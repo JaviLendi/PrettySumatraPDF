@@ -8,6 +8,7 @@ struct StressTest;
 class SumatraUIAutomationProvider;
 struct FrameRateWnd;
 struct LabelWithCloseWnd;
+struct WebviewWnd;
 struct Splitter;
 struct Tooltip;
 struct TreeView;
@@ -220,10 +221,14 @@ struct MainWindow {
     // home page thumbnail scrolling
     int homePageScrollY = 0;
 
+    WebviewWnd* homePageWebView = nullptr;
+    WebviewWnd* hybridToolbar = nullptr;
+
     // home page search filter
     HWND hwndHomeSearch = nullptr;
 
     bool isToolbarVisible = false;
+    bool isToolbarCompact = false;
     bool isFullScreen = false;
     PresentationMode presentation = PM_DISABLED;
     int windowStateBeforePresentation = 0;
@@ -242,6 +247,7 @@ struct MainWindow {
         bool isFullScreen = false;
         bool tabsVisible = false;
         bool isToolbarVisible = false;
+        bool isToolbarCompact = false;
         bool tocVisible = false;
         bool showFavorites = false;
         bool showMenuBarRebar = false;

@@ -156,6 +156,26 @@ bool IsCurrentThemeDefault() {
     return gCurrThemeIndex == 0;
 }
 
+bool PrettyStyleEnabled() {
+    return true;
+}
+
+COLORREF PrettySurfaceColor() {
+    return ThemeWindowControlBackgroundColor();
+}
+
+COLORREF PrettySurfaceAltColor() {
+    return ThemeWindowBackgroundColor();
+}
+
+COLORREF PrettyBorderColor() {
+    return ThemeWindowTextDisabledColor();
+}
+
+COLORREF PrettyAccentColor() {
+    return ThemeWindowLinkColor();
+}
+
 void FreeThemes() {
     delete gThemes; // no need to free members, they are owned by gParsedThemes
     gThemes = nullptr;

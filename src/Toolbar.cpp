@@ -42,6 +42,7 @@ extern "C" {
 #include "DarkModeSubclass.h"
 #include "wingui/Layout.h"
 #include "wingui/WinGui.h"
+#include "prettysumatra/BridgeDispatcher.h"
 
 #include "utils/Log.h"
 
@@ -719,20 +720,44 @@ void UpdateToolbarState(MainWindow* win) {
     if (!win->IsDocLoaded()) {
         return;
     }
+
+    if (prettysumatra::bridge::HasHybridToolbar(win->hwndFrame) && win->ctrl) {
+        prettysumatra::bridge::SyncHybridToolbarPageState(
+            win->hwndFrame,
+            win->ctrl->CurrentPageNo(),
+            win->ctrl->PageCount()
+        );
+        prettysumatra::bridge::SyncHybridToolbarZoomState(
+            win->hwndFrame,
+            win->ctrl->GetZoomVirtual(true)
+        );
+    }
+
     HWND hwnd = win->hwndToolbar;
     DisplayMode dm = win->ctrl->GetDisplayMode();
     float zoomVirtual = win->ctrl->GetZoomVirtual();
-    {
-        bool isChecked = dm == DisplayMode::Continuous && zoomVirtual == kZoomFitWidth;
-        SetToolbarButtonCheckedState(win, CmdZoomFitWidthAndContinuous, isChecked);
+
+    bool isChecked = dm == DisplayMode::Continuous && zoomVirtual == kZoomFitWidth;
+    SetToolbarButtonCheckedState(win, CmdZoomFitWidthAndContinuous, isChecked);
+
+    isChecked = dm == DisplayMode::SinglePage && zoomVirtual == kZoomFitPage;
+    SetToolbarButtonCheckedState(win, CmdZoomFitPageAndSinglePage, isChecked);
+    if (!isChecked) {
+        win->CurrentTab()->prevZoomVirtual = kInvalidZoom;
     }
-    {
-        bool isChecked = dm == DisplayMode::SinglePage && zoomVirtual == kZoomFitPage;
-        SetToolbarButtonCheckedState(win, CmdZoomFitPageAndSinglePage, isChecked);
-        if (!isChecked) {
-            win->CurrentTab()->prevZoomVirtual = kInvalidZoom;
-        }
-    }
+
+    ToolbarUpdateStateForWindow(win, false);
+
+    bool enable = !win->AsFixed() || !win->AsFixed()->GetEngine()->IsImageCollection();
+    EnableWindow(hwnd, enable);
+
+    int currPage = win->ctrl->CurrentPageNo();
+    bool canGoToPrevPage = currPage > 1;
+    bool canGoToNextPage = currPage < win->ctrl->PageCount();
+    SetToolbarButtonEnableState(win, CmdGoToPrevPage, canGoToPrevPage);
+    SetToolbarButtonEnableState(win, CmdGoToNextPage, canGoToNextPage);
+
+    UpdateToolbarPageText(win, win->ctrl->PageCount(), true);
 }
 
 static void CreateFindBox(MainWindow* win, HFONT hfont, int iconDy) {
@@ -931,6 +956,21 @@ void UpdateToolbarPageText(MainWindow* win, int pageCount, bool updateOnly) {
         TbSetButtonDx(win->hwndToolbar, PageInfoId, size2.dx);
     }
     InvalidateRect(win->hwndToolbar, nullptr, TRUE);
+    if (prettysumatra::bridge::HasHybridToolbar(win->hwndFrame) && win->ctrl) {
+        int total = pageCount;
+        if (total <= 0) {
+            total = win->ctrl->PageCount();
+        }
+        prettysumatra::bridge::SyncHybridToolbarPageState(
+            win->hwndFrame,
+            win->ctrl->CurrentPageNo(),
+            total
+        );
+        prettysumatra::bridge::SyncHybridToolbarZoomState(
+            win->hwndFrame,
+            win->ctrl->GetZoomVirtual(true)
+        );
+    }
 }
 
 static void CreatePageBox(MainWindow* win, HFONT font, int iconDy) {

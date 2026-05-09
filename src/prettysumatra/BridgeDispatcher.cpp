@@ -624,6 +624,7 @@ static int ResolveBridgeCommandId(const char* commandName) {
         return 0;
     }
     if (str::EqI(commandName, "commandPalette")) return CmdCommandPalette;
+    if (str::EqI(commandName, "openFile")) return CmdOpenFile;
     if (str::EqI(commandName, "properties")) return CmdProperties;
     if (str::EqI(commandName, "find")) return CmdFindFirst;
     if (str::EqI(commandName, "newWindow")) return CmdNewWindow;
