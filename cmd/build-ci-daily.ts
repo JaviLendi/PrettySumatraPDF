@@ -7,13 +7,13 @@ import {
   runLogged,
   isGitClean,
   getGitSha1,
-  detectVisualStudio2026,
+  detectVisualStudio,
 } from "./util";
 
 //const { msbuildPath } = detectVisualStudio();
 //const slnPath = join("vs2022", "SumatraPDF.sln");
 
-const { msbuildPath } = detectVisualStudio2026();
+const { msbuildPath } = detectVisualStudio();
 const slnPath = join("vs2022", "SumatraPDF.sln");
 
 const platforms = [

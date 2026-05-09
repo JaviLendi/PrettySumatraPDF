@@ -9,7 +9,7 @@ jobs:
   build:
     name: Build
     #runs-on: SumatraBuilder
-    runs-on: windows-2025-vs2026
+    runs-on: windows-latest
     steps:
       - name: Check out source code
         uses: actions/checkout@v6
@@ -21,4 +21,14 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Build
-        run: bun .\cmd\build-ci-daily.ts
+        shell: pwsh
+        run: |
+          bun .\cmd\build-ci-daily.ts 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-log-daily
+          path: build.log

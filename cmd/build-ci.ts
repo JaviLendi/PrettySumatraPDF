@@ -14,13 +14,13 @@ import {
   extractSumatraVersion,
   runLogged,
   getGitSha1,
-  detectVisualStudio2026,
+  detectVisualStudio,
 } from "./util";
 
 // const { msbuildPath, llvmPdbutilPath } = detectVisualStudio2022();
 // const slnPath = join("vs2022", "SumatraPDF.sln");
 
-const { msbuildPath, llvmPdbutilPath } = detectVisualStudio2026();
+const { msbuildPath, llvmPdbutilPath } = detectVisualStudio();
 const slnPath = join("vs2022", "SumatraPDF.sln");
 
 const pdbFiles = ["libmupdf.pdb", "SumatraPDF-dll.pdb", "SumatraPDF.pdb"];

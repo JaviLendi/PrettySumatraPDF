@@ -8,7 +8,7 @@ jobs:
   build:
     name: Build
     #runs-on: SumatraBuilder
-    runs-on: windows-2025-vs2026
+    runs-on: windows-latest
     steps:
       - name: Check out source code
         uses: actions/checkout@v6
@@ -20,9 +20,19 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Build
+        shell: pwsh
         env:
           R2_SECRET: ${{ secrets.R2_SECRET }}
           R2_ACCESS: ${{ secrets.R2_ACCESS }}
           BB_SECRET: ${{ secrets.BB_SECRET }}
           BB_ACCESS: ${{ secrets.BB_ACCESS }}
-        run: bun .\cmd\build-ci.ts
+        run: |
+          bun .\cmd\build-ci.ts 2>&1 | Tee-Object -FilePath build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-log
+          path: build.log
