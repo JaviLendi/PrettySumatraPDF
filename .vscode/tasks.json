@@ -44,7 +44,7 @@
             "args": [
                 "/d",
                 "/c",
-                "scripts\\build-vs2022.cmd Debug x64 SumatraPDF-dll"
+                "scripts\\build-vs2022.cmd Debug x64 SumatraPDF-dll && if exist out\\dbg64\\SumatraPDF-dll.exe copy /Y \"out\\dbg64\\SumatraPDF-dll.exe\" \"out\\dbg64\\SumatraPDF.exe\""
             ],
             "group": "build",
             "presentation": {
@@ -62,8 +62,8 @@
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
-                "-Command",
-                "$exe='${workspaceFolder}\\out\\dbg64\\SumatraPDF.exe'; if (Test-Path $exe) { & $exe } else { Write-Error \"No existe: $exe\"; exit 1 }"
+                "-File",
+                "${workspaceFolder}\\scripts\\run-sumatra.ps1"
             ],
             "presentation": {
                 "reveal": "always"
@@ -78,8 +78,10 @@
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
-                "-Command",
-                "$exe='${workspaceFolder}\\out\\rel64\\SumatraPDF.exe'; if (Test-Path $exe) { & $exe } else { Write-Error \"No existe: $exe\"; exit 1 }"
+                "-File",
+                "${workspaceFolder}\\scripts\\run-sumatra.ps1",
+                "-Config",
+                "rel64"
             ],
             "presentation": {
                 "reveal": "always"

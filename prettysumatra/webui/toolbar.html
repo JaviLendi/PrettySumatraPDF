@@ -53,7 +53,7 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-app); color:
 .select-wrapper i { position: absolute; right: 8px; pointer-events: none; font-size: 0.75rem; color: var(--text-muted); }
 .search-box { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--radius-md); padding: 0 4px 0 12px; height: 36px; transition: var(--transition); flex-shrink: 0; }
 .search-box:focus-within { border-color: var(--brand-primary); box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2); }
-.search-input { border: none; background: transparent; color: var(--text-main); font-family: inherit; font-size: 0.9rem; width: 140px; outline: none; transition: var(--transition); }
+.search-input { border: none; background: transparent; color: var(--text-main); font-family: inherit; font-size: 0.9rem; width: 100px; outline: none; transition: var(--transition); }
 .search-input::placeholder { color: var(--text-muted); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 
@@ -146,29 +146,390 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-app); color:
 .invert-doc-btn:hover { color: var(--text-main); background: var(--bg-button-hover); }
 .invert-doc-btn.active { background: var(--bg-button-active); color: var(--brand-primary); }
 
-@media (max-width: 1200px) {
-  .toolbar-container { padding: 6px 10px; gap: 10px; } .toolbar-section { gap: 6px; }
-  .btn-icon { width: 28px; height: 28px; font-size: 0.9rem; } .divider { height: 16px; margin: 0 2px; }
-  #openButtonText { display: none; } .btn-primary { padding: 0; width: 30px; height: 30px; border-radius: 50%; }
-  .btn-primary i { margin: 0; font-size: 0.9rem; } .page-input { width: 36px; height: 24px; font-size: 0.85rem; }
-  .page-meta { font-size: 0.8rem; } .brand-subtitle { display: none; }
-  .control-group:has(#zoomSelect) .select-wrapper, .control-group:has(#zoomSelect) .divider, .control-group:has(#viewModeSelect) .select-wrapper, .control-group:has(#viewModeSelect) .divider { display: none; }
-  .search-box { position: relative; width: 32px; padding: 0; justify-content: center; cursor: pointer; overflow: hidden; }
-  .search-box i.fa-magnifying-glass { min-width: 32px; text-align: center; pointer-events: none; }
-  .search-box:not(:focus-within) .search-input { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-  .search-box:not(:focus-within) #searchPrev, .search-box:not(:focus-within) #searchNext { display: none; }
-  .search-box:focus-within { width: 180px; padding: 0 4px 0 8px; justify-content: flex-start; }
-  .search-box:focus-within .search-input { position: relative; width: 100px; opacity: 1; cursor: text; }
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Large screens (1600px+): Full toolbar with all features */
+@media (max-width: 1600px) {
+  .toolbar-container { max-width: 100%; }
 }
-@media (max-width: 900px) { .brand { display: none; } .search-box:focus-within { width: 140px; } .search-box:focus-within .search-input { width: 70px; } }
-@media (max-width: 768px) { .toolbar-container { gap: 6px; padding: 4px 8px; } .toolbar-section { gap: 4px; } }
-.skeleton-container { display: flex !important; align-items: center; justify-content: center; gap: 16px; width: 100%; max-width: 1600px; height: 58px; margin: 0 auto; background: var(--bg-toolbar); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; position: relative; overflow: hidden; box-shadow: var(--shadow-md); z-index: 999; }
-.skel-shape { background: rgba(150, 150, 150, 0.3); height: 36px; border-radius: var(--radius-md); }
-.skel-circle { width: 36px; border-radius: 50%; } .skel-box { width: 90px; } .skel-large { width: 160px; }
-.skeleton-container::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.35), transparent); animation: shimmer 1.2s linear 1; }
-@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-@media (max-width: 1200px) { .skeleton-container { height: 44px; gap: 10px; } .skel-shape { height: 30px; } .skel-circle { width: 30px; } }
-@media (max-width: 768px) { .skeleton-container { height: 40px; } }
+
+/* Medium-Large screens (1200px - 1599px): Compact spacing */
+@media (max-width: 1200px) {
+  .toolbar-container {
+    padding: 6px 10px;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+  .toolbar-section {
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .btn-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+  .divider {
+    height: 16px;
+    margin: 0 2px;
+  }
+  #openButtonText {
+    display: none;
+  }
+  .btn-primary {
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+  }
+  .btn-primary i {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+  .page-input {
+    width: 36px;
+    height: 24px;
+    font-size: 0.85rem;
+  }
+  .page-meta {
+    font-size: 0.8rem;
+  }
+  .brand-subtitle {
+    display: none;
+  }
+  .control-group:has(#zoomSelect) .select-wrapper,
+  .control-group:has(#zoomSelect) .divider,
+  .control-group:has(#viewModeSelect) .select-wrapper,
+  .control-group:has(#viewModeSelect) .divider {
+    display: none;
+  }
+  .search-box {
+    position: relative;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .search-box i.fa-magnifying-glass {
+    min-width: 32px;
+    text-align: center;
+    pointer-events: none;
+  }
+  .search-box:not(:focus-within) .search-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .search-box:not(:focus-within) #searchPrev,
+  .search-box:not(:focus-within) #searchNext {
+    display: none;
+  }
+  .search-box:focus-within {
+    width: 100px;
+    padding: 0 4px 0 8px;
+    justify-content: flex-start;
+  }
+  .search-box:focus-within .search-input {
+    position: relative;
+    width: 100px;
+    opacity: 1;
+    cursor: text;
+  }
+}
+
+/* Tablet screens (900px - 1199px): More compact */
+@media (max-width: 1024px) {
+  .toolbar-container {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  .toolbar-section {
+    gap: 5px;
+  }
+  .btn-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 0.85rem;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .brand-title {
+    font-size: 0.95rem;
+  }
+  .search-box:focus-within {
+    width: 120px;
+  }
+  .search-box:focus-within .search-input {
+    width: 90px;
+  }
+}
+
+@media (max-width: 900px) {
+  .brand {
+    display: none;
+  }
+  .toolbar-container {
+    padding: 5px 6px;
+    gap: 6px;
+  }
+  .toolbar-section {
+    gap: 4px;
+  }
+  .search-box:focus-within {
+    width: 140px;
+  }
+  .search-box:focus-within .search-input {
+    width: 70px;
+  }
+  .control-group {
+    padding: 3px;
+  }
+}
+
+/* Mobile landscape / Small tablet (768px - 899px): Minimal layout */
+@media (max-width: 768px) {
+  .toolbar-container {
+    gap: 6px;
+    padding: 4px 8px;
+    height: auto;
+    min-height: 44px;
+    flex-wrap: nowrap;
+  }
+  .toolbar-section {
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+  .btn-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.8rem;
+  }
+  .page-input {
+    width: 32px;
+    height: 22px;
+    font-size: 0.8rem;
+  }
+  .divider {
+    height: 14px;
+    margin: 0 1px;
+  }
+  .search-box {
+    width: 28px;
+  }
+  .search-box:focus-within {
+    width: 120px;
+  }
+  .search-box:focus-within .search-input {
+    width: 60px;
+  }
+  .control-group {
+    padding: 2px;
+  }
+}
+
+/* Mobile portrait / Small screens (480px - 767px): Stacked layout */
+@media (max-width: 480px) {
+  .toolbar-container {
+    gap: 4px;
+    padding: 4px 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .toolbar-section {
+    width: auto;
+    gap: 3px;
+    flex-wrap: nowrap;
+  }
+  .btn-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+  }
+  .btn-primary {
+    width: 24px;
+    height: 24px;
+  }
+  .btn-primary i {
+    font-size: 0.8rem;
+  }
+  .page-input {
+    width: 28px;
+    height: 20px;
+    font-size: 0.75rem;
+  }
+  .divider {
+    height: 12px;
+    margin: 0 1px;
+  }
+  .search-box {
+    width: 24px;
+  }
+  .search-box:focus-within {
+    width: 100px;
+  }
+  .search-box:focus-within .search-input {
+    width: 50px;
+    font-size: 0.8rem;
+  }
+  .control-group {
+    padding: 2px;
+    gap: 2px;
+  }
+  .theme-pill-container {
+    order: -1;
+  }
+}
+
+/* Extra small screens (<480px): Ultra minimal */
+@media (max-width: 380px) {
+  .toolbar-container {
+    gap: 3px;
+    padding: 3px;
+  }
+  .btn-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+  .btn-primary {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+  }
+  .page-input {
+    width: 24px;
+    height: 18px;
+    font-size: 0.7rem;
+  }
+  .divider {
+    height: 10px;
+    margin: 0 0.5px;
+  }
+  .search-box {
+    width: 20px;
+  }
+  .search-box:focus-within {
+    width: 90px;
+  }
+  .control-group {
+    padding: 1px;
+    gap: 1px;
+  }
+  .invert-doc-btn {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ===== SKELETON LOADER RESPONSIVE ===== */
+.skeleton-container {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 1600px;
+  height: 58px;
+  margin: 0 auto;
+  background: var(--bg-toolbar);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 10px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  z-index: 999;
+}
+.skel-shape {
+  background: rgba(150, 150, 150, 0.3);
+  height: 36px;
+  border-radius: var(--radius-md);
+}
+.skel-circle {
+  width: 36px;
+  border-radius: 50%;
+}
+.skel-box {
+  width: 90px;
+}
+.skel-large {
+  width: 160px;
+}
+.skeleton-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.35), transparent);
+  animation: shimmer 1.2s linear 1;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@media (max-width: 1200px) {
+  .skeleton-container {
+    height: 44px;
+    gap: 10px;
+  }
+  .skel-shape {
+    height: 30px;
+  }
+  .skel-circle {
+    width: 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .skeleton-container {
+    height: 40px;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .skel-shape {
+    height: 28px;
+  }
+  .skel-circle {
+    width: 28px;
+  }
+  .skel-box {
+    width: 70px;
+  }
+  .skel-large {
+    width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeleton-container {
+    height: 36px;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .skel-shape {
+    height: 24px;
+  }
+  .skel-circle {
+    width: 24px;
+  }
+  .skel-box {
+    width: 50px;
+  }
+  .skel-large {
+    width: 80px;
+  }
+}
 </style>
 </head>
 
@@ -177,16 +538,16 @@ body { font-family: 'Inter', sans-serif; background-color: var(--bg-app); color:
   <div class="skel-shape skel-circle"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-large"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-circle"></div>
 </div>
 <div id="mainToolbar" class="toolbar-container" style="display: none !important;">
-  <div class="brand"><div class="brand-icon"><img src="sumatrapdf/gfx/PrettySumatra/SumatraPDF-256.png" alt="SumatraPDF"></div><div class="brand-text"><div class="brand-title">Pretty<span>Sumatra</span>PDF</div><div id="toolbarSubtitle" class="brand-subtitle subtitle">Focused reading</div></div></div>
+  <div class="brand"><div class="brand-icon"><img src="../../gfx/SumatraPDF-256x256x32.png" alt="SumatraPDF"></div><div class="brand-text"><div class="brand-title">Pretty<span>Sumatra</span>PDF</div><div id="toolbarSubtitle" class="brand-subtitle subtitle">Focused reading</div></div></div>
   <div class="toolbar-section">
-    <button id="openButton" class="btn btn-primary" data-cmd="openFile" type="button" title="Open File (Ctrl+O)"><i class="fa-regular fa-folder-open"></i><span id="openButtonText">Open</span></button>
+    <button id="openButton" class="btn btn-primary" data-exec="openFile" type="button" title="Open File (Ctrl+O)"><i class="fa-regular fa-folder-open"></i><span id="openButtonText">Open</span></button>
     <div class="control-group"><button id="pagePrevButton" class="btn btn-icon" data-cmd="goToPage" data-delta="-1" type="button"><i class="fa-solid fa-chevron-left"></i></button><div class="divider"></div><input id="pageInput" class="page-input page" type="number" min="1" value="1"><div class="divider"></div><button id="pageNextButton" class="btn btn-icon" data-cmd="goToPage" data-delta="1" type="button"><i class="fa-solid fa-chevron-right"></i></button></div>
     <div class="control-group"><button id="zoomOutButton" class="btn btn-icon" data-exec="zoomOut" type="button"><i class="fa-solid fa-magnifying-glass-minus"></i></button><div class="divider"></div><div class="select-wrapper"><select id="zoomSelect" class="custom-select" style="padding-right: 24px;"><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.25">125%</option><option value="1.5">150%</option></select><i class="fa-solid fa-chevron-down"></i></div><div class="divider"></div><button id="zoomInButton" class="btn btn-icon" data-exec="zoomIn" type="button"><i class="fa-solid fa-magnifying-glass-plus"></i></button></div>
     <div class="control-group"><div class="select-wrapper"><select id="viewModeSelect" class="custom-select" style="padding-right: 24px;"><option value="singlePage" selected>Single Page</option><option value="facing">Facing</option><option value="bookView">Book View</option></select><i class="fa-solid fa-chevron-down"></i></div><div class="divider"></div><button id="continuousToggle" class="btn btn-icon toggle active" type="button"><i class="fa-solid fa-arrows-up-down"></i></button></div>
   </div>
   <div class="toolbar-section">
     <div class="control-group"><button id="highlightButton" disabled class="btn btn-icon" data-exec="highlightSelection" type="button"><i class="fa-solid fa-highlighter"></i></button><div class="divider"></div><button id="annotateButton" disabled class="btn btn-icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button><div class="divider"></div><button id="drawButton" disabled class="btn btn-icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button></div>
-    <div class="search-box"><i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); font-size: 0.9rem;"></i><input id="searchInput" type="search" class="search-input search" placeholder="Search text"><button id="searchPrev" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-up"></i></button><button id="searchNext" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-down"></i></button></div>
+    <div class="search-box"><i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); font-size: 0.9rem; margin-right: 0.5rem;"></i><input id="searchInput" type="search" class="search-input search" placeholder="Search text"><button id="searchPrev" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-up"></i></button><button id="searchNext" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-down"></i></button></div>
     <div class="control-group">
       <button id="bookmarksToggle" class="btn btn-icon toggle active" data-exec="toggleBookmarks" type="button" title="Marcadores"><i class="fa-solid fa-bookmark"></i></button>
       <button id="favoritesToggle" class="btn btn-icon toggle" data-exec="toggleFavorites" type="button" title="Favoritos"><i class="fa-solid fa-star"></i></button>
