@@ -4,7 +4,7 @@ Release date: 2026-05-09
 
 ## Overview
 
-PrettySumatraPDF is the first official release of the PrettySumatra redesign. It preserves the full functionality of the original SumatraPDF reader while providing a modernized native UI and optional hybrid WebView2 features.
+PrettySumatraPDF is the first release of the PrettySumatra redesign. It preserves the full functionality of the original SumatraPDF reader while providing a modernized native UI and optional hybrid WebView2 features.
 
 ## Highlights
 
