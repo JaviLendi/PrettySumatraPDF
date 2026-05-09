@@ -3,8 +3,8 @@ PrettySumatraPDF Installer — Build Instructions
 This folder contains an Inno Setup script to create a Windows installer for PrettySumatraPDF.
 
 Requirements
-- Inno Setup (https://jrsoftware.org/isinfo.php) — `ISCC.exe` must be on PATH
-- A built application executable (release build) located at `out\rel64\SumatraPDF.exe` (adjust paths if necessary)
+- Inno Setup (https://jrsoftware.org/isinfo.php)
+- A built application executable (release build) located at `out\rel64\SumatraPDF-dll.exe` (adjust paths if necessary)
 
 Quick build steps
 
@@ -16,16 +16,18 @@ Quick build steps
 cmd /c "scripts\\build-vs2022.cmd Release x64 SumatraPDF-dll"
 ```
 
-2. Copy the produced `SumatraPDF.exe` and any required runtime files into the repository root or adjust `PrettySumatraPDF.iss` `Source` paths accordingly.
+2. Ensure the produced `SumatraPDF-dll.exe` and any required runtime files are present under `out\rel64\`, or adjust `PrettySumatraPDF.iss` `Source` paths accordingly. The script resolves paths relative to `scripts\installer`.
 
 3. Compile the installer with Inno Setup:
 
 ```powershell
-ISCC.exe scripts\\installer\\PrettySumatraPDF.iss
+& 'C:\Users\javil\AppData\Local\Programs\Inno Setup 6\ISCC.exe' scripts\\installer\\PrettySumatraPDF.iss
 ```
 
-4. The installer will be produced under the `dist/` directory with filename `PrettySumatraPDF-Setup-1.0.0.exe`.
+4. The installer will be produced under `scripts\installer\dist\` with filename `PrettySumatraPDF-Setup-1.0.0.exe`.
 
 Notes
-- Customize the `[Files]` section in `PrettySumatraPDF.iss` to include any extra files (DLLs, license file, README, etc.).
+- The current script packages runtime artifacts from `out\\rel64` (`*.exe`, `*.dll`, `*.dat`, `*.txt`) to keep installer size reasonable.
+- The script also packages `prettysumatra\\webui` (homepage + toolbar HTML and vendor assets). If this folder is missing in the install dir, homepage/toolbar will not render.
+- Customize the `[Files]` section in `PrettySumatraPDF.iss` to include extra runtime assets if needed.
 - If you prefer NSIS, I can generate an NSIS script instead.
