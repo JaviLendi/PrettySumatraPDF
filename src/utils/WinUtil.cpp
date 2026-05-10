@@ -565,14 +565,20 @@ static void ResetRegKeyAcl(HKEY hkey, const char* keyName) {
         return;
     }
     SECURITY_DESCRIPTOR secdesc;
-    InitializeSecurityDescriptor(&secdesc, SECURITY_DESCRIPTOR_REVISION);
+    if (!InitializeSecurityDescriptor(&secdesc, SECURITY_DESCRIPTOR_REVISION)) {
+        RegCloseKey(hKey);
+        return;
+    }
 
-#pragma warning(push)
-#pragma warning(disable : 6248)
-    // "Setting a SECURITY_DESCRIPTOR's DACL to nullptr will result in an unprotected object"
-    // https://docs.microsoft.com/en-us/cpp/code-quality/c6248?view=msvc-170
-    SetSecurityDescriptorDacl(&secdesc, TRUE, nullptr, TRUE);
-#pragma warning(pop)
+    ACL dacl;
+    if (!InitializeAcl(&dacl, sizeof(dacl), ACL_REVISION)) {
+        RegCloseKey(hKey);
+        return;
+    }
+    if (!SetSecurityDescriptorDacl(&secdesc, TRUE, &dacl, FALSE)) {
+        RegCloseKey(hKey);
+        return;
+    }
 
     RegSetKeySecurity(hKey, DACL_SECURITY_INFORMATION, &secdesc);
     RegCloseKey(hKey);
