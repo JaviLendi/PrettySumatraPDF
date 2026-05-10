@@ -295,7 +295,23 @@ static void FixRoundedCorners(HBITMAP hbm, int w, int h, COLORREF bgColor, int r
     InitBitmapInfo32(bmi, w, h);
 
     HDC hdc = GetDC(nullptr);
-    DWORD* pixels = (DWORD*)malloc(w * h * 4);
+    if (w <= 0 || h <= 0) {
+         ReleaseDC(nullptr, hdc);
+        return;
+    }
+    size_t sw = (size_t)w;
+    size_t sh = (size_t)h;
+    if (sw > (SIZE_MAX / sh)) {
+        ReleaseDC(nullptr, hdc);
+        return;
+    }
+    size_t pixelCount = sw * sh;
+    if (pixelCount > (SIZE_MAX / sizeof(DWORD))) {
+        ReleaseDC(nullptr, hdc);
+        return;
+    }
+    size_t allocSize = pixelCount * sizeof(DWORD);
+    DWORD* pixels = (DWORD*)malloc(allocSize);
     if (!pixels) {
         ReleaseDC(nullptr, hdc);
         return;

@@ -149,15 +149,14 @@ TempStr UnknownToUtf8Temp(const char* s, size_t cb) {
     if (str::StartsWith(s, UTF16_BOM)) {
         s += 2;
         int cch = (int)((len - 2) / 2);
-        // codeql complains about char* => WCHAR* cast
-        void* d = (void*)s;
-        return ToUtf8Temp((const WCHAR*)d, cch);
+        const WCHAR* ws = str::CastToWCHAR(s);
+        return ToUtf8Temp(ws, cch);
     }
 
     if (str::StartsWith(s, UTF16BE_BOM)) {
         // convert from utf16 big endian to utf16
         s += 2;
-        WCHAR* ws = (WCHAR*)s;
+        WCHAR* ws = str::CastToWCHAR(s);
         int n = str::Leni(ws);
         WCHAR* tmpW = str::DupTemp(ws, n + 1);
         char* tmp = (char*)tmpW;

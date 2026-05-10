@@ -93,13 +93,13 @@ static TempStr DecodeTextToUtf8Temp(const char* s, bool isXML = false) {
     if (str::StartsWith(s, UTF16BE_BOM)) {
         // convert from utf16 big endian to utf16
         s += 2;
-        int n = str::Leni((WCHAR*)s);
+        WCHAR* ws = str::CastToWCHAR(s);
+        int n = str::Leni(ws);
         char* tmp = (char*)s;
         for (int i = 0; i < n; i++) {
             int idx = i * 2;
             std::swap(tmp[idx], tmp[idx + 1]);
         }
-        WCHAR* ws = str::CastToWCHAR(s);
         return ToUtf8Temp(ws);
     }
     uint codePage = isXML ? GetCodepageFromPI(s) : CP_ACP;
