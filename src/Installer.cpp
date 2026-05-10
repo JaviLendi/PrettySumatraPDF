@@ -612,8 +612,7 @@ static void ForAllUsersStateChanged() {
     str::ReplacePtr(&cli->installDir, str::Dup(dir));
     gWnd->editInstallationDir->SetText(cli->installDir);
     logf("ForAllUsersStateChanged: cli->allUsers: %d, cli->installDir: '%s', forAllUsers: %d\n", (int)cli->allUsers,
-         cli->installDir),
-        (int)forAllUsers;
+         cli->installDir, (int)forAllUsers);
 }
 
 static void UpdateUIForOptionsState(InstallerWnd* wnd) {

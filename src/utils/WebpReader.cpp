@@ -38,7 +38,8 @@ Gdiplus::Bitmap* ImageFromData(const ByteSlice& d) {
     if (ok != Gdiplus::Ok) {
         return nullptr;
     }
-    if (!WebPDecodeBGRAInto((const u8*)d.data(), d.size(), (u8*)bmpData.Scan0, bmpData.Stride * h, bmpData.Stride)) {
+    if (!WebPDecodeBGRAInto((const u8*)d.data(), d.size(), (u8*)bmpData.Scan0,
+                            static_cast<size_t>(bmpData.Stride) * static_cast<size_t>(h), bmpData.Stride)) {
         return nullptr;
     }
     bmp.UnlockBits(&bmpData);
