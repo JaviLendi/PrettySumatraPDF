@@ -814,7 +814,7 @@ static void PaintOverlayLayered(HWND hwnd, ScreenshotOverlayData* data) {
     bmiTemp.bmiHeader.biPlanes = 1;
     bmiTemp.bmiHeader.biBitCount = 32;
     bmiTemp.bmiHeader.biCompression = BI_RGB;
-    DWORD* tempPixels = (DWORD*)malloc(w * h * 4);
+    DWORD* tempPixels = (DWORD*)malloc((size_t)w * (size_t)h * sizeof(DWORD));
     GetDIBits(hdcTemp, hbmTemp, 0, h, tempPixels, &bmiTemp, DIB_RGB_COLORS);
 
     // Copy thumbnail and label regions with full opacity into the DIB
