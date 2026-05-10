@@ -397,7 +397,7 @@ ByteSlice SerializeBitmap(HBITMAP hbmp) {
     WORD w = (WORD)bmpInfo.bmWidth;
     WORD h = (WORD)bmpInfo.bmHeight;
     int stride = ((w * 3 + 3) / 4) * 4;
-    char* bmpData = AllocArrayTemp<char>(stride * h);
+    char* bmpData = AllocArrayTemp<char>(static_cast<size_t>(stride) * static_cast<size_t>(h));
     if (!bmpData) {
         return {};
     }
@@ -452,7 +452,7 @@ ByteSlice SerializeBitmap(HBITMAP hbmp) {
     tgaData.Append((char*)&footerLE, sizeof(footerLE));
 
     // don't compress the image data if that increases the file size
-    if (tgaData.size() > sizeof(headerLE) + w * h * 3 + sizeof(footerLE)) {
+    if (tgaData.size() > sizeof(headerLE) + static_cast<size_t>(w) * h * 3 + sizeof(footerLE)) {
         tgaData.RemoveAt(0, tgaData.size());
         headerLE.imageType = Type_Truecolor;
         tgaData.Append((char*)&headerLE, sizeof(headerLE));

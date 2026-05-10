@@ -3342,7 +3342,7 @@ void CloseTab(WindowTab* tab, bool quitIfLast) {
 // are other windows, else the Frequently Read page is displayed
 void CloseCurrentTab(MainWindow* win, bool quitIfLast) {
     WindowTab* tab = win->CurrentTab();
-    logf("CloseCurrentTab: tab: 0x%p win: 0x%p, hwndFrame: 0x%x, quitIfLast: %d\n", tab, win, win->hwndFrame,
+    logf("CloseCurrentTab: tab: 0x%p win: 0x%p, hwndFrame: 0x%p, quitIfLast: %d\n", tab, win, win->hwndFrame,
          (int)quitIfLast);
     if (tab) {
         CloseTab(tab, quitIfLast);
@@ -3388,7 +3388,7 @@ void CloseWindow(MainWindow* win, bool quitIfLast, bool forceClose) {
     if (win->isBeingClosed && !forceClose) {
         return;
     }
-    logf("CloseWindow: win: 0x%p, hwndFrame: 0x%x, quitIfLast: %d, forceClose: %d\n", win, win->hwndFrame,
+    logf("CloseWindow: win: 0x%p, hwndFrame: 0x%p, quitIfLast: %d, forceClose: %d\n", win, (void*)win->hwndFrame,
          (int)quitIfLast, (int)forceClose);
     win->isBeingClosed = true;
     ReportIf(forceClose && !quitIfLast);

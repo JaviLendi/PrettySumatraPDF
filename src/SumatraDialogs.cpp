@@ -1221,7 +1221,13 @@ static void PaintColorArea(HDC hdc, RECT* rc) {
     }
     // rows must be DWORD-aligned; each pixel is 3 bytes (BGR)
     int stride = (w * 3 + 3) & ~3;
-    u8* bits = (u8*)malloc(stride * h);
+    size_t strideSz = (size_t)stride;
+    size_t hSz = (size_t)h;
+    if (strideSz > SIZE_MAX / hSz) {
+        return;
+    }
+    size_t bitsSize = strideSz * hSz;
+    u8* bits = (u8*)malloc(bitsSize);
     if (!bits) {
         return;
     }

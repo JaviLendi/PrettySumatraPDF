@@ -1459,7 +1459,8 @@ static void GetBitmapExifProperties(Bitmap* bmp, StrVec& keyValOut) {
                 }
                 // Unicode
                 else if (memcmp(item->value, "UNICODE\0", 8) == 0) {
-                    val = ToUtf8Temp((WCHAR*)commentData, commentLen / 2);
+                    WCHAR* ws = str::CastToWCHAR(commentData);
+                    val = ToUtf8Temp(ws, commentLen / 2);
                     if (val && !str::IsEmpty(val)) {
                         AddProp(keyValOut, kPropUserComment, val);
                     }
