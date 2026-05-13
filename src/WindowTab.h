@@ -5,6 +5,7 @@ struct SelectionOnPage;
 struct WatchedFile;
 struct EditAnnotationsWindow;
 struct MainWindow;
+struct Annotation;
 
 /* Data related to a single document loaded into a tab/window */
 /* (none of these depend on MainWindow, so that a WindowTab could

@@ -120,7 +120,7 @@ struct ToolbarHeightBreakpoint {
 };
 
 static const ToolbarHeightBreakpoint kToolbarHeightBreakpoints[] = {
-    {1700, 120}, {1300, 110}, {1000, 90}, {700, 70}, {0, 50}, // default fallback
+    {1700, 56}, {1300, 56}, {1000, 52}, {650, 44}, {0, 44}, // default fallback
 };
 
 static int GetHybridToolbarHeight(HWND hwndFrame) {
@@ -2983,6 +2983,10 @@ static void ShowSavedAnnotationsFailedNotification(HWND hwndParent, const char* 
     ShowWarningNotification(hwndParent, msg.Get(), 0);
 }
 
+static void ShowHighlightSelectionRequiredNotification(HWND hwndParent) {
+    ShowWarningNotification(hwndParent, _TRA("Select text first to highlight it"), kNotif5SecsTimeOut);
+}
+
 struct ShowErrorData {
     WindowTab* tab;
     const char* path;
@@ -5204,18 +5208,7 @@ static bool ChmForwardKey(WPARAM key) {
     return false;
 }
 
-static Annotation* GetAnnotionUnderCursor(WindowTab* tab, Annotation* annot) {
-    DisplayModel* dm = tab->AsFixed();
-    if (!dm) return nullptr;
-    Point pt = HwndGetCursorPos(tab->win->hwndCanvas);
-    if (pt.IsEmpty()) return nullptr;
-    int pageNoUnderCursor = dm->GetPageNoByPoint(pt);
-    if (pageNoUnderCursor <= 0) {
-        return nullptr;
-    }
-    annot = dm->GetAnnotationAtPos(pt, annot);
-    return annot;
-}
+ 
 
 static bool FrameOnKeydown(MainWindow* win, WPARAM key, LPARAM lp) {
     // TODO: how does this interact with new accelerators?
@@ -7499,7 +7492,19 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
         case CmdDeleteAnnotation: {
             if (!tab) return 0;
             Annotation* annot = tab->selectedAnnotation;
-            if (!annot) annot = GetAnnotionUnderCursor(tab, nullptr);
+            // If command was invoked from context menu, lp encodes the point where menu was opened
+            if (!annot) {
+                Point pt = HwndGetCursorPos(win->hwndCanvas);
+                if (lp != 0) {
+                    pt.x = GET_X_LPARAM(lp);
+                    pt.y = GET_Y_LPARAM(lp);
+                    // Coordinates supplied by menu code are already in canvas client coords
+                }
+                int pageNoUnderCursor = dm->GetPageNoByPoint(pt);
+                if (pageNoUnderCursor > 0) {
+                    annot = dm->GetAnnotationAtPos(pt, nullptr);
+                }
+            }
             if (!annot) return 0;
             DeleteAnnotationAndUpdateUI(tab, annot);
             return 0;
@@ -7515,7 +7520,21 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
             if (!win || !tab) {
                 return 0;
             }
+            if (cmdId == CmdCreateAnnotHighlight && (!win->showSelection || !tab->selectionOnPage)) {
+                ShowHighlightSelectionRequiredNotification(win->hwndCanvas);
+                return 0;
+            }
             AnnotCreateArgs args{annotType};
+            
+            // Check if there's a pending color from the bridge (for highlight from webui toolbar)
+            const char* bridgeColor = prettysumatra::bridge::GetPendingHighlightColor();
+            if (cmdId == CmdCreateAnnotHighlight && bridgeColor && str::StartsWith(bridgeColor, "#")) {
+                // Create a command string with the color and parse it
+                char cmdStr[128];
+                snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotHighlight %s", bridgeColor);
+                cmd = CreateCommandFromDefinition(cmdStr);
+            }
+            
             SetAnnotCreateArgs(args, cmd);
             lastCreatedAnnot = MakeAnnotationsFromSelection(tab, &args);
             if (cmd) {

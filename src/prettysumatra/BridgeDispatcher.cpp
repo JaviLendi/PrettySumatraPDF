@@ -349,6 +349,7 @@ struct BridgeMessage {
     const char* action = nullptr;
     const char* direction = nullptr;
     const char* mode = nullptr;
+    const char* color = nullptr;
     int page = 0;
     int cmdId = 0;
     float value = 0.0f;
@@ -408,6 +409,15 @@ class BridgeMessageVisitor : public json::ValueVisitor {
             msg->hasValue = true;
             return true;
         }
+        // Accept string 'value' for backwards-compatible color payloads (e.g. "#facc15")
+        if (str::Eq(path, "/payload/value") && type == json::Type::String) {
+            msg->color = str::DupTemp(value);
+            return true;
+        }
+        if (str::Eq(path, "/payload/color") && type == json::Type::String) {
+            msg->color = str::DupTemp(value);
+            return true;
+        }
         return true;
     }
 
@@ -434,6 +444,31 @@ static MainWindow* GetTargetWindow() {
         win = gWindows.at(0);
     }
     return win;
+}
+
+// Global variable to store the highlight color from the latest message
+static char gPendingHighlightColor[16] = "#ffff00";
+
+const char* GetPendingHighlightColor() {
+    return gPendingHighlightColor;
+}
+
+static bool DispatchHighlightSelection(const BridgeMessage& msg) {
+    MainWindow* win = GetTargetWindow();
+    if (!win) {
+        return false;
+    }
+    
+    // Validate and store the color
+    if (msg.color && str::StartsWith(msg.color, "#") && str::Len(msg.color) == 7) {
+        str::BufSet(gPendingHighlightColor, dimof(gPendingHighlightColor), msg.color);
+    } else {
+        str::BufSet(gPendingHighlightColor, dimof(gPendingHighlightColor), "#ffff00"); // default yellow
+    }
+    
+    // Dispatch the highlight command
+    PostMessageW(win->hwndFrame, WM_COMMAND, CmdCreateAnnotHighlight, 0);
+    return true;
 }
 
 static bool DispatchOpenFile(const BridgeMessage& msg) {
@@ -670,6 +705,9 @@ static int ResolveBridgeCommandId(const char* commandName) {
     if (str::EqI(commandName, "rotateLeft")) return CmdRotateLeft;
     if (str::EqI(commandName, "rotateRight")) return CmdRotateRight;
     if (str::EqI(commandName, "print")) return CmdPrint;
+    if (str::EqI(commandName, "highlightSelection")) return CmdCreateAnnotHighlight;
+    if (str::EqI(commandName, "addAnnotation")) return CmdCreateAnnotText;
+    if (str::EqI(commandName, "freeDraw")) return CmdCreateAnnotInk;
     return 0;
 }
 
@@ -679,6 +717,9 @@ static bool DispatchExecCommand(const BridgeMessage& msg) {
         return false;
     }
 
+    if (str::EqI(msg.command, "highlightSelection")) {
+        return DispatchHighlightSelection(msg);
+    }
     if (str::EqI(msg.command, "toggleTheme")) {
         return DispatchToggleThemeLightDark();
     }
@@ -700,6 +741,20 @@ static bool DispatchExecCommand(const BridgeMessage& msg) {
     }
 
     PostMessageW(win->hwndFrame, WM_COMMAND, cmdId, 0);
+    return true;
+}
+
+static bool DispatchSetHighlightColor(const BridgeMessage& msg) {
+    MainWindow* win = GetTargetWindow();
+    if (!win) return false;
+
+    // msg.color may contain a hex string like "#facc15" (from payload.value or payload.color)
+    if (msg.color && str::StartsWith(msg.color, "#") && str::Len(msg.color) == 7) {
+        str::BufSet(gPendingHighlightColor, dimof(gPendingHighlightColor), msg.color);
+        return true;
+    }
+
+    // fallback: if payload.color contained a name, ignore for now
     return true;
 }
 
@@ -942,6 +997,9 @@ static bool DispatchKnownCommand(const BridgeMessage& msg) {
     }
     if (str::Eq(msg.name, kExecCommand)) {
         return DispatchExecCommand(msg);
+    }
+    if (str::Eq(msg.name, "setHighlightColor")) {
+        return DispatchSetHighlightColor(msg);
     }
     if (str::Eq(msg.name, kToolbarReady)) {
         return DispatchToolbarReady();

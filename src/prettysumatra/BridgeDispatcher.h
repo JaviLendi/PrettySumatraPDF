@@ -28,5 +28,8 @@ void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent);
 
 DispatchResult DispatchShellMessage(const char* msg);
 
+// Get the pending highlight color from bridge (used for passing color from webui)
+const char* GetPendingHighlightColor();
+
 } // namespace bridge
 } // namespace prettysumatra

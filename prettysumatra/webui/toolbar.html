@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -8,13 +7,12 @@
 <link rel="stylesheet" href="vendor/fontawesome/all.min.css">
 <link rel="stylesheet" href="vendor/inter/inter.css">
 <style>
-
 :root {
-  --bg-app: #F2F2F2FF; --bg-toolbar: rgba(255, 255, 255, 0.85); --bg-button: rgba(255, 255, 255, 0.6);
+  --bg-app: #F2F2F2FF; --bg-toolbar: rgba(255, 255, 255, 0.75); --bg-button: rgba(255, 255, 255, 0.6);
   --bg-surface: var(--bg-input);
   --bg-hover: var(--bg-button-hover);
   --bg-button-hover: rgba(255, 255, 255, 0.95); --bg-input: rgba(255, 255, 255, 0.8);
-  --text-main: #1d1d1f; --text-muted: #6e6e73; --border-color: rgba(0, 0, 0, 0.05); --border-input: rgba(0, 0, 0, 0.1);
+  --text-main: #1d1d1f; --text-muted: #6e6e73; --border-color: rgba(0, 0, 0, 0.08); --border-input: rgba(0, 0, 0, 0.1);
   --brand-primary: #eab308; --brand-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
   --brand-light-08: rgba(250, 204, 21, 0.08); --brand-medium-16: rgba(234, 179, 8, 0.16); --brand-shadow-3: rgba(234, 179, 8, 0.3);
   --brand-shadow-2: rgba(234, 179, 8, 0.2); --brand-focus-12: rgba(234, 179, 8, 0.15); --brand-shimmer: rgba(234, 179, 8, 0.35);
@@ -22,12 +20,12 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04); --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
   --skeleton-bg: #F2F2F2FF;
   --btn-highlight: inset 0 0 0 0 rgba(255,255,255,0);
-  --radius-sm: 8px; --radius-md: 12px; --transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  --radius-sm: 6px; --radius-md: 10px; --transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 [data-theme="dark"] {
-  --bg-app: #121214; --bg-toolbar: rgba(28, 28, 30, 0.90); --bg-button: rgba(44, 44, 46, 0.5);
+  --bg-app: #121214; --bg-toolbar: rgba(28, 28, 30, 0.85); --bg-button: rgba(44, 44, 46, 0.5);
   --bg-button-hover: rgba(68, 68, 70, 0.8); --bg-input: rgba(0, 0, 0, 0.3);
-  --text-main: #f5f5f7; --text-muted: #98989f; --border-color: rgba(255, 255, 255, 0.08); --border-input: rgba(255, 255, 255, 0.12); 
+  --text-main: #f5f5f7; --text-muted: #98989f; --border-color: rgba(255, 255, 255, 0.1); --border-input: rgba(255, 255, 255, 0.12); 
   --brand-primary: #facc15; --shadow-sm: 0 2px 4px rgba(0,0,0,0.3); --shadow-md: 0 6px 16px rgba(0,0,0,0.5);
   --btn-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   --skeleton-bg: rgba(200, 200, 200, 0.15);
@@ -91,7 +89,7 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 [data-theme="dark"] .modern-search-group { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
 .modern-search-group:focus-within { background: var(--bg-app); border-color: var(--brand-primary); box-shadow: 0 0 0 3px var(--brand-focus-12); }
 .modern-search-group .search-icon { color: var(--text-muted); font-size: 0.9rem; margin-right: 8px; pointer-events: none; }
-.modern-search-group .search-input { border: none; background: transparent; color: var(--text-main); outline: none; width: 140px; transition: max-width 0.3s ease; }
+.modern-search-group .search-input { border: none; background: transparent; color: var(--text-main); outline: none; width: 140px; transition: width 0.3s ease; }
 .modern-search-group:focus-within .search-input { width: 180px; }
 .modern-search-group .search-input::placeholder { color: var(--text-muted); }
 .search-nav { display: flex; align-items: center; margin-left: 4px; }
@@ -186,7 +184,7 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
    ========================================================= */
 .native-context-menu {
   position: fixed; background: var(--bg-toolbar); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-md), 0 10px 30px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md), 0 10px 30px rgba(0,0,0,0.1);
   padding: 6px; min-width: 220px; z-index: 10000; display: none; flex-direction: column; opacity: 0; transform: scale(0.98); transition: opacity 0.1s, transform 0.1s;
 }
 .native-context-menu.show { display: flex; opacity: 1; transform: scale(1); }
@@ -205,11 +203,11 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 .custom-dropdown.dropup .dropdown-menu { top: auto; bottom: calc(100% + 6px); transform: translateX(-50%) translateY(0); }
 .custom-dropdown .dropdown-menu.clamped-left { left: 8px; transform: translateX(0) translateY(0); }
 .custom-dropdown .dropdown-menu.clamped-right { left: auto; right: 8px; transform: translateX(0) translateY(0); }
-/* .custom-dropdown.inline { ... } disabled */
-/* .custom-dropdown.inline .dropdown-menu { ... } removed to prevent conflict */
+/* .custom-dropdown.inline { display: inline-flex; }
+.custom-dropdown.inline .dropdown-menu { position: static; top: auto; bottom: auto; left: auto; right: auto; transform: none; margin-top: 6px; opacity: 1; visibility: visible; pointer-events: auto; box-shadow: none; border-radius: 6px; padding: 4px; } */
 
 /* When any dropdown is inline-open, allow toolbar to grow vertically */
-.toolbar-container.inline-open { /* Comportamiento desactivado para menús horizontales */ }
+.toolbar-container.inline-open { /*align-items: flex-start; height: auto; padding-bottom: 10px;*/ }
 .dropdown-menu li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.85rem; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: background 0.1s ease; position: relative; }
 .dropdown-menu li:hover { background: var(--bg-hover); }
 .dropdown-menu li .check-icon { position: absolute; right: 12px; font-size: 0.75rem; color: var(--brand-primary); opacity: 0; }
@@ -260,8 +258,8 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
   .toolbar-items { gap: 4px; }
   .control-group, .modern-pagination-group, .theme-control-group, .search-wrapper { height: 36px; padding: 2px 4px; }
   .btn--icon { width: 28px; height: 28px; font-size: 0.85rem; }
-  .btn--primary { padding: 0; width: 32px; height: 28px; }
-  .page-nav-btn { width: 26px; height: 26px; font-size: 0.85rem; }
+height  .btn--primary { padding: 0; width: 32px; height: 28px; }
+  .page-nav-btn { width: 26px; : 26px; font-size: 0.85rem; }
   .modern-pagination-group .page-input { width: 32px; font-size: 0.85rem; }
   .custom-select { height: 28px; font-size: 0.85rem; padding: 0 8px; }
   .divider { margin: 0 4px; height: 16px; }
@@ -281,8 +279,6 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
   .custom-dropdown { display: none !important; }
   .grp-zoom .divider { display: none !important; }
   .grp-view { display: none !important; }
-
-  
   .modern-search-group .search-icon { margin: 0; pointer-events: none; }
   .modern-search-group:not(:focus-within) .search-input { width: 0; opacity: 0; padding: 0; position: absolute; }
   .modern-search-group:not(:focus-within) .search-nav { display: none; }
@@ -313,6 +309,7 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 .skel-circle { width: 36px; border-radius: 50%; }
 .skel-box { width: 90px; }
 .skel-large { width: 160px; }
+
 
 /* EXTRA IMPROVEMENTS FOR A MODERN DESKTOP FEEL */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -438,69 +435,113 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
   min-width: 0;
 }
 
+
+
 /* =========================================================
-   COMPACTACIÓN Y RESPONSIVE (Mantiene el alto, ajusta/oculta desbordes)
+   HIGHLIGHTER INLINE COLOR PICKER
    ========================================================= */
-.toolbar-container {
-  height: 100% !important;
-  min-height: 100% !important;
-  max-height: 100% !important;
-  flex-wrap: nowrap !important;
-  overflow: hidden !important; /* Nunca crecerá hacia abajo */
+.highlight-combo {
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  overflow: hidden;
+  background: transparent;
+  transition: var(--transition);
 }
 
-.toolbar-items {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
-}
-.toolbar-items::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/WebView */
+.highlight-combo.open {
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm), var(--btn-highlight);
 }
 
-/* En pantallas pequeñas, reducimos márgenes y ocultamos texto no esencial */
-@media (max-width: 850px) {
-  .toolbar-container { padding: 4px 8px; gap: 4px; }
-  .toolbar-items { gap: 4px; }
-
-  /* Reducir controles */
-  .control-group, .modern-pagination-group, .theme-control-group {
-    padding: 2px 4px;
-    height: 36px; /* Ligeramente más bajos */
-  }
-
-  /* Ocultar textos de marca para ahorrar espacio */
-  .brand-title, .brand-subtitle { display: none !important; }
-  .brand { margin-right: 4px; }
-
-  /* Botón de abrir compacto (solo icono) */
-  #openButtonText { display: none; }
-  .btn--primary { padding: 0 10px; height: 32px; }
-
-  /* Ajustar buscador */
-  .modern-search-group .search-input { width: 80px; }
-  .modern-search-group:focus-within .search-input { width: 130px; }
-
-  /* Achicar iconos y botones base */
-  .btn--icon { width: 28px; height: 28px; }
-  .custom-dropdown .dropdown-trigger { padding: 0 6px; font-size: 0.8rem; }
-
-  .flex-spacer { min-width: 5px; }
+.highlight-main-btn,
+.highlight-menu-btn {
+  position: relative;
+  flex-shrink: 0;
 }
 
-@media (max-width: 600px) {
-  /* En pantallas muy pequeñas, ocultar incluso más elementos o comprimirlos al máximo */
-  .page-input { width: 30px !important; }
-  .modern-search-group { padding: 0 8px; }
-  .search-nav { display: none; } /* Ocultar botones de siguiente/anterior en búsqueda */
-  .modern-theme-switch { width: 80px; }
+.highlight-main-btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
+
+.highlight-menu-btn {
+  width: 24px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  color: var(--text-muted);
+}
+
+.highlight-menu-btn:hover {
+  background: var(--border-color);
+  color: var(--text-main);
+}
+
+.highlight-current-color {
+  --highlight-current: #facc15;
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--highlight-current);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+.highlight-inline-palette {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  transition: max-width 0.28s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.18s ease, padding 0.28s ease;
+  pointer-events: none;
+}
+
+.highlight-combo.open .highlight-inline-palette {
+  max-width: 220px;
+  opacity: 1;
+  padding: 0 8px 0 6px;
+  pointer-events: auto;
+}
+
+.highlight-color-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--chip-color, #facc15);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.highlight-color-chip[data-color="#facc15"] { --chip-color: #facc15; }
+.highlight-color-chip[data-color="#86efac"] { --chip-color: #86efac; }
+.highlight-color-chip[data-color="#93c5fd"] { --chip-color: #93c5fd; }
+.highlight-color-chip[data-color="#f9a8d4"] { --chip-color: #f9a8d4; }
+
+.highlight-color-chip:hover {
+  transform: scale(1.08);
+}
+
+.highlight-color-chip.active {
+  border-color: var(--text-main);
+  box-shadow: 0 0 0 3px var(--brand-focus-12);
+}
+
+[data-theme="dark"] .highlight-color-chip.active {
+  border-color: #fff;
+}
+
 </style>
 </head>
-<body>
 
+<body>
 <!-- SKELETON -->
 <div id="skeletonToolbar" class="skeleton-container">
   <div class="skel-shape skel-circle"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-large"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-circle"></div>
@@ -556,8 +597,28 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
       <button id="continuousToggle" class="btn btn--icon btn--toggle toggle active" data-exec="showPagesContinuously" type="button"><i class="fa-solid fa-arrows-up-down"></i></button>
     </div>
     
-    <div class="control-group" id="grp-tools" data-name="Anotaciones"><button id="highlightButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="highlightSelection" type="button"><i class="fa-solid fa-highlighter"></i></button><div class="divider"></div><button id="annotateButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button><div class="divider"></div><button id="drawButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button></div>
-    
+    <div class="control-group" id="grp-tools" data-name="Anotaciones">
+      <div class="highlight-combo" id="highlightCombo">
+        <button id="highlightButton" disabled aria-disabled="true" class="btn btn--icon highlight-main-btn" data-exec="highlightSelection" type="button" title="Resaltar">
+          <i class="fa-solid fa-highlighter"></i>
+          <span class="highlight-current-color" id="highlightCurrentColor"></span>
+        </button>
+        <button id="highlightMenuButton" class="btn btn--icon highlight-menu-btn" type="button" aria-expanded="false" aria-label="Elegir color" title="Color del resaltador">
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="highlight-inline-palette" id="highlightPalette" aria-hidden="true">
+          <button class="highlight-color-chip active" type="button" data-highlight-color="yellow" data-color="#facc15" title="Amarillo"></button>
+          <button class="highlight-color-chip" type="button" data-highlight-color="green" data-color="#86efac" title="Verde"></button>
+          <button class="highlight-color-chip" type="button" data-highlight-color="blue" data-color="#93c5fd" title="Azul"></button>
+          <button class="highlight-color-chip" type="button" data-highlight-color="pink" data-color="#f9a8d4" title="Rosa"></button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <button id="annotateButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button>
+      <div class="divider"></div>
+      <button id="drawButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button>
+    </div>
+
     <div class="flex-spacer" id="grp-spacer" data-name="Espacio"></div>
     
     <div class="search-wrapper" id="grp-search" data-name="Buscador">
@@ -593,14 +654,12 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 <!-- Banner de Modo Edición Ultra Compacto -->
 <div id="editModeBanner" class="edit-mode-banner">
   <span>Personalizando barra</span>
-  <button id="exitEditModeBtn" class="btn btn--primary">Hecho</button>
 </div>
 
 <!-- Menú Contextual (Click Derecho) -->
 <div id="nativeContextMenu" class="native-context-menu"></div>
 
 <script>
-
 /* =================== NÚCLEO DE SUMATRAPDF =================== */
 const toolbarText={}; const pageInput=document.getElementById('pageInput'); const pageMeta=document.getElementById('pageMeta'); const toolbarSubtitle=document.getElementById('toolbarSubtitle');
 const openButton=document.getElementById('openButton'); const openButtonText=document.getElementById('openButtonText'); const pagePrevButton=document.getElementById('pagePrevButton'); const pageNextButton=document.getElementById('pageNextButton');
@@ -802,7 +861,7 @@ function selectZoomOption(dropdown, li) {
   const menu = dropdown.querySelector('.dropdown-menu');
   Array.from(menu.querySelectorAll('li')).forEach(i => i.classList.toggle('selected', i === li));
   const display = dropdown.querySelector('.dropdown-value'); if (display) display.textContent = li.textContent.trim();
-  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false'); setDropdownInline(dropdown, false); setDropdownInline(dropdown, false);
+  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
   const val = parseFloat(li.dataset.value);
   if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'zoom', payload: { value: val }, ts: Date.now() }));
 }
@@ -811,7 +870,7 @@ function selectViewModeOption(dropdown, li) {
   const menu = dropdown.querySelector('.dropdown-menu');
   Array.from(menu.querySelectorAll('li')).forEach(i => i.classList.toggle('selected', i === li));
   const display = dropdown.querySelector('.dropdown-value'); if (display) display.textContent = li.textContent.trim();
-  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false'); setDropdownInline(dropdown, false); setDropdownInline(dropdown, false);
+  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
   const cmd = String(li.dataset.value || '');
   if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: cmd }, ts: Date.now() }));
 }
@@ -971,7 +1030,16 @@ function updateEditMode() {
   else { mainToolbar.classList.remove('edit-mode'); editModeBanner.classList.remove('show'); saveLayout(); }
 }
 
-document.getElementById('exitEditModeBtn').addEventListener('click', () => { isToolbarUnlocked = false; updateEditMode(); });
+document.addEventListener('keydown', (e) => {
+  if (!isToolbarUnlocked) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();
+    isToolbarUnlocked = false;
+    updateEditMode();
+    contextMenu.classList.remove('show');
+  }
+});
 
 let draggingElement = null;
 toolbarItemsContainer.addEventListener('dragstart', e => {
@@ -1027,6 +1095,84 @@ function revealToolbar() {
 }
 setTimeout(revealToolbar, 800);
 if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) revealToolbar();
+
+// =========================================================
+//   HIGHLIGHTER INLINE COLOR PICKER LOGIC
+// =========================================================
+const highlightCombo = document.getElementById('highlightCombo');
+const highlightMenuButton = document.getElementById('highlightMenuButton');
+const highlightCurrentColor = document.getElementById('highlightCurrentColor');
+const highlightColorChips = Array.from(document.querySelectorAll('.highlight-color-chip'));
+const highlightButton = document.getElementById('highlightButton');
+
+function setHighlightColorChip(chip) {
+  if (!chip) return;
+
+  highlightColorChips.forEach(c => c.classList.toggle('active', c === chip));
+
+  const color = chip.dataset.color || '#facc15';
+  const colorName = chip.dataset.highlightColor || 'yellow';
+
+  if (highlightCurrentColor) {
+    highlightCurrentColor.style.setProperty('--highlight-current', color);
+  }
+
+  highlightCombo?.classList.remove('open');
+  highlightMenuButton?.setAttribute('aria-expanded', 'false');
+
+  if (window.external && typeof window.external.invoke === 'function') {
+    window.external.invoke(JSON.stringify({
+      type: 'command',
+      name: 'setHighlightColor',
+      payload: { color: colorName, value: color },
+      ts: Date.now()
+    }));
+  }
+}
+
+highlightMenuButton?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const willOpen = !highlightCombo.classList.contains('open');
+
+  // Close other custom dropdowns if any
+  document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+    d.classList.remove('open');
+  });
+
+  highlightCombo.classList.toggle('open', willOpen);
+  highlightMenuButton.setAttribute('aria-expanded', String(willOpen));
+});
+
+highlightColorChips.forEach(chip => {
+  chip.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setHighlightColorChip(chip);
+  });
+});
+
+// Ensure clicking the main highlight button enters highlight mode (with current color)
+highlightButton?.addEventListener('pointerdown', (e) => {
+  try {
+    e.preventDefault();
+    e.stopPropagation();
+    const activeChip = document.querySelector('.highlight-color-chip.active');
+    const color = (activeChip && activeChip.dataset && activeChip.dataset.color) ? activeChip.dataset.color : '#facc15';
+    if (window.external && typeof window.external.invoke === 'function') {
+      window.external.invoke(JSON.stringify({
+        type: 'command',
+        name: 'execCommand',
+        payload: { command: 'highlightSelection', color: color },
+        ts: Date.now()
+      }));
+    }
+  } catch (ex) {}
+});
+
+document.addEventListener('click', (e) => {
+  if (!highlightCombo || highlightCombo.contains(e.target)) return;
+  highlightCombo.classList.remove('open');
+  highlightMenuButton?.setAttribute('aria-expanded', 'false');
+});
 
 </script>
 </body>
