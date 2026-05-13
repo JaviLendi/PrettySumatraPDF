@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
 <meta charset="utf-8">
@@ -8,707 +8,1026 @@
 <link rel="stylesheet" href="vendor/fontawesome/all.min.css">
 <link rel="stylesheet" href="vendor/inter/inter.css">
 <style>
+
 :root {
-  --bg-app: #F2F2F2FF; --bg-toolbar: rgba(255, 255, 255, 0.75); --bg-button: rgba(255, 255, 255, 0.5);
-  --bg-button-hover: rgba(255, 255, 255, 0.9); --bg-button-active: rgba(230, 230, 230, 0.9); --bg-input: rgba(255, 255, 255, 0.8);
-  --text-main: #1d1d1f; --text-muted: #86868b; --border-color: rgba(0, 0, 0, 0.08); --border-input: rgba(0, 0, 0, 0.1);
-  --brand-primary: #eab308; --brand-primary-hover: #ca8a04; --brand-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  --bg-app: #F2F2F2FF; --bg-toolbar: rgba(255, 255, 255, 0.85); --bg-button: rgba(255, 255, 255, 0.6);
+  --bg-surface: var(--bg-input);
+  --bg-hover: var(--bg-button-hover);
+  --bg-button-hover: rgba(255, 255, 255, 0.95); --bg-input: rgba(255, 255, 255, 0.8);
+  --text-main: #1d1d1f; --text-muted: #6e6e73; --border-color: rgba(0, 0, 0, 0.05); --border-input: rgba(0, 0, 0, 0.1);
+  --brand-primary: #eab308; --brand-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  --brand-light-08: rgba(250, 204, 21, 0.08); --brand-medium-16: rgba(234, 179, 8, 0.16); --brand-shadow-3: rgba(234, 179, 8, 0.3);
+  --brand-shadow-2: rgba(234, 179, 8, 0.2); --brand-focus-12: rgba(234, 179, 8, 0.15); --brand-shimmer: rgba(234, 179, 8, 0.35);
+  --accent-win11: #0078D4; 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04); --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
-  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --skeleton-bg: #F2F2F2FF;
+  --btn-highlight: inset 0 0 0 0 rgba(255,255,255,0);
+  --radius-sm: 8px; --radius-md: 12px; --transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 [data-theme="dark"] {
-  --bg-app: #0f0f11; --bg-toolbar: rgba(28, 28, 30, 0.75); --bg-button: rgba(44, 44, 46, 0.6);
-  --bg-button-hover: rgba(58, 58, 60, 0.9); --bg-button-active: rgba(72, 72, 74, 0.9); --bg-input: rgba(44, 44, 46, 0.8);
-  --text-main: #f5f5f7; --text-muted: #a1a1a6; --border-color: rgba(255, 255, 255, 0.08);
-  --border-input: rgba(255, 255, 255, 0.1); --brand-primary: #facc15; --brand-primary-hover: #fef08a;
+  --bg-app: #121214; --bg-toolbar: rgba(28, 28, 30, 0.90); --bg-button: rgba(44, 44, 46, 0.5);
+  --bg-button-hover: rgba(68, 68, 70, 0.8); --bg-input: rgba(0, 0, 0, 0.3);
+  --text-main: #f5f5f7; --text-muted: #98989f; --border-color: rgba(255, 255, 255, 0.08); --border-input: rgba(255, 255, 255, 0.12); 
+  --brand-primary: #facc15; --shadow-sm: 0 2px 4px rgba(0,0,0,0.3); --shadow-md: 0 6px 16px rgba(0,0,0,0.5);
+  --btn-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --skeleton-bg: rgba(200, 200, 200, 0.15);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background-color: var(--bg-app); color: var(--text-main); height: 100vh; padding: 16px; display: block; overflow: hidden; }
-.toolbar-container { display: flex; align-items: center; justify-content: safe center; width: 100%; max-width: 1600px; margin: 0 auto; background: var(--bg-toolbar); backdrop-filter: blur(10px) saturate(130%); -webkit-backdrop-filter: blur(10px) saturate(130%); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; box-shadow: var(--shadow-md); gap: 16px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; }
-.toolbar-container::-webkit-scrollbar { display: none; }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-.brand-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3); overflow: hidden; background: linear-gradient(135deg, rgba(250, 204, 21, 0.08), rgba(234, 179, 8, 0.16)); }
-.brand-icon img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
-.brand-text { display: flex; flex-direction: column; }
-.brand-title { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; white-space: nowrap; }
-.brand-title span { color: var(--brand-primary); }
-.brand-subtitle { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
 
-.toolbar-section { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; flex-shrink: 0; }
-.control-group { display: flex; align-items: center; background: var(--bg-button); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 4px; transition: var(--transition); flex-shrink: 0; }
-.control-group:hover { box-shadow: var(--shadow-sm); }
-.btn { background: transparent; border: none; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 0.95rem; border-radius: var(--radius-sm); transition: var(--transition); flex-shrink: 0; }
-.btn-icon { width: 32px; height: 32px; color: var(--text-muted); }
-.btn-icon:hover { background: var(--bg-button-hover); color: var(--text-main); transform: translateY(-1px); }
-.btn-icon:active { background: var(--bg-button-active); transform: translateY(0); }
-.btn-primary { background: var(--brand-gradient); color: white; padding: 0 16px; height: 36px; font-weight: 600; border-radius: var(--radius-md); box-shadow: 0 2px 6px rgba(234, 179, 8, 0.2); }
-.btn-primary:hover { box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3); transform: translateY(-1px); }
-.btn.active { background: var(--bg-button-active); color: var(--brand-primary); }
-.divider { width: 1px; height: 20px; background: var(--border-color); margin: 0 4px; flex-shrink: 0; }
-.page-input { width: 44px; height: 28px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--radius-sm); color: var(--text-main); text-align: center; font-family: inherit; font-size: 0.9rem; font-weight: 500; flex-shrink: 0; }
-.page-input:focus { outline: 2px solid var(--brand-primary); border-color: transparent; }
-.page-meta { font-size: 0.85rem; color: var(--text-muted); margin: 0 6px 0 2px; font-weight: 500; white-space: nowrap; }
-.custom-select { background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 500; padding: 4px 8px; cursor: pointer; appearance: none; -webkit-appearance: none; outline: none; }
-.select-wrapper { position: relative; display: flex; align-items: center; flex-shrink: 0; }
-.select-wrapper i { position: absolute; right: 8px; pointer-events: none; font-size: 0.75rem; color: var(--text-muted); }
-.search-box { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--radius-md); padding: 0 4px 0 12px; height: 36px; transition: var(--transition); flex-shrink: 0; }
-.search-box:focus-within { border-color: var(--brand-primary); box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2); }
-.search-input { border: none; background: transparent; color: var(--text-main); font-family: inherit; font-size: 0.9rem; width: 100px; outline: none; transition: var(--transition); }
-.search-input::placeholder { color: var(--text-muted); }
-.btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: var(--bg-app); color: var(--text-main); height: 100vh; overflow: hidden; user-select: none; -webkit-user-select: none; }
+input, textarea { user-select: auto; -webkit-user-select: auto; }
+
+/* BARRA PRINCIPAL */
+.toolbar-container { 
+  position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: flex-start; 
+  width: 100%; height: 56px; background: var(--bg-toolbar); backdrop-filter: blur(20px) saturate(150%); 
+  -webkit-backdrop-filter: blur(20px) saturate(150%); border-bottom: 1px solid var(--border-color); 
+  padding: 8px 16px; gap: 8px; -webkit-app-region: drag; overflow: visible;
+}
+button, input, select, label, .control-group, .modern-pagination-group, .search-wrapper, .brand, .theme-control-group { -webkit-app-region: no-drag; }
+
+/* MARCA Y ITEMS */
+.brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-right: 8px; cursor: default; }
+.brand-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); box-shadow: 0 2px 8px var(--brand-shadow-3); background: linear-gradient(135deg, var(--brand-light-08), var(--brand-medium-16)); }
+.brand-icon img { width: 100%; height: 100%; object-fit: contain; }
+.brand-title { font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
+.brand-title span { color: var(--brand-primary); }
+.brand-subtitle { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+
+.toolbar-items { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; height: 100%; }
+.flex-spacer { flex: 1 1 auto; min-width: 20px; height: 100%; -webkit-app-region: drag; }
+
+/* CONTROLES BASE */
+.control-group, .modern-pagination-group, .theme-control-group { 
+  display: flex; align-items: center; justify-content: center; background: var(--bg-button); 
+  border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px 6px; height: 40px; 
+  transition: var(--transition); flex-shrink: 0; box-shadow: var(--btn-highlight);
+}
+.control-group:hover, .modern-pagination-group:hover, .theme-control-group:hover { background: var(--bg-button-hover); box-shadow: var(--shadow-sm), var(--btn-highlight); }
+.theme-control-group { border-radius: 20px; gap: 6px; }
+
+/* BOTONES */
+.btn { background: transparent; border: none; color: var(--text-main); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 0.95rem; border-radius: var(--radius-sm); transition: var(--transition); }
+.btn--icon { width: 32px; height: 32px; color: var(--text-muted); border-radius: 6px; padding: 0; }
+.btn--icon:hover { background: var(--border-color); color: var(--text-main); }
+.btn--icon:active { transform: scale(0.92); }
+.btn--icon.active, .btn--toggle.active i { color: var(--brand-primary); }
+.btn--primary { background: var(--brand-gradient); color: white; padding: 0 16px; height: 32px; font-weight: 600; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+/* DIVISORES Y SELECTORES MODERNOS */
+.divider { width: 1px; height: 20px; background: var(--border-input); margin: 0 6px; flex-shrink: 0; }
+.custom-select { background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 600; padding: 0 10px; height: 32px; cursor: pointer; border-radius: 6px; -webkit-appearance: none; appearance: none; outline: none; text-align: center; transition: var(--transition); }
+.custom-select:hover { background: var(--border-color); color: var(--brand-primary); }
+.custom-select:focus { background: var(--bg-app); box-shadow: 0 0 0 2px var(--brand-focus-12); }
+
+/* PAGINACIÓN Y BUSCADOR */
+.page-nav-btn { width: 30px; height: 30px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; transition: var(--transition); }
+.page-nav-btn:hover { background: var(--border-color); color: var(--brand-primary); }
+.modern-pagination-group .page-input { width: 40px; text-align: center; background: transparent; border: none; font-weight: 700; color: var(--text-main); outline: none; -moz-appearance: textfield; font-size: 0.95rem; margin: 0 2px; }
+.modern-pagination-group .page-input::-webkit-outer-spin-button, .modern-pagination-group .page-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.search-wrapper { position: relative; display: flex; align-items: center; width: auto; height: 40px; flex-shrink: 0; z-index: 100; transition: var(--transition); }
+.modern-search-group { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 20px; padding: 0 14px; height: 100%; box-shadow: inset 0 1px 3px rgba(0,0,0,0.04); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); cursor: text; }
+[data-theme="dark"] .modern-search-group { box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+.modern-search-group:focus-within { background: var(--bg-app); border-color: var(--brand-primary); box-shadow: 0 0 0 3px var(--brand-focus-12); }
+.modern-search-group .search-icon { color: var(--text-muted); font-size: 0.9rem; margin-right: 8px; pointer-events: none; }
+.modern-search-group .search-input { border: none; background: transparent; color: var(--text-main); outline: none; width: 140px; transition: max-width 0.3s ease; }
+.modern-search-group:focus-within .search-input { width: 180px; }
+.modern-search-group .search-input::placeholder { color: var(--text-muted); }
+.search-nav { display: flex; align-items: center; margin-left: 4px; }
+.search-btn { background: transparent; border: none; color: var(--text-muted); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; transition: var(--transition); }
+.search-btn:hover { background: var(--border-color); color: var(--text-main); }
+
+/* THEME SWITCH */
+
+/* THEME SWITCH */
+.modern-theme-switch { 
+  position: relative; 
+  display: flex; 
+  background: rgba(0, 0, 0, 0.04); 
+  border: 1px solid var(--border-input); 
+  border-radius: 20px; 
+  padding: 1px; 
+  width: 100px; 
+  height: 32px; 
+  align-items: center; 
+
+  /* 1. Definimos las medidas clave como variables */
+  --btn-width: 32px;
+  --slider-width: 31px;
+  --padding: 1px;
+  
+  /* 2. Calculamos el offset para centrar (padding + la mitad de la diferencia de anchos) */
+  --center-offset: calc(var(--padding) + (var(--btn-width) - var(--slider-width)) / 2);
+}
+
+[data-theme="dark"] .modern-theme-switch { 
+  background: rgba(0, 0, 0, 0.3); 
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.3); 
+}
+
+.mts-slider { 
+  position: absolute; 
+  width: var(--slider-width); /* Usamos la variable */
+  height: 26px; 
+  background: #ffffff; 
+  border-radius: 14px; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12); 
+  transition: transform 0.3s ease; 
+}
+
+[data-theme="dark"] .mts-slider { 
+  background: #2c2c2e; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4); 
+  border: 1px solid rgba(255,255,255,0.05); 
+}
+
+/* 3. Posicionamiento dinámico: Cada estado suma el ancho de un botón */
+.modern-theme-switch[data-state="light"] .mts-slider { 
+  transform: translateX(var(--center-offset)); 
+}
+.modern-theme-switch[data-state="dark"] .mts-slider { 
+  transform: translateX(calc(var(--btn-width) + var(--center-offset))); 
+}
+.modern-theme-switch[data-state="auto"] .mts-slider { 
+  transform: translateX(calc(var(--btn-width) * 2 + var(--center-offset))); 
+}
+
+.mts-btn { 
+  width: var(--btn-width); /* Usamos la variable */
+  height: 28px; 
+  background: transparent; 
+  border: none; 
+  color: var(--text-muted); 
+  cursor: pointer; 
+  z-index: 1; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  transition: color 0.2s; 
+}
+
+.modern-theme-switch { position: relative; display: flex; background: rgba(0, 0, 0, 0.04); border: 1px solid var(--border-input); border-radius: 20px; padding: 1px; width: 100px; height: 32px; align-items: center; }
+[data-theme="dark"] .modern-theme-switch { background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 1px 4px rgba(0,0,0,0.3); }
+.mts-slider { position: absolute; width: 31px; height: 26px; background: #ffffff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); transition: transform 0.3s ease; }
+[data-theme="dark"] .mts-slider { background: #2c2c2e; box-shadow: 0 2px 4px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); }
+.modern-theme-switch[data-state="light"] .mts-slider { transform: translateX(2px); }
+.modern-theme-switch[data-state="dark"] .mts-slider { transform: translateX(33.5px); }
+.modern-theme-switch[data-state="auto"] .mts-slider { transform: translateX(65px); }
+.mts-btn { width: 32px; height: 28px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; z-index: 1; display: flex; align-items: center; justify-content: center; transition: color 0.2s; }
+.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"], .modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"], .modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] { color: var(--brand-primary); }
+.win11-icon { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 12px; height: 12px; }
+.win11-icon i { background: currentColor; border-radius: 1px; }
+.invert-doc-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); background: transparent; border: none; transition: var(--transition); flex-shrink: 0;}
+.invert-doc-btn:hover, .invert-doc-btn.active { color: var(--brand-primary); }
 
 /* =========================================================
-   MODERN MINIMALIST 3-STATE THEME SWITCH
+   MENÚ CONTEXTUAL NATIVO
    ========================================================= */
-.theme-pill-container { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.native-context-menu {
+  position: fixed; background: var(--bg-toolbar); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-md), 0 10px 30px rgba(0,0,0,0.1);
+  padding: 6px; min-width: 220px; z-index: 10000; display: none; flex-direction: column; opacity: 0; transform: scale(0.98); transition: opacity 0.1s, transform 0.1s;
+}
+.native-context-menu.show { display: flex; opacity: 1; transform: scale(1); }
+.cm-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); font-weight: 500; transition: background 0.1s; }
+.cm-item:hover { background: var(--brand-primary); color: white; }
 
-.modern-theme-switch {
+/* Custom dropdown (zoom + view mode) */
+.custom-dropdown { position: relative; display: inline-block; }
+.dropdown-trigger { display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; padding: 0 10px; height: 32px; cursor: pointer; border-radius: 6px; transition: var(--transition); }
+.dropdown-trigger:hover { background: var(--bg-hover); }
+.dropdown-trigger:focus, .custom-dropdown.open .dropdown-trigger { background: var(--bg-app); box-shadow: 0 0 0 2px var(--brand-focus-12); }
+.dropdown-arrow { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.custom-dropdown.open .dropdown-arrow { transform: rotate(-180deg); }
+.dropdown-menu { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06); padding: 6px; min-width: 140px; list-style: none; margin: 0; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; pointer-events: none; }
+.custom-dropdown.open .dropdown-menu { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.custom-dropdown.dropup .dropdown-menu { top: auto; bottom: calc(100% + 6px); transform: translateX(-50%) translateY(0); }
+.custom-dropdown .dropdown-menu.clamped-left { left: 8px; transform: translateX(0) translateY(0); }
+.custom-dropdown .dropdown-menu.clamped-right { left: auto; right: 8px; transform: translateX(0) translateY(0); }
+/* .custom-dropdown.inline { ... } disabled */
+/* .custom-dropdown.inline .dropdown-menu { ... } removed to prevent conflict */
+
+/* When any dropdown is inline-open, allow toolbar to grow vertically */
+.toolbar-container.inline-open { /* Comportamiento desactivado para menús horizontales */ }
+.dropdown-menu li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.85rem; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: background 0.1s ease; position: relative; }
+.dropdown-menu li:hover { background: var(--bg-hover); }
+.dropdown-menu li .check-icon { position: absolute; right: 12px; font-size: 0.75rem; color: var(--brand-primary); opacity: 0; }
+.dropdown-menu li.selected .check-icon { opacity: 1; }
+.menu-icon { font-size: 0.95rem; color: var(--text-muted); width: 18px; text-align: center; }
+
+/* =========================================================
+   SISTEMA DE MODO EDICIÓN (X / +) Y BANNER ULTRA COMPACTO
+   ========================================================= */
+.edit-mode-banner {
+  position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-toolbar); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+  padding: 4px 4px 4px 12px; border-radius: 30px; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 10px; z-index: 10000;
+  transition: top 0.3s cubic-bezier(0.25, 1, 0.5, 1); font-weight: 500; font-size: 0.8rem; color: var(--text-main);
+}
+.edit-mode-banner.show { top: 50px; }
+#exitEditModeBtn { height: 24px !important; padding: 0 10px !important; font-size: 0.75rem !important; border-radius: 12px; margin: 0; }
+
+[data-name].is-hidden { display: none !important; }
+.toolbar-container.edit-mode { outline: 2px dashed var(--brand-primary); outline-offset: -2px; }
+.toolbar-container.edit-mode [data-name] { position: relative; cursor: grab; }
+.toolbar-container.edit-mode [data-name].dragging { opacity: 0.2; transform: scale(0.95); }
+.toolbar-container.edit-mode .flex-spacer { background: rgba(150,150,150,0.1); border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; }
+.toolbar-container.edit-mode .flex-spacer::after { content: 'Espacio'; font-size: 0.75rem; color: var(--text-muted); }
+.toolbar-container.edit-mode [data-name].is-hidden { display: flex !important; opacity: 0.4; }
+.toolbar-container.edit-mode [data-name] * { pointer-events: none; }
+.edit-badge {
+  display: none; position: absolute; top: -8px; right: -8px; width: 22px; height: 22px;
+  border-radius: 50%; cursor: pointer; z-index: 100; align-items: center; justify-content: center;
+  font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); pointer-events: auto !important; transition: transform 0.1s;
+}
+.edit-badge:active { transform: scale(0.85); }
+.toolbar-container.edit-mode .edit-badge { display: flex; }
+.toolbar-container.edit-mode .edit-badge * { pointer-events: none; }
+.toolbar-container.edit-mode [data-name]:not(.is-hidden) .edit-badge { background: #ef4444; color: white; border: 1px solid #dc2626; }
+.toolbar-container.edit-mode [data-name]:not(.is-hidden) .icon-add { display: none; }
+.toolbar-container.edit-mode [data-name].is-hidden .edit-badge { background: #22c55e; color: white; border: 1px solid #16a34a; }
+.toolbar-container.edit-mode [data-name].is-hidden .icon-remove { display: none; }
+
+/* =========================================================
+   COMPACTACIÓN DINÁMICA A < 1000px
+   ========================================================= */
+@media (max-width: 1000px) {
+  #openButtonText, .brand-subtitle, .brand-title { display: none; }
+  .toolbar-container { gap: 6px; padding: 6px 12px; height: 52px; }
+  .toolbar-items { gap: 4px; }
+  .control-group, .modern-pagination-group, .theme-control-group, .search-wrapper { height: 36px; padding: 2px 4px; }
+  .btn--icon { width: 28px; height: 28px; font-size: 0.85rem; }
+  .btn--primary { padding: 0; width: 32px; height: 28px; }
+  .page-nav-btn { width: 26px; height: 26px; font-size: 0.85rem; }
+  .modern-pagination-group .page-input { width: 32px; font-size: 0.85rem; }
+  .custom-select { height: 28px; font-size: 0.85rem; padding: 0 8px; }
+  .divider { margin: 0 4px; height: 16px; }
+  .modern-theme-switch { width: 88px; height: 28px; padding: 1px; }
+  .mts-slider { width: 27px; height: 22px; }
+  .modern-theme-switch[data-state="dark"] .mts-slider { transform: translateX(28.5px); }
+  .modern-theme-switch[data-state="auto"] .mts-slider { transform: translateX(55px); }
+  .mts-btn { width: 28px; height: 24px; font-size: 0.8rem; }
+  .modern-search-group .search-input { width: 100px; }
+}
+
+@media (max-width: 850px) {
+  .search-wrapper { width: 34px; height: 34px; }
+  .modern-search-group { position: absolute; right: 0; top: 0; width: 34px; height: 34px; padding: 0; border-radius: 17px; justify-content: center; cursor: pointer; z-index: 100; }
+
+  /* ELIMINAR DROPDOWNS EN VERSIÓN COMPACTA */
+  .custom-dropdown { display: none !important; }
+  .grp-zoom .divider { display: none !important; }
+  .grp-view { display: none !important; }
+
+  
+  .modern-search-group .search-icon { margin: 0; pointer-events: none; }
+  .modern-search-group:not(:focus-within) .search-input { width: 0; opacity: 0; padding: 0; position: absolute; }
+  .modern-search-group:not(:focus-within) .search-nav { display: none; }
+  .modern-search-group:focus-within { width: 240px; max-width: calc(100vw - 32px); padding: 0 12px; justify-content: flex-start; box-shadow: 0 4px 16px rgba(0,0,0,0.15), 0 0 0 3px var(--brand-focus-12); background: var(--bg-app); border-color: var(--brand-primary); }
+  .modern-search-group:focus-within .search-icon { margin-right: 8px; }
+  .modern-search-group:focus-within .search-input { width: 100%; opacity: 1; position: relative; }
+  .modern-search-group:focus-within .search-nav { display: flex; }
+}
+
+@media (max-width: 650px) {
+  .brand { display: none; }
+  .toolbar-container { padding: 4px; height: 44px; gap: 4px; }
+  .toolbar-items { gap: 2px; }
+  .control-group, .modern-pagination-group, .theme-control-group { height: 32px; padding: 1px 2px; border-radius: 6px; }
+  .btn--icon { width: 24px; height: 24px; font-size: 0.75rem; border-radius: 4px; }
+  .btn--primary { width: 28px; height: 26px; border-radius: 4px; }
+  .page-nav-btn { width: 22px; height: 22px; font-size: 0.75rem; }
+  .modern-pagination-group .page-input { width: 26px; font-size: 0.8rem; margin: 0; }
+  .divider { height: 12px; margin: 0 2px; }
+  .grp-zoom .custom-select, .grp-zoom .divider, .grp-view .custom-select, .grp-view .divider { display: none; }
+  .search-wrapper { width: 30px; height: 30px; }
+  .modern-search-group { width: 30px; height: 30px; border-radius: 15px; }
+  .theme-control-group { display: none !important; } 
+}
+
+.skeleton-container { position: sticky; top: 0; z-index: 999; display: flex !important; align-items: center; justify-content: center; gap: 16px; width: 100%; height: 56px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); padding: 8px 16px; overflow: hidden; -webkit-app-region: drag; }
+.skel-shape { background: var(--skeleton-bg); height: 36px; border-radius: var(--radius-md); -webkit-app-region: no-drag; }
+.skel-circle { width: 36px; border-radius: 50%; }
+.skel-box { width: 90px; }
+.skel-large { width: 160px; }
+
+/* EXTRA IMPROVEMENTS FOR A MODERN DESKTOP FEEL */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(150, 150, 150, 0.5); }
+
+.toolbar-container {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.btn:active, .page-nav-btn:active {
+  transform: scale(0.96);
+}
+
+.custom-dropdown.open .dropdown-menu {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid var(--border-color);
+}
+[data-theme="dark"] .custom-dropdown.open .dropdown-menu {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.modern-search-group {
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.modern-search-group:focus-within {
+  box-shadow: 0 0 0 3px var(--brand-focus-12), inset 0 1px 2px rgba(0,0,0,0.02);
+}
+
+/* Tooltip nativo o mejorado (opcional si quisieras CSS tooltips en el futuro) */
+
+
+
+/* MODERN HORIZONTAL INLINE DROPDOWNS */
+.custom-dropdown {
   position: relative;
   display: flex;
-  background: var(--bg-button);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 3px;
-  gap: 2px;
-  flex-shrink: 0;
-  transition: var(--transition);
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: transparent;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  min-width: 0; /* KEY FIX: allow shrinking */
 }
-.modern-theme-switch:hover { box-shadow: var(--shadow-sm); }
 
-/* Indicador deslizante (El fondo activo) */
-.mts-slider {
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 28px; height: 28px;
-  background: var(--bg-toolbar);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 1;
+.custom-dropdown.open {
+  background: var(--bg-hover);
+  box-shadow: 0 0 0 1px var(--border-color), var(--shadow-sm);
+}
+
+.custom-dropdown .dropdown-trigger {
+  position: relative;
+  z-index: 2;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-width: 0; /* allow shrinking */
+  flex-shrink: 0; /* don't shrink the button itself */
+}
+
+.custom-dropdown .dropdown-menu {
+  position: static !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  opacity: 0;
+  width: max-content !important;
+  max-width: 0;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0;
+  margin: 0;
+  transform: none !important; /* CRITICAL: Override inline JS transform */
+  transition: max-width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
   pointer-events: none;
 }
-.modern-theme-switch[data-state="light"] .mts-slider { transform: translateX(0); }
-.modern-theme-switch[data-state="dark"] .mts-slider { transform: translateX(30px); }
-.modern-theme-switch[data-state="auto"] .mts-slider { transform: translateX(60px); }
 
-/* Efecto de resplandor sutil según el estado */
-.modern-theme-switch[data-state="light"] .mts-slider { box-shadow: 0 0 6px rgba(234, 179, 8, 0.2); border: 1px solid rgba(234, 179, 8, 0.1); }
-.modern-theme-switch[data-state="auto"] .mts-slider { box-shadow: 0 0 6px rgba(0, 120, 212, 0.2); border: 1px solid rgba(0, 120, 212, 0.1); }
-
-/* Botones individuales (Zonas de clic) */
-.mts-btn {
-  position: relative;
-  width: 28px; height: 28px;
-  background: transparent; border: none; border-radius: 50%;
-  color: var(--text-muted); font-size: 0.9rem; cursor: pointer;
-  z-index: 2; display: flex; align-items: center; justify-content: center;
-  transition: color 0.3s ease, transform 0.2s ease;
-}
-.mts-btn:hover { color: var(--text-main); }
-
-/* Colores activos */
-.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"] { color: var(--brand-primary); }
-.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"] { color: var(--text-main); }
-
-/* --- ANIMACIÓN ESTADO: CLARO (SOL) --- */
-.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"] i {
-  transform: rotate(0deg);
-}
-@keyframes sunSpin { 100% { transform: rotate(360deg); } }
-
-/* --- ANIMACIÓN ESTADO: OSCURO (LUNA) --- */
-.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"] i {
-  transform: rotate(-15deg); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.mts-tiny-star { position: absolute; background: currentColor; border-radius: 50%; opacity: 0; pointer-events: none; }
-.ts-1 { width: 2px; height: 2px; top: 6px; right: 6px; }
-.ts-2 { width: 1.5px; height: 1.5px; bottom: 8px; left: 4px; }
-.modern-theme-switch[data-state="dark"] .ts-1 { animation: mtsTwinkle 0.9s ease-out 1 0.15s; }
-.modern-theme-switch[data-state="dark"] .ts-2 { animation: mtsTwinkle 0.9s ease-out 1 0.3s; }
-@keyframes mtsTwinkle { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 0.8; transform: scale(1); } }
-
-/* --- ANIMACIÓN ESTADO: AUTO (WIN11) --- */
-.win11-icon { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 12px; height: 12px; }
-.win11-icon i { background: currentColor; border-radius: 0.5px; transition: all 0.3s ease; }
-
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i { background: #0078D4; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon { animation: winBreathe 0.8s ease-in-out 1 0.15s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(1) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.0s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(2) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.1s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(3) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(4) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.3s; }
-
-@keyframes winPop { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes winBreathe { 0% { filter: drop-shadow(0 0 0px rgba(0, 120, 212, 0)); } 100% { filter: drop-shadow(0 0 3px rgba(0, 120, 212, 0.4)); } }
-
-/* Botón de invertir documento */
-.invert-doc-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); background: var(--bg-button); border: 1px solid var(--border-color); transition: var(--transition); flex-shrink: 0; margin-left: 4px; }
-.invert-doc-btn:hover { color: var(--text-main); background: var(--bg-button-hover); }
-.invert-doc-btn.active { background: var(--bg-button-active); color: var(--brand-primary); }
-
-/* ===== RESPONSIVE BREAKPOINTS ===== */
-
-/* Large screens (1600px+): Full toolbar with all features */
-@media (max-width: 1600px) {
-  .toolbar-container { max-width: 100%; }
+.custom-dropdown.open .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  max-width: 500px;
+  padding: 0 8px 0 0;
+  pointer-events: auto;
 }
 
-/* Medium-Large screens (1200px - 1599px): Compact spacing */
-@media (max-width: 1200px) {
-  .toolbar-container {
-    padding: 6px 10px;
-    gap: 10px;
-    flex-wrap: nowrap;
-  }
-  .toolbar-section {
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-  .btn-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 0.9rem;
-  }
-  .divider {
-    height: 16px;
-    margin: 0 2px;
-  }
-  #openButtonText {
-    display: none;
-  }
-  .btn-primary {
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-  }
-  .btn-primary i {
-    margin: 0;
-    font-size: 0.9rem;
-  }
-  .page-input {
-    width: 36px;
-    height: 24px;
-    font-size: 0.85rem;
-  }
-  .page-meta {
-    font-size: 0.8rem;
-  }
-  .brand-subtitle {
-    display: none;
-  }
-  .control-group:has(#zoomSelect) .select-wrapper,
-  .control-group:has(#zoomSelect) .divider,
-  .control-group:has(#viewModeSelect) .select-wrapper,
-  .control-group:has(#viewModeSelect) .divider {
-    display: none;
-  }
-  .search-box {
-    position: relative;
-    width: 32px;
-    padding: 0;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
-  }
-  .search-box i.fa-magnifying-glass {
-    min-width: 32px;
-    text-align: center;
-    pointer-events: none;
-  }
-  .search-box:not(:focus-within) .search-input {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .search-box:not(:focus-within) #searchPrev,
-  .search-box:not(:focus-within) #searchNext {
-    display: none;
-  }
-  .search-box:focus-within {
-    width: 100px;
-    padding: 0 4px 0 8px;
-    justify-content: flex-start;
-  }
-  .search-box:focus-within .search-input {
-    position: relative;
-    width: 100px;
-    opacity: 1;
-    cursor: text;
-  }
+.custom-dropdown .dropdown-menu li {
+  padding: 4px 10px;
+  margin-left: 4px; /* Use margin instead of gap to avoid invisible width */
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
-/* Tablet screens (900px - 1199px): More compact */
-@media (max-width: 1024px) {
-  .toolbar-container {
-    padding: 6px 8px;
-    gap: 8px;
-  }
-  .toolbar-section {
-    gap: 5px;
-  }
-  .btn-icon {
-    width: 26px;
-    height: 26px;
-    font-size: 0.85rem;
-  }
-  .brand-icon {
-    width: 32px;
-    height: 32px;
-  }
-  .brand-title {
-    font-size: 0.95rem;
-  }
-  .search-box:focus-within {
-    width: 120px;
-  }
-  .search-box:focus-within .search-input {
-    width: 90px;
-  }
+.custom-dropdown .dropdown-menu li:hover {
+  background: var(--border-color);
+  color: var(--text-main);
 }
 
-@media (max-width: 900px) {
-  .brand {
-    display: none;
-  }
-  .toolbar-container {
-    padding: 5px 6px;
-    gap: 6px;
-  }
-  .toolbar-section {
-    gap: 4px;
-  }
-  .search-box:focus-within {
-    width: 140px;
-  }
-  .search-box:focus-within .search-input {
-    width: 70px;
-  }
-  .control-group {
-    padding: 3px;
-  }
+.custom-dropdown .dropdown-menu li.selected {
+  background: var(--bg-app);
+  color: var(--brand-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-/* Mobile landscape / Small tablet (768px - 899px): Minimal layout */
-@media (max-width: 768px) {
-  .toolbar-container {
-    gap: 6px;
-    padding: 4px 8px;
-    height: auto;
-    min-height: 44px;
-    flex-wrap: nowrap;
-  }
-  .toolbar-section {
-    gap: 4px;
-    flex-wrap: nowrap;
-  }
-  .btn-icon {
-    width: 24px;
-    height: 24px;
-    font-size: 0.8rem;
-  }
-  .page-input {
-    width: 32px;
-    height: 22px;
-    font-size: 0.8rem;
-  }
-  .divider {
-    height: 14px;
-    margin: 0 1px;
-  }
-  .search-box {
-    width: 28px;
-  }
-  .search-box:focus-within {
-    width: 120px;
-  }
-  .search-box:focus-within .search-input {
-    width: 60px;
-  }
-  .control-group {
-    padding: 2px;
-  }
+.custom-dropdown.open .dropdown-arrow {
+  opacity: 0;
+  max-width: 0;
+  margin-left: 0;
 }
-
-/* Mobile portrait / Small screens (480px - 767px): Stacked layout */
-@media (max-width: 480px) {
-  .toolbar-container {
-    gap: 4px;
-    padding: 4px 4px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .toolbar-section {
-    width: auto;
-    gap: 3px;
-    flex-wrap: nowrap;
-  }
-  .btn-icon {
-    width: 22px;
-    height: 22px;
-    font-size: 0.75rem;
-  }
-  .btn-primary {
-    width: 24px;
-    height: 24px;
-  }
-  .btn-primary i {
-    font-size: 0.8rem;
-  }
-  .page-input {
-    width: 28px;
-    height: 20px;
-    font-size: 0.75rem;
-  }
-  .divider {
-    height: 12px;
-    margin: 0 1px;
-  }
-  .search-box {
-    width: 24px;
-  }
-  .search-box:focus-within {
-    width: 100px;
-  }
-  .search-box:focus-within .search-input {
-    width: 50px;
-    font-size: 0.8rem;
-  }
-  .control-group {
-    padding: 2px;
-    gap: 2px;
-  }
-  .theme-pill-container {
-    order: -1;
-  }
-}
-
-/* Extra small screens (<480px): Ultra minimal */
-@media (max-width: 380px) {
-  .toolbar-container {
-    gap: 3px;
-    padding: 3px;
-  }
-  .btn-icon {
-    width: 20px;
-    height: 20px;
-    font-size: 0.7rem;
-  }
-  .btn-primary {
-    width: 22px;
-    height: 22px;
-    padding: 0;
-  }
-  .page-input {
-    width: 24px;
-    height: 18px;
-    font-size: 0.7rem;
-  }
-  .divider {
-    height: 10px;
-    margin: 0 0.5px;
-  }
-  .search-box {
-    width: 20px;
-  }
-  .search-box:focus-within {
-    width: 90px;
-  }
-  .control-group {
-    padding: 1px;
-    gap: 1px;
-  }
-  .invert-doc-btn {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-/* ===== SKELETON LOADER RESPONSIVE ===== */
-.skeleton-container {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  width: 100%;
-  max-width: 1600px;
-  height: 58px;
-  margin: 0 auto;
-  background: var(--bg-toolbar);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 10px 16px;
-  position: relative;
+.dropdown-arrow {
+  margin-left: 6px;
+  transition: max-width 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
+  max-width: 20px;
   overflow: hidden;
-  box-shadow: var(--shadow-md);
-  z-index: 999;
-}
-.skel-shape {
-  background: rgba(150, 150, 150, 0.3);
-  height: 36px;
-  border-radius: var(--radius-md);
-}
-.skel-circle {
-  width: 36px;
-  border-radius: 50%;
-}
-.skel-box {
-  width: 90px;
-}
-.skel-large {
-  width: 160px;
-}
-.skeleton-container::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.35), transparent);
-  animation: shimmer 1.2s linear 1;
-}
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  display: inline-block;
+  min-width: 0;
 }
 
-@media (max-width: 1200px) {
-  .skeleton-container {
-    height: 44px;
-    gap: 10px;
-  }
-  .skel-shape {
-    height: 30px;
-  }
-  .skel-circle {
-    width: 30px;
-  }
+/* =========================================================
+   COMPACTACIÓN Y RESPONSIVE (Mantiene el alto, ajusta/oculta desbordes)
+   ========================================================= */
+.toolbar-container {
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important; /* Nunca crecerá hacia abajo */
 }
 
-@media (max-width: 768px) {
-  .skeleton-container {
-    height: 40px;
-    gap: 8px;
-    padding: 8px 12px;
-  }
-  .skel-shape {
-    height: 28px;
-  }
-  .skel-circle {
-    width: 28px;
-  }
-  .skel-box {
-    width: 70px;
-  }
-  .skel-large {
-    width: 120px;
-  }
+.toolbar-items {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+.toolbar-items::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/WebView */
 }
 
-@media (max-width: 480px) {
-  .skeleton-container {
-    height: 36px;
-    gap: 6px;
-    padding: 6px 8px;
+/* En pantallas pequeñas, reducimos márgenes y ocultamos texto no esencial */
+@media (max-width: 850px) {
+  .toolbar-container { padding: 4px 8px; gap: 4px; }
+  .toolbar-items { gap: 4px; }
+
+  /* Reducir controles */
+  .control-group, .modern-pagination-group, .theme-control-group {
+    padding: 2px 4px;
+    height: 36px; /* Ligeramente más bajos */
   }
-  .skel-shape {
-    height: 24px;
-  }
-  .skel-circle {
-    width: 24px;
-  }
-  .skel-box {
-    width: 50px;
-  }
-  .skel-large {
-    width: 80px;
-  }
+
+  /* Ocultar textos de marca para ahorrar espacio */
+  .brand-title, .brand-subtitle { display: none !important; }
+  .brand { margin-right: 4px; }
+
+  /* Botón de abrir compacto (solo icono) */
+  #openButtonText { display: none; }
+  .btn--primary { padding: 0 10px; height: 32px; }
+
+  /* Ajustar buscador */
+  .modern-search-group .search-input { width: 80px; }
+  .modern-search-group:focus-within .search-input { width: 130px; }
+
+  /* Achicar iconos y botones base */
+  .btn--icon { width: 28px; height: 28px; }
+  .custom-dropdown .dropdown-trigger { padding: 0 6px; font-size: 0.8rem; }
+
+  .flex-spacer { min-width: 5px; }
+}
+
+@media (max-width: 600px) {
+  /* En pantallas muy pequeñas, ocultar incluso más elementos o comprimirlos al máximo */
+  .page-input { width: 30px !important; }
+  .modern-search-group { padding: 0 8px; }
+  .search-nav { display: none; } /* Ocultar botones de siguiente/anterior en búsqueda */
+  .modern-theme-switch { width: 80px; }
 }
 </style>
 </head>
-
 <body>
+
+<!-- SKELETON -->
 <div id="skeletonToolbar" class="skeleton-container">
   <div class="skel-shape skel-circle"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-large"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-circle"></div>
 </div>
+
+<!-- BARRA PRINCIPAL -->
 <div id="mainToolbar" class="toolbar-container" style="display: none !important;">
   <div class="brand"><div class="brand-icon"><img src="assets/SumatraPDF-256x256x32.png" alt="SumatraPDF"></div><div class="brand-text"><div class="brand-title">Pretty<span>Sumatra</span>PDF</div><div id="toolbarSubtitle" class="brand-subtitle subtitle">Focused reading</div></div></div>
-  <div class="toolbar-section">
-    <button id="openButton" class="btn btn-primary" data-exec="openFile" type="button" title="Open File (Ctrl+O)"><i class="fa-regular fa-folder-open"></i><span id="openButtonText">Open</span></button>
-    <div class="control-group"><button id="pagePrevButton" class="btn btn-icon" data-cmd="goToPage" data-delta="-1" type="button"><i class="fa-solid fa-chevron-left"></i></button><div class="divider"></div><input id="pageInput" class="page-input page" type="number" min="1" value="1"><div class="divider"></div><button id="pageNextButton" class="btn btn-icon" data-cmd="goToPage" data-delta="1" type="button"><i class="fa-solid fa-chevron-right"></i></button></div>
-    <div class="control-group"><button id="zoomOutButton" class="btn btn-icon" data-exec="zoomOut" type="button"><i class="fa-solid fa-magnifying-glass-minus"></i></button><div class="divider"></div><div class="select-wrapper"><select id="zoomSelect" class="custom-select" style="padding-right: 24px;"><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.25">125%</option><option value="1.5">150%</option></select><i class="fa-solid fa-chevron-down"></i></div><div class="divider"></div><button id="zoomInButton" class="btn btn-icon" data-exec="zoomIn" type="button"><i class="fa-solid fa-magnifying-glass-plus"></i></button></div>
-    <div class="control-group"><div class="select-wrapper"><select id="viewModeSelect" class="custom-select" style="padding-right: 24px;"><option value="singlePage" selected>Single Page</option><option value="facing">Facing</option><option value="bookView">Book View</option></select><i class="fa-solid fa-chevron-down"></i></div><div class="divider"></div><button id="continuousToggle" class="btn btn-icon toggle active" type="button"><i class="fa-solid fa-arrows-up-down"></i></button></div>
-  </div>
-  <div class="toolbar-section">
-    <div class="control-group"><button id="highlightButton" disabled class="btn btn-icon" data-exec="highlightSelection" type="button"><i class="fa-solid fa-highlighter"></i></button><div class="divider"></div><button id="annotateButton" disabled class="btn btn-icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button><div class="divider"></div><button id="drawButton" disabled class="btn btn-icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button></div>
-    <div class="search-box"><i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); font-size: 0.9rem; margin-right: 0.5rem;"></i><input id="searchInput" type="search" class="search-input search" placeholder="Search text"><button id="searchPrev" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-up"></i></button><button id="searchNext" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-down"></i></button></div>
-    <div class="control-group">
-      <button id="bookmarksToggle" class="btn btn-icon toggle active" data-exec="toggleBookmarks" type="button" title="Marcadores"><i class="fa-solid fa-bookmark"></i></button>
-      <button id="favoritesToggle" class="btn btn-icon toggle" data-exec="toggleFavorites" type="button" title="Favoritos"><i class="fa-solid fa-star"></i></button>
-      <button id="commandPaletteButton" class="btn btn-icon" data-exec="commandPalette" type="button"><i class="fa-solid fa-terminal"></i></button>
-      <button id="printButton" class="btn btn-icon" data-exec="print" type="button"><i class="fa-solid fa-print"></i></button>
+  
+  <div class="toolbar-items" id="toolbarItems">
+    <div class="control-group" id="grp-file" data-name="Abrir Archivo"><button id="openButton" class="btn btn--primary" data-exec="openFile" type="button" title="Open File (Ctrl+O)"><i class="fa-regular fa-folder-open"></i><span id="openButtonText">Open</span></button></div>
+    
+    <div class="modern-pagination-group" id="grp-nav" data-name="Navegación">
+      <button id="pagePrevButton" class="page-nav-btn" data-cmd="goToPage" data-delta="-1" type="button"><i class="fa-solid fa-chevron-left"></i></button>
+      <input id="pageInput" class="page-input page" type="number" min="1" value="1">
+      <button id="pageNextButton" class="page-nav-btn" data-cmd="goToPage" data-delta="1" type="button"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <div class="control-group grp-zoom" id="grp-zoom" data-name="Zoom">
+      <button id="zoomOutButton" class="btn btn--icon" data-exec="zoomOut" type="button"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+      <div class="divider"></div>
+      <div class="custom-dropdown" id="zoomDropdown" title="Seleccionar nivel de zoom">
+        <button class="dropdown-trigger" type="button" aria-expanded="false">
+          <span class="dropdown-value">100%</span>
+          <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu">
+          <li data-value="0.75">75%</li>
+          <li data-value="1" class="selected">100% <i class="fa-solid fa-check check-icon"></i></li>
+          <li data-value="1.25">125%</li>
+          <li data-value="1.5">150%</li>
+        </ul>
+      </div>
+      <div class="divider"></div>
+      <button id="zoomInButton" class="btn btn--icon" data-exec="zoomIn" type="button"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
     </div>
     
-    <div class="theme-pill-container">
-      <div id="themeSwitch" class="modern-theme-switch" data-state="auto">
-        <!-- El fondo que se desliza suavemente -->
-        <div class="mts-slider"></div>
-        
-        <!-- Botones (Iconos con animaciones sutiles incrustadas) -->
-        <button class="mts-btn" data-val="light" title="Tema Claro">
-          <i class="fa-solid fa-sun"></i>
+    <div class="control-group" id="grp-rotate" data-name="Rotar"><button id="rotateLeftButton" class="btn btn--icon" data-exec="rotateLeft" type="button"><i class="fa-solid fa-rotate-left"></i></button><div class="divider"></div><button id="rotateRightButton" class="btn btn--icon" data-exec="rotateRight" type="button"><i class="fa-solid fa-rotate-right"></i></button></div>
+    
+    <div class="control-group grp-view" id="grp-view" data-name="Modo de Vista">
+      <div class="custom-dropdown" id="viewModeDropdown" title="Cambiar modo de lectura">
+        <button class="dropdown-trigger" type="button" aria-expanded="false">
+          <span class="dropdown-value">Single Page</span>
+          <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
         </button>
-        <button class="mts-btn" data-val="dark" title="Tema Oscuro">
-          <i class="fa-solid fa-moon"></i>
-          <span class="mts-tiny-star ts-1"></span>
-          <span class="mts-tiny-star ts-2"></span>
-        </button>
-        <button class="mts-btn" data-val="auto" title="Seguir Sistema (Windows 11)">
-          <div class="win11-icon"><i></i><i></i><i></i><i></i></div>
-        </button>
+        <ul class="dropdown-menu">
+          <li data-value="singlePage" class="selected"><i class="fa-regular fa-file-lines menu-icon"></i> Single Page <i class="fa-solid fa-check check-icon"></i></li>
+          <li data-value="facing"><i class="fa-solid fa-book-open menu-icon"></i> Facing</li>
+          <li data-value="bookView"><i class="fa-solid fa-book-journal-whills menu-icon"></i> Book View</li>
+        </ul>
       </div>
-      
-      <button id="documentInvertToggle" class="invert-doc-btn toggle" type="button" title="Invertir Documento"><i class="fa-solid fa-circle-half-stroke"></i></button>
+      <div class="divider"></div>
+      <button id="continuousToggle" class="btn btn--icon btn--toggle toggle active" data-exec="showPagesContinuously" type="button"><i class="fa-solid fa-arrows-up-down"></i></button>
+    </div>
+    
+    <div class="control-group" id="grp-tools" data-name="Anotaciones"><button id="highlightButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="highlightSelection" type="button"><i class="fa-solid fa-highlighter"></i></button><div class="divider"></div><button id="annotateButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button><div class="divider"></div><button id="drawButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button></div>
+    
+    <div class="flex-spacer" id="grp-spacer" data-name="Espacio"></div>
+    
+    <div class="search-wrapper" id="grp-search" data-name="Buscador">
+      <label class="modern-search-group">
+        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+        <input id="searchInput" type="search" class="search-input search" placeholder="Search...">
+        <div class="search-nav">
+          <button id="searchPrev" class="search-btn" type="button"><i class="fa-solid fa-angle-up"></i></button>
+          <button id="searchNext" class="search-btn" type="button"><i class="fa-solid fa-angle-down"></i></button>
+        </div>
+      </label>
+    </div>
+
+    <div class="control-group" id="grp-actions" data-name="Acciones">
+      <button id="bookmarksToggle" class="btn btn--icon btn--toggle toggle active" data-exec="toggleBookmarks" type="button"><i class="fa-solid fa-bookmark"></i></button>
+      <button id="favoritesToggle" class="btn btn--icon btn--toggle toggle" data-exec="toggleFavorites" type="button"><i class="fa-solid fa-star"></i></button>
+      <button id="commandPaletteButton" class="btn btn--icon" data-exec="commandPalette" type="button"><i class="fa-solid fa-terminal"></i></button>
+      <button id="printButton" class="btn btn--icon" data-exec="print" type="button"><i class="fa-solid fa-print"></i></button>
+    </div>
+    
+    <div class="theme-control-group" id="grp-theme" data-name="Tema">
+      <div id="themeSwitch" class="modern-theme-switch" data-state="auto">
+        <div class="mts-slider"></div>
+        <button class="mts-btn" data-val="light"><i class="fa-solid fa-sun"></i></button>
+        <button class="mts-btn" data-val="dark"><i class="fa-solid fa-moon"></i></button>
+        <button class="mts-btn" data-val="auto"><div class="win11-icon"><i></i><i></i><i></i><i></i></div></button>
+      </div>
+      <button id="documentInvertToggle" class="invert-doc-btn btn--toggle toggle" data-exec="toggleDocumentInvert" type="button"><i class="fa-solid fa-circle-half-stroke"></i></button>
     </div>
   </div>
 </div>
 
+<!-- Banner de Modo Edición Ultra Compacto -->
+<div id="editModeBanner" class="edit-mode-banner">
+  <span>Personalizando barra</span>
+  <button id="exitEditModeBtn" class="btn btn--primary">Hecho</button>
+</div>
+
+<!-- Menú Contextual (Click Derecho) -->
+<div id="nativeContextMenu" class="native-context-menu"></div>
+
 <script>
+
+/* =================== NÚCLEO DE SUMATRAPDF =================== */
 const toolbarText={}; const pageInput=document.getElementById('pageInput'); const pageMeta=document.getElementById('pageMeta'); const toolbarSubtitle=document.getElementById('toolbarSubtitle');
 const openButton=document.getElementById('openButton'); const openButtonText=document.getElementById('openButtonText'); const pagePrevButton=document.getElementById('pagePrevButton'); const pageNextButton=document.getElementById('pageNextButton');
 const zoomOutButton=document.getElementById('zoomOutButton'); const zoomInButton=document.getElementById('zoomInButton'); const searchInput=document.getElementById('searchInput');
-const zoomSelect=document.getElementById('zoomSelect'); const viewModeSelect=document.getElementById('viewModeSelect'); const continuousToggle=document.getElementById('continuousToggle');
-const bookmarksToggle=document.getElementById('bookmarksToggle'); const favoritesToggle=document.getElementById('favoritesToggle'); const fullscreenToggle=document.getElementById('fullscreenToggle');
-const commandPaletteButton=document.getElementById('commandPaletteButton'); const rotateLeftButton=document.getElementById('rotateLeftButton'); const rotateRightButton=document.getElementById('rotateRightButton');
-const printButton=document.getElementById('printButton');
-const documentInvertToggle=document.getElementById('documentInvertToggle');
-const themeSwitch=document.getElementById('themeSwitch');
+const zoomDropdown=document.getElementById('zoomDropdown'); const viewModeDropdown=document.getElementById('viewModeDropdown'); const continuousToggle=document.getElementById('continuousToggle');
+const documentInvertToggle=document.getElementById('documentInvertToggle'); const themeSwitch=document.getElementById('themeSwitch');
 let currentPage=1; let totalPages=1; let lastAppDark=false; let lastWindowsDark=false; let lastFollowWindows=false; let lastDocInverted=false;
 
-function formatText(template, values) { return String(template || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (m, k) => Object.prototype.hasOwnProperty.call(values, k) ? String(values[k]) : m); }
+// ensure toggles expose aria-pressed consistent with class
+document.querySelectorAll('.toggle').forEach(t => { try { t.setAttribute('aria-pressed', String(t.classList.contains('active'))); } catch(e) {} });
+
 function applyToolbarText(payload={}) {
-  Object.assign(toolbarText, payload); document.documentElement.lang=toolbarText.lang||document.documentElement.lang||'en';
-  if(toolbarSubtitle) toolbarSubtitle.textContent=toolbarText.subtitle||toolbarSubtitle.textContent;
+  Object.assign(toolbarText, payload); 
   if(openButtonText) openButtonText.textContent=toolbarText.openButton||openButtonText.textContent;
-  if(pagePrevButton) pagePrevButton.title=toolbarText.pagePrevTitle||pagePrevButton.title;
-  if(pageNextButton) pageNextButton.title=toolbarText.pageNextTitle||pageNextButton.title;
-  if(zoomOutButton) zoomOutButton.title=toolbarText.zoomOutTitle||zoomOutButton.title;
-  if(zoomInButton) zoomInButton.title=toolbarText.zoomInTitle||zoomInButton.title;
-  if(continuousToggle) continuousToggle.title=toolbarText.continuousTitle||continuousToggle.title;
   if(searchInput) searchInput.placeholder=toolbarText.searchPlaceholder||searchInput.placeholder;
-  if(favoritesToggle) favoritesToggle.title=toolbarText.favoritesTitle||favoritesToggle.title;
-  if(viewModeSelect && viewModeSelect.options[0]) viewModeSelect.options[0].textContent=toolbarText.viewSinglePage||viewModeSelect.options[0].textContent;
-  setPageState(currentPage, totalPages); setThemeButtonState(lastAppDark, lastWindowsDark, lastFollowWindows); setDocumentInvertState(lastDocInverted);
 }
-window.hybridToolbarApplyText=applyToolbarText;
-if(window.__hybridToolbarTextPayload) applyToolbarText(window.__hybridToolbarTextPayload);
-function post(n, p={}) { if(window.external && typeof window.external.invoke==='function') window.external.invoke(JSON.stringify({type:'command', name:n, payload:p, ts:Date.now()})); }
-function setPage(p) { const n=Math.max(1, parseInt(p||'1', 10)); currentPage=n; if(pageInput) pageInput.value=String(n); if(pageMeta) pageMeta.textContent=formatText(toolbarText.pageTemplate||'{current}', {current:n}); return n; }
-function setPageState(c, pCount) { const cP=Math.max(1, parseInt(c||'1', 10)); const t=Math.max(1, parseInt(pCount||'1', 10)); currentPage=cP; totalPages=t; if(pageInput){pageInput.max=String(t); pageInput.value=String(Math.min(cP,t));} if(pageMeta) pageMeta.textContent=formatText(toolbarText.pageTemplate||'{current}', {current:pageInput.value}); }
+window.hybridToolbarApplyText=applyToolbarText; if(window.__hybridToolbarTextPayload) applyToolbarText(window.__hybridToolbarTextPayload);
+// `post` helper removed — use direct host invoke where needed.
+// debug badge removed: no on-screen transient notifications
+function setPage(p) {
+  const t = Math.max(1, parseInt(totalPages||'1', 10));
+  let n = parseInt(p||'1', 10);
+  if (Number.isNaN(n)) n = 1;
+  n = Math.min(Math.max(1, n), t);
+  currentPage = n;
+  if (pageInput) {
+    pageInput.max = String(t);
+    pageInput.value = String(n);
+  }
+  // update prev/next disabled state for accessibility
+  if (pagePrevButton) { const prevDisabled = n <= 1; pagePrevButton.disabled = prevDisabled; pagePrevButton.setAttribute('aria-disabled', String(prevDisabled)); }
+  if (pageNextButton) { const nextDisabled = n >= t; pageNextButton.disabled = nextDisabled; pageNextButton.setAttribute('aria-disabled', String(nextDisabled)); }
+  return n;
+}
+
+function setPageState(c, pCount) {
+  const cP = Math.max(1, parseInt(c||'1', 10));
+  const t = Math.max(1, parseInt(pCount||'1', 10));
+  totalPages = t;
+  // delegate to setPage so clamping and nav updates happen in one place
+  setPage(cP);
+}
 window.hybridToolbarSetPageState=setPageState;
 function normalizeZoomValue(z) { const n=Math.max(1, Number(z)||100); return (n/100).toFixed(4).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1'); }
-function setZoomState(z) { if(!zoomSelect) return; const n=Math.max(1, Number(z)||100); const norm=normalizeZoomValue(n); const opts=Array.from(zoomSelect.options||[]); const match=opts.find(o=>Math.abs(parseFloat(o.value)-parseFloat(norm))<0.0009); if(match){zoomSelect.value=match.value;return;} const dyn=document.createElement('option'); dyn.value=norm; dyn.textContent=String(Math.round(n))+'%'; dyn.setAttribute('data-dynamic-zoom','1'); zoomSelect.appendChild(dyn); zoomSelect.value=norm; }
-window.hybridToolbarSetZoomState=setZoomState;
-function setSearchText(text) { if(!searchInput) return; searchInput.value = text || ''; }
-window.hybridToolbarSetSearchText=setSearchText;
-function focusSearch(selectText=true) { if(!searchInput) return; searchInput.focus(); if(selectText && typeof searchInput.select==='function') searchInput.select(); }
-window.hybridToolbarFocusSearch=focusSearch;
-
-function setThemeButtonState(aD, wD, fW) {
-  lastAppDark=!!aD; lastWindowsDark=!!wD; lastFollowWindows=!!fW;
-  if(!themeSwitch) return;
-  if (fW) { themeSwitch.setAttribute('data-state', 'auto'); } 
-  else if (aD) { themeSwitch.setAttribute('data-state', 'dark'); } 
-  else { themeSwitch.setAttribute('data-state', 'light'); }
+function setZoomState(z) {
+  if (!zoomDropdown) return;
+  const n = Math.max(1, Number(z) || 100);
+  const norm = normalizeZoomValue(n);
+  const menu = zoomDropdown.querySelector('.dropdown-menu');
+  if (!menu) return;
+  let options = Array.from(menu.querySelectorAll('li'));
+  let match = options.find(li => String(li.dataset.value) === String(norm));
+  if (!match) {
+    const li = document.createElement('li'); li.dataset.value = String(norm); li.textContent = Math.round(n) + '%';
+    menu.appendChild(li);
+    // attach click handler for the new option
+    li.addEventListener('click', () => selectZoomOption(zoomDropdown, li));
+    options = Array.from(menu.querySelectorAll('li'));
+    match = li;
+  }
+  options.forEach(li => li.classList.toggle('selected', li === match));
+  const display = zoomDropdown.querySelector('.dropdown-value');
+  if (display) display.textContent = match.textContent.trim();
 }
-function setDocumentInvertState(dI) { lastDocInverted=!!dI; if(documentInvertToggle) documentInvertToggle.classList.toggle('active', lastDocInverted); }
+window.hybridToolbarSetZoomState = setZoomState;
+
+function setToggleStateByExec(execName, state) {
+  try {
+    const el = document.querySelector('[data-exec="'+String(execName)+'"]');
+    if (!el) return;
+    if (state) el.classList.add('active'); else el.classList.remove('active');
+    el.setAttribute('aria-pressed', String(!!state));
+    // clear busy marker if present
+    try { clearBusy(el); } catch(e) {}
+    // debug post removed: setToggleStateByExec
+    try { console.log('toolbar: setToggleStateByExec', execName, !!state); } catch(e) {}
+  } catch(e) {}
+}
+window.hybridToolbarSetToggleState = setToggleStateByExec;
+
+function setToggleStateById(id, state) {
+  try {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (state) el.classList.add('active'); else el.classList.remove('active');
+    el.setAttribute('aria-pressed', String(!!state));
+    try { clearBusy(el); } catch(e) {}
+    // debug post removed: setToggleStateById
+    try { console.log('toolbar: setToggleStateById', id, !!state); } catch(e) {}
+  } catch(e) {}
+}
+
+function setButtonEnabled(id, enabled) {
+  try {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (enabled) { el.removeAttribute('disabled'); el.setAttribute('aria-disabled', 'false'); }
+    else { el.setAttribute('disabled', ''); el.setAttribute('aria-disabled', 'true'); }
+  } catch(e) {}
+}
+
+function hybridToolbarSetBookmarksState(on) { setToggleStateById('bookmarksToggle', !!on); }
+function hybridToolbarSetFavoritesState(on) { setToggleStateById('favoritesToggle', !!on); }
+function hybridToolbarSetAnnotationAvailability(opts={}) {
+  // opts: { highlight: bool, annotate: bool, draw: bool }
+  setButtonEnabled('highlightButton', !!opts.highlight);
+  setButtonEnabled('annotateButton', !!opts.annotate);
+  setButtonEnabled('drawButton', !!opts.draw);
+}
+window.hybridToolbarSetBookmarksState = hybridToolbarSetBookmarksState;
+window.hybridToolbarSetFavoritesState = hybridToolbarSetFavoritesState;
+window.hybridToolbarSetAnnotationAvailability = hybridToolbarSetAnnotationAvailability;
+
+// Backwards-compatible aliases (some native callers may use unprefixed names)
+window.setBookmarksState = hybridToolbarSetBookmarksState;
+window.setFavoritesState = hybridToolbarSetFavoritesState;
+window.setAnnotationAvailability = hybridToolbarSetAnnotationAvailability;
+window.setToggleStateByExec = setToggleStateByExec;
+window.setToggleStateById = setToggleStateById;
+
+function notifyPanelState(name, active) {
+  try {
+    const n = String(name||'').toLowerCase();
+    if (n === 'favorites' || n === 'favorite' || n === 'fav') {
+      setToggleStateById('favoritesToggle', !!active);
+    } else if (n === 'bookmarks' || n === 'bookmark' || n === 'marks') {
+      setToggleStateById('bookmarksToggle', !!active);
+    }
+    // clear any busy markers on relevant toggles
+    try { clearBusy(document.getElementById('favoritesToggle')); } catch(e) {}
+    try { clearBusy(document.getElementById('bookmarksToggle')); } catch(e) {}
+    // debug post removed: notifyPanelState
+    try { console.log('toolbar: notifyPanelState', name, !!active); } catch(e) {}
+  } catch(e) {}
+}
+window.notifyPanelState = notifyPanelState;
+window.panelStateChanged = notifyPanelState;
+
 function hybridToolbarApplyTheme(p={}) {
   const root=document.documentElement; const keys=['canvas','panel','panel2','stroke','text','muted','btn','accent','brand1','brand2'];
-  for(const k of keys) { if(typeof p[k]==='string' && p[k]) root.style.setProperty('--'+k, p[k]); }
+  for(const k of keys) { if(p[k]) root.style.setProperty('--'+k, p[k]); }
   const aD=!!p.appDark; root.dataset.theme=aD?'dark':'light';
-  setThemeButtonState(aD, !!p.windowsDark, !!p.followWindows); setDocumentInvertState(!!p.docInverted);
+  lastFollowWindows = !!p.followWindows; lastAppDark = aD; lastWindowsDark = !!p.windowsDark;
+  if(themeSwitch) themeSwitch.setAttribute('data-state', lastFollowWindows ? 'auto' : (aD ? 'dark' : 'light'));
+  // keep document invert toggle in sync (use centralized setter)
+  if (typeof setToggleStateByExec === 'function') setToggleStateByExec('toggleDocumentInvert', !!p.docInverted);
+  // ensure theme buttons reflect state visually and via aria
+  try {
+    const stateVal = lastFollowWindows ? 'auto' : (lastAppDark ? 'dark' : 'light');
+    themeSwitch.querySelectorAll('.mts-btn').forEach(btn => { const active = btn.dataset.val === stateVal; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', String(active)); });
+  } catch(e) {}
 }
-window.hybridToolbarApplyTheme=hybridToolbarApplyTheme;
-if(window.__hybridToolbarThemePayload) hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);
-document.querySelectorAll('[data-cmd]').forEach((b) => { b.addEventListener('click', () => { const cmd=b.dataset.cmd; if(cmd==='goToPage' && pageInput) { const n=setPage(parseInt(pageInput.value||'1',10)+parseInt(b.dataset.delta||'0',10)); post('goToPage', {page:n}); return; } if(cmd==='openFile') post('openFile', {}); }); });
-function execCommand(n) { if(!n) return; post('execCommand', {command:n}); }
-document.querySelectorAll('[data-exec]').forEach((b) => { b.addEventListener('click', () => { if(b.classList.contains('toggle')) b.classList.toggle('active'); execCommand(b.dataset.exec||''); }); });
-if(pageInput) { pageInput.addEventListener('change', () => post('goToPage', {page:setPage(pageInput.value)})); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
-if(zoomSelect) zoomSelect.addEventListener('change', () => post('zoom', {value:parseFloat(zoomSelect.value)}));
-if(viewModeSelect) viewModeSelect.addEventListener('change', () => execCommand(viewModeSelect.value));
-if(continuousToggle) { continuousToggle.addEventListener('click', () => { continuousToggle.classList.toggle('active'); execCommand('showPagesContinuously'); }); }
-post('setFitMode', {mode:'page'});
-function runSearch(dir) { if(!searchInput) return; const q=searchInput.value.trim(); if(!q) return; post('search', {query:q, direction:dir}); }
-const sPrev=document.getElementById('searchPrev'); const sNext=document.getElementById('searchNext');
-if(sPrev) sPrev.addEventListener('click', () => runSearch('backward')); if(sNext) sNext.addEventListener('click', () => runSearch('forward'));
-if(searchInput) searchInput.addEventListener('keydown', (e) => { if(e.key==='Enter') runSearch('forward'); });
-let searchDebounceTimer = 0;
-if(searchInput) searchInput.addEventListener('input', () => {
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => runSearch('forward'), 220);
+window.hybridToolbarApplyTheme=hybridToolbarApplyTheme; if(window.__hybridToolbarThemePayload) hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);
+
+// Toggles that are controlled by native app state — mark busy but still give optimistic feedback.
+const serverSourcedToggles = new Set(['toggleFavorites','toggleBookmarks','toggleDocumentInvert','showPagesContinuously']);
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-exec]'); if (!b || isToolbarUnlocked) return;
+  if (b.classList.contains('toggle')) {
+    // optimistic visual toggle for responsiveness
+    const willActive = !b.classList.contains('active');
+    if (willActive) b.classList.add('active'); else b.classList.remove('active');
+    try { b.setAttribute('aria-pressed', String(willActive)); } catch(e) {}
+    // if state is server-owned, mark busy until native confirms (with timeout fallback)
+    try { if (serverSourcedToggles.has(String(b.dataset.exec||''))) markBusy(b); } catch(e) {}
+  }
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: b.dataset.exec||'' }, ts: Date.now() }));
 });
 
-window.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'f') {
-    e.preventDefault();
-    e.stopPropagation();
-    focusSearch(true);
+// Busy helper with timeout fallback
+const BUSY_TIMEOUT_MS = 1500;
+function markBusy(el) {
+  try {
+    if (!el) return;
+    el.setAttribute('aria-busy', 'true');
+    if (el.__busyTimer) clearTimeout(el.__busyTimer);
+    el.__busyTimer = setTimeout(() => { try { el.removeAttribute('aria-busy'); el.__busyTimer = null; } catch (e) {} }, BUSY_TIMEOUT_MS);
+  } catch(e) {}
+}
+function clearBusy(el) { try { if (!el) return; if (el.__busyTimer) { clearTimeout(el.__busyTimer); el.__busyTimer = null; } el.removeAttribute('aria-busy'); } catch(e) {} }
+
+document.querySelectorAll('[data-cmd]').forEach(b => b.addEventListener('click', () => {
+  if (isToolbarUnlocked) return;
+  const cmd = b.dataset.cmd;
+  if (cmd === 'goToPage') {
+    const delta = parseInt(b.dataset.delta||'0', 10) || 0;
+    const before = currentPage;
+    const base = parseInt(pageInput?.value||String(currentPage), 10) || currentPage;
+    const desired = base + delta;
+    const newPage = setPage(desired);
+    if (newPage !== before) if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: newPage }, ts: Date.now() }));
     return;
   }
-  if (e.key === 'F3') {
-    e.preventDefault();
-    runSearch(e.shiftKey ? 'backward' : 'forward');
-  }
-}, true);
+}));
 
-// Mapeo de botones del Switch minimalista (con auto-inversión inteligente del PDF)
+if(pageInput) { pageInput.addEventListener('change', () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: setPage(pageInput.value) }, ts: Date.now() })); }); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
+// wire up custom dropdowns
+function selectZoomOption(dropdown, li) {
+  const menu = dropdown.querySelector('.dropdown-menu');
+  Array.from(menu.querySelectorAll('li')).forEach(i => i.classList.toggle('selected', i === li));
+  const display = dropdown.querySelector('.dropdown-value'); if (display) display.textContent = li.textContent.trim();
+  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false'); setDropdownInline(dropdown, false); setDropdownInline(dropdown, false);
+  const val = parseFloat(li.dataset.value);
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'zoom', payload: { value: val }, ts: Date.now() }));
+}
+
+function selectViewModeOption(dropdown, li) {
+  const menu = dropdown.querySelector('.dropdown-menu');
+  Array.from(menu.querySelectorAll('li')).forEach(i => i.classList.toggle('selected', i === li));
+  const display = dropdown.querySelector('.dropdown-value'); if (display) display.textContent = li.textContent.trim();
+  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false'); setDropdownInline(dropdown, false); setDropdownInline(dropdown, false);
+  const cmd = String(li.dataset.value || '');
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: cmd }, ts: Date.now() }));
+}
+
+if (zoomDropdown) {
+  const trigger = zoomDropdown.querySelector('.dropdown-trigger');
+  const menu = zoomDropdown.querySelector('.dropdown-menu');
+  trigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // close other dropdowns and reset their inline state
+    document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+      if (d !== zoomDropdown) d.classList.remove('open');
+      d.classList.remove('dropup','inline');
+      d.querySelector('.dropdown-menu')?.classList.remove('clamped-left','clamped-right');
+    });
+    // toggle open
+    const willOpen = !zoomDropdown.classList.contains('open');
+    zoomDropdown.classList.toggle('open', willOpen);
+    // open inline inside toolbar to avoid WebView clipping
+    setDropdownInline(zoomDropdown, willOpen);
+    const expanded = willOpen;
+    trigger.setAttribute('aria-expanded', String(expanded));
+  });
+  Array.from(menu.querySelectorAll('li')).forEach(li => li.addEventListener('click', () => selectZoomOption(zoomDropdown, li)));
+}
+
+if (viewModeDropdown) {
+  const trigger = viewModeDropdown.querySelector('.dropdown-trigger');
+  const menu = viewModeDropdown.querySelector('.dropdown-menu');
+  trigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.custom-dropdown.open').forEach(d => { if (d !== viewModeDropdown) d.classList.remove('open'); d.classList.remove('dropup','inline'); d.querySelector('.dropdown-menu')?.classList.remove('clamped-left','clamped-right'); });
+    const willOpen = !viewModeDropdown.classList.contains('open');
+    viewModeDropdown.classList.toggle('open', willOpen);
+    setDropdownInline(viewModeDropdown, willOpen);
+    const expanded = willOpen;
+    trigger.setAttribute('aria-expanded', String(expanded));
+  });
+  Array.from(menu.querySelectorAll('li')).forEach(li => li.addEventListener('click', () => selectViewModeOption(viewModeDropdown, li)));
+}
+
+// close dropdowns when clicking outside
+document.addEventListener('click', () => { document.querySelectorAll('.custom-dropdown.open').forEach(d => { d.classList.remove('open'); setDropdownInline(d, false); }); });
+
+// Positioning helper: keep dropdowns inside the WebView viewport by flipping or clamping
+function positionDropdown(dropdown) {
+  try {
+    const menu = dropdown.querySelector('.dropdown-menu');
+    if (!menu) return;
+    // reset any previous inline adjustments
+    dropdown.classList.remove('dropup');
+    menu.classList.remove('clamped-left','clamped-right');
+    menu.style.left = '';
+    menu.style.right = '';
+    // measure
+    const rect = dropdown.getBoundingClientRect();
+    // ensure menu is temporarily visible to measure height
+    menu.style.visibility = 'hidden';
+    menu.style.display = 'block';
+    const menuRect = menu.getBoundingClientRect();
+    menu.style.display = '';
+    menu.style.visibility = '';
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    // if not enough space below but enough above, open upwards
+    if (spaceBelow < menuRect.height && spaceAbove > menuRect.height) {
+      dropdown.classList.add('dropup');
+    }
+    // horizontal clamping: compute desired left in px
+    const desiredLeft = rect.left + rect.width / 2 - menuRect.width / 2;
+    if (desiredLeft < 8) {
+      // clamp to left edge
+      menu.classList.add('clamped-left');
+      menu.style.left = '8px';
+      menu.style.right = '';
+    } else if ((desiredLeft + menuRect.width) > (window.innerWidth - 8)) {
+      // clamp to right edge
+      menu.classList.add('clamped-right');
+      menu.style.right = '8px';
+      menu.style.left = '';
+    } else {
+      // center as default (keep existing CSS behavior)
+      menu.style.left = '50%';
+      menu.style.right = '';
+      menu.style.transform = dropdown.classList.contains('dropup') ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(0)';
+    }
+  } catch (e) { console.error('positionDropdown error', e); }
+}
+
+function setDropdownInline(dropdown, on) {
+  try {
+    const main = document.getElementById('mainToolbar');
+    if (on) {
+      dropdown.classList.add('inline');
+      if (main) main.classList.add('inline-open');
+    } else {
+      dropdown.classList.remove('inline');
+      // if no other inline dropdowns, remove toolbar inline state
+      if (main && document.querySelectorAll('.custom-dropdown.inline').length === 0) main.classList.remove('inline-open');
+    }
+  } catch (e) { console.error('setDropdownInline', e); }
+}
+
+function runSearch(dir) { const q=searchInput.value.trim(); if(q) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'search', payload: { query: q, direction: dir }, ts: Date.now() })); } }
+document.getElementById('searchPrev')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('backward')});
+document.getElementById('searchNext')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('forward')});
+searchInput?.addEventListener('keydown', (e) => { if(e.key==='Enter' && !isToolbarUnlocked) runSearch('forward'); });
+
 if(themeSwitch) {
   themeSwitch.querySelectorAll('.mts-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      if(isToolbarUnlocked) return;
       const val = btn.dataset.val;
-      if (val === 'auto') {
-        if (!lastFollowWindows) execCommand('toggleThemeFollowWindows');
-        // Si Windows es oscuro y el doc no está invertido, invertirlo. Y viceversa.
-        if (lastWindowsDark && !lastDocInverted) execCommand('toggleDocumentInvert');
-        if (!lastWindowsDark && lastDocInverted) execCommand('toggleDocumentInvert');
-      } else if (val === 'light') {
-        if (lastFollowWindows) execCommand('toggleThemeFollowWindows');
-        if (lastAppDark) execCommand('toggleTheme');
-        // En modo claro, asegurar que el documento NO esté invertido
-        if (lastDocInverted) execCommand('toggleDocumentInvert');
-      } else if (val === 'dark') {
-        if (lastFollowWindows) execCommand('toggleThemeFollowWindows');
-        if (!lastAppDark) execCommand('toggleTheme');
-        // En modo oscuro, asegurar que el documento SÍ esté invertido
-        if (!lastDocInverted) execCommand('toggleDocumentInvert');
-      }
+      if (val === 'auto') { if (!lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if ((lastWindowsDark && !lastDocInverted) || (!lastWindowsDark && lastDocInverted)) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleDocumentInvert' }, ts: Date.now() })); } } 
+      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (lastDocInverted) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleDocumentInvert' }, ts: Date.now() })); } } 
+      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (!lastDocInverted) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleDocumentInvert' }, ts: Date.now() })); } }
     });
   });
 }
 
-const diToggle=document.getElementById('documentInvertToggle');
-if(diToggle) diToggle.addEventListener('click', () => execCommand('toggleDocumentInvert'));
-post('toolbarReady', {});
+/* =================== CUSTOMIZACIÓN MODO MAC / WINDOWS =================== */
+const toolbarItemsContainer = document.getElementById('toolbarItems');
+const contextMenu = document.getElementById('nativeContextMenu');
+const mainToolbar = document.getElementById('mainToolbar');
+const editModeBanner = document.getElementById('editModeBanner');
 
+let isToolbarUnlocked = false; 
+const LS_KEY = 'sumatra-toolbar-layout-v4';
+
+Array.from(toolbarItemsContainer.children).forEach(el => {
+  const badge = document.createElement('div');
+  badge.className = 'edit-badge';
+  badge.innerHTML = `<i class="icon-remove fa-solid fa-xmark"></i><i class="icon-add fa-solid fa-plus"></i>`;
+  badge.onclick = (e) => { e.stopPropagation(); el.classList.toggle('is-hidden'); };
+  el.appendChild(badge);
+});
+
+try {
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved) {
+    const layout = JSON.parse(saved);
+    layout.forEach(item => {
+      const el = document.getElementById(item.id);
+      if (el) { toolbarItemsContainer.appendChild(el); if (!item.visible) el.classList.add('is-hidden'); }
+    });
+  }
+} catch(e) {}
+
+function saveLayout() {
+  const newLayout = Array.from(toolbarItemsContainer.children).map(el => ({ id: el.id, visible: !el.classList.contains('is-hidden') }));
+  localStorage.setItem(LS_KEY, JSON.stringify(newLayout));
+}
+
+function updateEditMode() {
+  Array.from(toolbarItemsContainer.children).forEach(el => el.setAttribute('draggable', isToolbarUnlocked ? 'true' : 'false'));
+  if(isToolbarUnlocked) { mainToolbar.classList.add('edit-mode'); editModeBanner.classList.add('show'); } 
+  else { mainToolbar.classList.remove('edit-mode'); editModeBanner.classList.remove('show'); saveLayout(); }
+}
+
+document.getElementById('exitEditModeBtn').addEventListener('click', () => { isToolbarUnlocked = false; updateEditMode(); });
+
+let draggingElement = null;
+toolbarItemsContainer.addEventListener('dragstart', e => {
+  if (!isToolbarUnlocked) { e.preventDefault(); return; }
+  draggingElement = e.target.closest('[data-name]');
+  if (!draggingElement) return;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => draggingElement.classList.add('dragging'), 0);
+});
+
+toolbarItemsContainer.addEventListener('dragover', e => {
+  e.preventDefault();
+  if (!draggingElement || !isToolbarUnlocked) return;
+  const afterElement = getDragAfterElement(toolbarItemsContainer, e.clientX);
+  if (afterElement == null) toolbarItemsContainer.appendChild(draggingElement);
+  else toolbarItemsContainer.insertBefore(draggingElement, afterElement);
+});
+
+toolbarItemsContainer.addEventListener('dragend', () => { if (draggingElement) draggingElement.classList.remove('dragging'); draggingElement = null; });
+
+function getDragAfterElement(container, x) {
+  const draggableElements = [...container.querySelectorAll('[data-name]:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = x - box.left - box.width / 2;
+    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+    else { return closest; }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+mainToolbar.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (isToolbarUnlocked) return; 
+  contextMenu.innerHTML = '';
+  const editItem = document.createElement('div'); editItem.className = 'cm-item';
+  editItem.innerHTML = `<i class="fa-solid fa-pen" style="color:var(--brand-primary)"></i> <span>Personalizar barra de herramientas...</span>`;
+  editItem.onclick = () => { isToolbarUnlocked = true; updateEditMode(); contextMenu.classList.remove('show'); };
+  contextMenu.appendChild(editItem);
+  contextMenu.style.left = Math.min(e.clientX, window.innerWidth - 250) + 'px';
+  contextMenu.style.top = Math.max(e.clientY, 10) + 'px';
+  contextMenu.classList.add('show');
+});
+
+document.addEventListener('click', e => { if (!contextMenu.contains(e.target)) contextMenu.classList.remove('show'); });
+
+/* =================== INICIALIZACIÓN =================== */
+if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'toolbarReady', payload: {}, ts: Date.now() }));
 let isRevealed = false;
 function revealToolbar() {
-  if (isRevealed) return;
-  isRevealed = true;
-  const skel = document.getElementById('skeletonToolbar');
-  const tool = document.getElementById('mainToolbar');
-  if (skel) skel.style.setProperty('display', 'none', 'important');
-  if (tool) tool.style.setProperty('display', 'flex', 'important');
+  if (isRevealed) return; isRevealed = true;
+  document.getElementById('skeletonToolbar')?.style.setProperty('display', 'none', 'important');
+  document.getElementById('mainToolbar')?.style.setProperty('display', 'flex', 'important');
 }
 setTimeout(revealToolbar, 800);
-if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  revealToolbar();
-}
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) revealToolbar();
+
 </script>
 </body>
 </html>

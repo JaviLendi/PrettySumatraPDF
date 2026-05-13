@@ -5675,6 +5675,17 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
             InvalidateRect(win->favSplitter->hwnd, nullptr, TRUE);
         }
     }
+
+    // Notify hybrid toolbar WebView (if present) about panel state changes
+    if (win->hybridToolbar) {
+        TempStr jsFav = str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('favorites',%s);}catch(e){};",
+                                      showFavorites ? "true" : "false");
+        win->hybridToolbar->Eval(jsFav);
+
+        TempStr jsToc = str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('bookmarks',%s);}catch(e){};",
+                                      tocVisible ? "true" : "false");
+        win->hybridToolbar->Eval(jsToc);
+    }
 }
 
 // if url-encoded s is bigger than a reasonable URL path,
@@ -7014,6 +7025,8 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
         case CmdFindFirst:
             if (win->IsCurrentTabAbout()) {
                 HomePageFocusSearch(win);
+            } else if (prettysumatra::bridge::UseHybridToolbar() && win->hybridToolbar) {
+                prettysumatra::bridge::FocusHybridToolbarSearch(win->hwndFrame);
             } else {
                 FindFirst(win);
             }

@@ -114,10 +114,10 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
     <input type="text" id="searchInput" class="search-input" placeholder="Buscar documentos por nombre..." autocomplete="off">
   </div>
   <div class="quick-actions">
-    <button class="btn-action btn-primary-action" onclick="post('openFile')">
+    <button class="btn-action btn-primary-action" onclick="if(window.external&&typeof window.external.invoke==='function')window.external.invoke(JSON.stringify({type:'command',name:'openFile',payload:{},ts:Date.now()}))">
       <i class="fa-solid fa-folder-open"></i> Explorar Archivos
     </button>
-    <button class="btn-action" onclick="post('reopenLast')">
+    <button class="btn-action" onclick="if(window.external&&typeof window.external.invoke==='function')window.external.invoke(JSON.stringify({type:'command',name:'reopenLast',payload:{},ts:Date.now()}))">
       <i class="fa-solid fa-clock-rotate-left"></i> Retomar Último
     </button>
   </div>
@@ -134,11 +134,11 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
 </div>
 
 <script>
-function post(name, payload = {}) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name, payload, ts: Date.now() })); }
+// `post` helper removed — use direct host invoke instead when needed
 
 const searchInput = document.getElementById('searchInput');
 searchInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') post('searchFiles', { query: e.target.value });
+  if (e.key === 'Enter') { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'searchFiles', payload: { query: e.target.value }, ts: Date.now() })); }
 });
 searchInput.addEventListener('input', (e) => {
   const q = e.target.value.trim();
@@ -158,7 +158,7 @@ function renderRecentFiles(files) {
   }
   files.forEach((file, index) => {
     const card = document.createElement('div'); card.className = 'file-card'; card.style.animation = `slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.05}s both`;
-    card.onclick = () => post('openRecent', { path: file.path });
+    card.onclick = () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'openRecent', payload: { path: file.path }, ts: Date.now() })); };
     card.innerHTML = `<div class="file-card-header"><div class="file-icon"><i class="fa-solid fa-file-pdf"></i></div><i class="fa-solid fa-arrow-right file-action-icon"></i></div><div class="file-info"><div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div><div class="file-path" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</div></div>`;
     grid.appendChild(card);
   });
@@ -178,7 +178,7 @@ window.applyTheme = function(isDark) {
   document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
 };
 
-post('homePageReady');
+if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'homePageReady', payload: {}, ts: Date.now() }));
 </script>
 </body>
 </html>

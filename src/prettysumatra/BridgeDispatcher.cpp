@@ -58,8 +58,8 @@ static bool WindowsPrefersDarkModeForHybridToolbar() {
     DWORD val = 1;
     DWORD cbData = sizeof(val);
     constexpr const wchar_t* kThemeRegPath = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
-    LONG err = RegGetValueW(HKEY_CURRENT_USER, kThemeRegPath, L"AppsUseLightTheme", RRF_RT_REG_DWORD, nullptr, &val,
-                            &cbData);
+    LONG err =
+        RegGetValueW(HKEY_CURRENT_USER, kThemeRegPath, L"AppsUseLightTheme", RRF_RT_REG_DWORD, nullptr, &val, &cbData);
     if (err != ERROR_SUCCESS) {
         return false;
     }
@@ -136,7 +136,8 @@ static TempStr HybridToolbarThemeJs(HWND hwndFrame) {
 
     return str::FormatTemp(
         "window.__hybridToolbarThemePayload={canvas:'%s',panel:'%s',panel2:'%s',stroke:'%s',"
-        "text:'%s',muted:'%s',btn:'%s',accent:'%s',brand1:'%s',brand2:'%s',appDark:%s,docInverted:%s,windowsDark:%s,followWindows:%s};"
+        "text:'%s',muted:'%s',btn:'%s',accent:'%s',brand1:'%s',brand2:'%s',appDark:%s,docInverted:%s,windowsDark:%s,"
+        "followWindows:%s};"
         "if(window.hybridToolbarApplyTheme){window.hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);}",
         ColorToCssHex(canvas), ColorToCssHex(panel), ColorToCssHex(panel2), ColorToCssHex(stroke), ColorToCssHex(text),
         ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), ColorToCssHex(brand1), ColorToCssHex(brand2),
@@ -149,7 +150,7 @@ static const char* JsQuoted(const char* s) {
         static const char empty[] = {'\'', '\'', '\0'};
         return empty;
     }
-    
+
     // Calculate needed size
     size_t len = 0;
     for (const char* p = s; *p; ++p) {
@@ -165,12 +166,12 @@ static const char* JsQuoted(const char* s) {
                 break;
         }
     }
-    len += 2;  // for surrounding quotes
-    len += 1;  // for null terminator
-    
+    len += 2; // for surrounding quotes
+    len += 1; // for null terminator
+
     char* out = (char*)malloc(len);
     if (!out) return nullptr;
-    
+
     char* dst = out;
     *dst++ = '\'';
     for (const char* p = s; *p; ++p) {
@@ -184,7 +185,7 @@ static const char* JsQuoted(const char* s) {
                 *dst++ = '\'';
                 break;
             case '\r':
-                break;  // skip carriage returns
+                break; // skip carriage returns
             case '\n':
                 *dst++ = '\\';
                 *dst++ = 'n';
@@ -200,7 +201,7 @@ static const char* JsQuoted(const char* s) {
     }
     *dst++ = '\'';
     *dst = '\0';
-    
+
     return out;
 }
 
@@ -215,15 +216,15 @@ static TempStr HybridToolbarTextJs(HWND hwndFrame) {
         "pageTemplate:%s,zoomOutTitle:%s,zoomInTitle:%s,viewSinglePage:%s,viewFacing:%s,viewBookView:%s,"
         "continuousTitle:%s,searchPlaceholder:%s,bookmarksTitle:%s,favoritesTitle:%s,fullscreenTitle:%s,"
         "commandPaletteText:%s,rotateLeftTitle:%s,rotateRightTitle:%s,printTitle:%s,themeLabel:%s,"
-            "followWindowsTitle:%s,followingWindowsTitle:%s,darkWord:%s,lightWord:%s,toggleThemeTitle:%s,documentLabel:%s,documentInvertTitle:%s};"
+        "followWindowsTitle:%s,followingWindowsTitle:%s,darkWord:%s,lightWord:%s,toggleThemeTitle:%s,documentLabel:%s,"
+        "documentInvertTitle:%s};"
         "if(window.hybridToolbarApplyText){window.hybridToolbarApplyText(window.__hybridToolbarTextPayload);}",
         JsQuoted(trans::GetCurrentLangCode()), JsQuoted(_TRA("Focused reading")), JsQuoted(_TRA("Open")),
         JsQuoted(_TRA("Previous page")), JsQuoted(_TRA("Next page")), JsQuoted(_TRA("Page {current} / {total}")),
-        JsQuoted(_TRA("Zoom out")), JsQuoted(_TRA("Zoom in")), JsQuoted(_TRA("Single Page")),
-        JsQuoted(_TRA("Facing")), JsQuoted(_TRA("Book View")), JsQuoted(_TRA("Show pages continuously")),
-        JsQuoted(_TRA("Search text")), JsQuoted(_TRA("Sidebar")), JsQuoted(_TRA("Favorites")),
-        JsQuoted(_TRA("Fullscreen")), JsQuoted(_TRA("Cmd")), JsQuoted(_TRA("Rotate left")),
-        JsQuoted(_TRA("Rotate right")), JsQuoted(_TRA("Print")), JsQuoted(_TRA("Theme")),
+        JsQuoted(_TRA("Zoom out")), JsQuoted(_TRA("Zoom in")), JsQuoted(_TRA("Single Page")), JsQuoted(_TRA("Facing")),
+        JsQuoted(_TRA("Book View")), JsQuoted(_TRA("Show pages continuously")), JsQuoted(_TRA("Search text")),
+        JsQuoted(_TRA("Sidebar")), JsQuoted(_TRA("Favorites")), JsQuoted(_TRA("Fullscreen")), JsQuoted(_TRA("Cmd")),
+        JsQuoted(_TRA("Rotate left")), JsQuoted(_TRA("Rotate right")), JsQuoted(_TRA("Print")), JsQuoted(_TRA("Theme")),
         JsQuoted(_TRA("Follow Windows")), JsQuoted(_TRA("Following Windows ({mode})")), JsQuoted(_TRA("dark")),
         JsQuoted(_TRA("light")), JsQuoted(_TRA("Toggle light/dark")), JsQuoted(_TRA("Doc")),
         JsQuoted(_TRA("Invert document colors")));
@@ -267,7 +268,8 @@ void SyncHybridToolbarSearchText(HWND hwndFrame, const char* text) {
     escaped = str::ReplaceTemp(escaped, "'", "\\'");
     escaped = str::ReplaceTemp(escaped, "\r", "");
     escaped = str::ReplaceTemp(escaped, "\n", "\\n");
-    TempStr js = str::FormatTemp("window.hybridToolbarSetSearchText && window.hybridToolbarSetSearchText('%s');", escaped);
+    TempStr js =
+        str::FormatTemp("window.hybridToolbarSetSearchText && window.hybridToolbarSetSearchText('%s');", escaped);
     win->hybridToolbar->Eval(js);
 }
 
@@ -334,7 +336,8 @@ void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent) {
     if (zoomPercent > 6400.0f) {
         zoomPercent = 6400.0f;
     }
-    TempStr js = str::FormatTemp("window.hybridToolbarSetZoomState && window.hybridToolbarSetZoomState(%.4f);", zoomPercent);
+    TempStr js =
+        str::FormatTemp("window.hybridToolbarSetZoomState && window.hybridToolbarSetZoomState(%.4f);", zoomPercent);
     win->hybridToolbar->Eval(js);
 }
 
@@ -343,6 +346,7 @@ struct BridgeMessage {
     const char* path = nullptr;
     const char* query = nullptr;
     const char* command = nullptr;
+    const char* action = nullptr;
     const char* direction = nullptr;
     const char* mode = nullptr;
     int page = 0;
@@ -375,6 +379,10 @@ class BridgeMessageVisitor : public json::ValueVisitor {
         }
         if (str::Eq(path, "/payload/command") && type == json::Type::String) {
             msg->command = str::DupTemp(value);
+            return true;
+        }
+        if (str::Eq(path, "/payload/action") && type == json::Type::String) {
+            msg->action = str::DupTemp(value);
             return true;
         }
         if (str::Eq(path, "/payload/direction") && type == json::Type::String) {
@@ -511,11 +519,18 @@ static bool DispatchSearch(const BridgeMessage& msg) {
     }
 
     bool wasModified = true;
-    TempStr currentFind = HwndGetTextTemp(win->hwndFindEdit);
-    if (str::Eq(msg.query, currentFind)) {
+    if (str::EqI(msg.action, "step") || str::EqI(msg.action, "next") || str::EqI(msg.action, "prev") || str::EqI(msg.action, "previous")) {
         wasModified = false;
+    } else if (str::IsEmpty(msg.action)) {
+        TempStr currentFind = HwndGetTextTemp(win->hwndFindEdit);
+        if (str::Eq(msg.query, currentFind)) {
+            wasModified = false;
+        }
     }
-    FindTextOnThread(win, dir, msg.query, wasModified, true);
+    HwndSetText(win->hwndFindEdit, msg.query);
+    Edit_SetModify(win->hwndFindEdit, FALSE);
+    int startPage = (dir == TextSearch::Direction::Backward) ? win->ctrl->PageCount() : 1;
+    FindTextOnThread(win, dir, msg.query, wasModified, true, startPage);
     return true;
 }
 
@@ -560,8 +575,8 @@ static bool WindowsPrefersDarkModeForHybrid() {
     DWORD val = 1;
     DWORD cbData = sizeof(val);
     constexpr const wchar_t* kThemeRegPath = L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
-    LONG err = RegGetValueW(HKEY_CURRENT_USER, kThemeRegPath, L"AppsUseLightTheme", RRF_RT_REG_DWORD, nullptr, &val,
-                            &cbData);
+    LONG err =
+        RegGetValueW(HKEY_CURRENT_USER, kThemeRegPath, L"AppsUseLightTheme", RRF_RT_REG_DWORD, nullptr, &val, &cbData);
     if (err != ERROR_SUCCESS) {
         return false;
     }
@@ -766,13 +781,13 @@ static ::TempStr SerializeRecentFilesToJson() {
     const size_t bufSize = 8192;
     char* buf = (char*)malloc(bufSize);
     if (!buf) return nullptr;
-    
+
     char* dst = buf;
-    size_t remaining = bufSize - 1;  // Leave room for null terminator
-    
+    size_t remaining = bufSize - 1; // Leave room for null terminator
+
     *dst++ = '[';
     remaining--;
-    
+
     bool first = true;
     for (int i = 0; i < kHomePageMaxRecentItems; i++) {
         FileState* fs = gFileHistory.Get(i);
@@ -782,13 +797,13 @@ static ::TempStr SerializeRecentFilesToJson() {
         if (!fs->filePath) {
             continue;
         }
-        
+
         if (!first && remaining > 0) {
             *dst++ = ',';
             remaining--;
         }
         first = false;
-        
+
         // Extract filename from path
         const char* filePath = fs->filePath;
         const char* fileName = filePath;
@@ -797,7 +812,7 @@ static ::TempStr SerializeRecentFilesToJson() {
                 fileName = p + 1;
             }
         }
-        
+
         // Build the JSON entry
         const char* entryStart = "{\"path\":";
         if (remaining > str::Len(entryStart)) {
@@ -805,35 +820,35 @@ static ::TempStr SerializeRecentFilesToJson() {
             dst += str::Len(entryStart);
             remaining -= str::Len(entryStart);
         }
-        
+
         AppendJsonString(dst, remaining, filePath);
-        
+
         const char* separator = ",\"name\":";
         if (remaining > str::Len(separator)) {
             memcpy(dst, separator, str::Len(separator));
             dst += str::Len(separator);
             remaining -= str::Len(separator);
         }
-        
+
         AppendJsonString(dst, remaining, fileName);
-        
+
         if (remaining > 0) {
             *dst++ = '}';
             remaining--;
         }
     }
-    
+
     if (remaining > 0) {
         *dst++ = ']';
         remaining--;
     }
-    
+
     if (remaining > 0) {
         *dst++ = '\0';
     } else {
         buf[bufSize - 1] = '\0';
     }
-    
+
     return buf;
 }
 
@@ -852,21 +867,17 @@ static bool DispatchHomePageReady() {
         sCachedRecentFilesJson = (char*)SerializeRecentFilesToJson();
         sCachedRecentSignature = recentSignature;
     }
-    
+
     // Send recent files list to HomePage
     const char* recentFilesJson = sCachedRecentFilesJson ? sCachedRecentFilesJson : "[]";
-    char* js = str::FormatTemp(
-        "window.setRecentFiles && window.setRecentFiles(%s);",
-        recentFilesJson);
+    char* js = str::FormatTemp("window.setRecentFiles && window.setRecentFiles(%s);", recentFilesJson);
     win->homePageWebView->Eval(js);
-    
+
     // Apply current theme
     bool isDarkMode = HomePageUsesDarkTheme();
-    char* themeJs = str::FormatTemp(
-        "window.applyTheme && window.applyTheme(%s);",
-        isDarkMode ? "true" : "false");
+    char* themeJs = str::FormatTemp("window.applyTheme && window.applyTheme(%s);", isDarkMode ? "true" : "false");
     win->homePageWebView->Eval(themeJs);
-    
+
     return true;
 }
 
@@ -951,8 +962,9 @@ static bool DispatchKnownCommand(const BridgeMessage& msg) {
         return DispatchReopenLast();
     }
 
-    if (str::Eq(msg.name, kAddAnnotation) || str::Eq(msg.name, kEditAnnotation) || str::Eq(msg.name, kDeleteAnnotation) ||
-        str::Eq(msg.name, kExportAnnotations) || str::Eq(msg.name, kImportAnnotations)) {
+    if (str::Eq(msg.name, kAddAnnotation) || str::Eq(msg.name, kEditAnnotation) ||
+        str::Eq(msg.name, kDeleteAnnotation) || str::Eq(msg.name, kExportAnnotations) ||
+        str::Eq(msg.name, kImportAnnotations)) {
         if (LogBridgeMessages()) {
             logf("[PrettySumatraBridge] command '%s' not implemented yet\n", msg.name);
         }
@@ -968,9 +980,7 @@ void SyncHomePageTheme(HWND hwndFrame) {
     }
     // Apply the actual app theme so the home page stays in sync with manual theme changes.
     bool isDarkMode = HomePageUsesDarkTheme();
-    char* themeJs = str::FormatTemp(
-        "window.applyTheme && window.applyTheme(%s);",
-        isDarkMode ? "true" : "false");
+    char* themeJs = str::FormatTemp("window.applyTheme && window.applyTheme(%s);", isDarkMode ? "true" : "false");
     win->homePageWebView->Eval(themeJs);
 }
 

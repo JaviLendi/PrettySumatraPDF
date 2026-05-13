@@ -46,6 +46,6 @@ void FindSelection(MainWindow* win, TextSearch::Direction direction);
 bool AbortFinding(MainWindow* win, bool hideMessage);
 void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, bool showProgress);
 void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, const char* text, bool wasModified,
-                      bool showProgress);
+                      bool showProgress, int startPage = -1);
 extern bool gIsStartup;
 extern StrVec gDdeOpenOnStartup;
