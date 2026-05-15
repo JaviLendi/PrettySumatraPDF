@@ -25,11 +25,15 @@ void SyncHybridToolbarSearchText(HWND hwndFrame, const char* text);
 void FocusHybridToolbarSearch(HWND hwndFrame);
 void SyncHybridToolbarPageState(HWND hwndFrame, int currentPage, int totalPages);
 void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent);
+void SyncHybridToolbarAnnotationAvailability(HWND hwndFrame);
 
 DispatchResult DispatchShellMessage(const char* msg);
 
 // Get the pending highlight color from bridge (used for passing color from webui)
 const char* GetPendingHighlightColor();
+// Get pending colors for underline and strikeout (from webui color chips)
+const char* GetPendingUnderlineColor();
+const char* GetPendingStrikeoutColor();
 
 } // namespace bridge
 } // namespace prettysumatra

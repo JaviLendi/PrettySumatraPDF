@@ -2987,6 +2987,14 @@ static void ShowHighlightSelectionRequiredNotification(HWND hwndParent) {
     ShowWarningNotification(hwndParent, _TRA("Select text first to highlight it"), kNotif5SecsTimeOut);
 }
 
+static void ShowUnderlineSelectionRequiredNotification(HWND hwndParent) {
+    ShowWarningNotification(hwndParent, _TRA("Select text first to underline it"), kNotif5SecsTimeOut);
+}
+
+static void ShowStrikeOutSelectionRequiredNotification(HWND hwndParent) {
+    ShowWarningNotification(hwndParent, _TRA("Select text first to strike out it"), kNotif5SecsTimeOut);
+}
+
 struct ShowErrorData {
     WindowTab* tab;
     const char* path;
@@ -7520,23 +7528,52 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
             if (!win || !tab) {
                 return 0;
             }
-            if (cmdId == CmdCreateAnnotHighlight && (!win->showSelection || !tab->selectionOnPage)) {
+            if (cmdId == CmdCreateAnnotHighlight && !tab->selectionOnPage) {
                 ShowHighlightSelectionRequiredNotification(win->hwndCanvas);
+                return 0;
+            }
+            if (cmdId == CmdCreateAnnotUnderline && !tab->selectionOnPage) {
+                ShowUnderlineSelectionRequiredNotification(win->hwndCanvas);
+                return 0;
+            }
+            if (cmdId == CmdCreateAnnotStrikeOut && !tab->selectionOnPage) {
+                ShowStrikeOutSelectionRequiredNotification(win->hwndCanvas);
                 return 0;
             }
             AnnotCreateArgs args{annotType};
             
-            // Check if there's a pending color from the bridge (for highlight from webui toolbar)
-            const char* bridgeColor = prettysumatra::bridge::GetPendingHighlightColor();
-            if (cmdId == CmdCreateAnnotHighlight && bridgeColor && str::StartsWith(bridgeColor, "#")) {
-                // Create a command string with the color and parse it
-                char cmdStr[128];
-                snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotHighlight %s", bridgeColor);
-                cmd = CreateCommandFromDefinition(cmdStr);
+            // Check if there's a pending color from the bridge (for highlight/underline/strikeout from webui toolbar)
+            const char* bridgeColor = nullptr;
+            if (cmdId == CmdCreateAnnotHighlight) {
+                bridgeColor = prettysumatra::bridge::GetPendingHighlightColor();
+            } else if (cmdId == CmdCreateAnnotUnderline) {
+                bridgeColor = prettysumatra::bridge::GetPendingUnderlineColor();
+            } else if (cmdId == CmdCreateAnnotStrikeOut) {
+                bridgeColor = prettysumatra::bridge::GetPendingStrikeoutColor();
             }
-            
+            if (bridgeColor && str::StartsWith(bridgeColor, "#")) {
+                char cmdStr[128];
+                if (cmdId == CmdCreateAnnotHighlight) {
+                    snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotHighlight %s", bridgeColor);
+                } else if (cmdId == CmdCreateAnnotUnderline) {
+                    snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotUnderline %s", bridgeColor);
+                } else if (cmdId == CmdCreateAnnotStrikeOut) {
+                    snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotStrikeOut %s", bridgeColor);
+                } else {
+                    cmdStr[0] = '\0';
+                }
+                if (cmdStr[0]) cmd = CreateCommandFromDefinition(cmdStr);
+            }
+            if (prettysumatra::bridge::LogBridgeMessages()) {
+                logf("[PrettySumatraBridge] Creating annotation cmdId=%d bridgeColor=%s cmdDef=%s selectionOnPage=%d\n",
+                     cmdId, bridgeColor ? bridgeColor : "(null)", cmd ? cmd->definition : "(none)", tab->selectionOnPage ? 1 : 0);
+            }
+
             SetAnnotCreateArgs(args, cmd);
             lastCreatedAnnot = MakeAnnotationsFromSelection(tab, &args);
+            if (prettysumatra::bridge::LogBridgeMessages()) {
+                logf("[PrettySumatraBridge] MakeAnnotationsFromSelection returned annot=%p\n", lastCreatedAnnot);
+            }
             if (cmd) {
                 // for custom commands must explicitly provide "openedit" argument
                 openAnnotationEdit = GetCommandBoolArg(cmd, kCmdArgOpenEdit, false);

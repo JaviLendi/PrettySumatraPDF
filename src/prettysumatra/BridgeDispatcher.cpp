@@ -11,6 +11,7 @@
 #include "wingui/UIModels.h"
 #include "DocController.h"
 #include "EngineBase.h"
+#include "EngineAll.h"
 #include "GlobalPrefs.h"
 #include "MainWindow.h"
 #include "ProgressUpdateUI.h"
@@ -31,6 +32,8 @@
 #include "utils/Log.h"
 #include "utils/StrUtil.h"
 #include "utils/WinUtil.h"
+
+#include "Notifications.h"
 
 namespace prettysumatra {
 namespace bridge {
@@ -323,6 +326,34 @@ void SyncHybridToolbarPageState(HWND hwndFrame, int currentPage, int totalPages)
     TempStr js = str::FormatTemp("window.hybridToolbarSetPageState && window.hybridToolbarSetPageState(%d,%d);",
                                  currentPage, totalPages);
     win->hybridToolbar->Eval(js);
+    // Also update annotation availability whenever page/document state is synced
+    SyncHybridToolbarAnnotationAvailability(hwndFrame);
+}
+
+void SyncHybridToolbarAnnotationAvailability(HWND hwndFrame) {
+    MainWindow* win = FindWindowForFrame(hwndFrame);
+    if (!win || !win->hybridToolbar) return;
+
+    bool canAnnotate = false;
+    WindowTab* tab = win->CurrentTab();
+    if (tab && tab->IsDocLoaded()) {
+        EngineBase* eng = tab->GetEngine();
+        if (eng) {
+            canAnnotate = EngineSupportsAnnotations(eng) && !(win->isFullScreen || win->presentation);
+        }
+    }
+
+    const char* h = canAnnotate ? "true" : "false";
+    const char* a = canAnnotate ? "true" : "false";
+    const char* d = canAnnotate ? "true" : "false";
+    TempStr js = str::FormatTemp(
+        "window.hybridToolbarSetAnnotationAvailability && "
+        "window.hybridToolbarSetAnnotationAvailability({highlight:%s,annotate:%s,draw:%s});",
+        h, a, d);
+    if (LogBridgeMessages()) {
+        logf("[PrettySumatraBridge] sending annotation availability: highlight=%s annotate=%s draw=%s\n", h, a, d);
+    }
+    win->hybridToolbar->Eval(js);
 }
 
 void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent) {
@@ -447,10 +478,20 @@ static MainWindow* GetTargetWindow() {
 }
 
 // Global variable to store the highlight color from the latest message
-static char gPendingHighlightColor[16] = "#ffff00";
+static char gPendingHighlightColor[16] = "#facc15";
+static char gPendingUnderlineColor[16] = "#22c55e";
+static char gPendingStrikeoutColor[16] = "#ef4444";
 
 const char* GetPendingHighlightColor() {
     return gPendingHighlightColor;
+}
+
+const char* GetPendingUnderlineColor() {
+    return gPendingUnderlineColor;
+}
+
+const char* GetPendingStrikeoutColor() {
+    return gPendingStrikeoutColor;
 }
 
 static bool DispatchHighlightSelection(const BridgeMessage& msg) {
@@ -458,16 +499,15 @@ static bool DispatchHighlightSelection(const BridgeMessage& msg) {
     if (!win) {
         return false;
     }
-    
+
     // Validate and store the color
     if (msg.color && str::StartsWith(msg.color, "#") && str::Len(msg.color) == 7) {
         str::BufSet(gPendingHighlightColor, dimof(gPendingHighlightColor), msg.color);
-    } else {
-        str::BufSet(gPendingHighlightColor, dimof(gPendingHighlightColor), "#ffff00"); // default yellow
     }
-    
-    // Dispatch the highlight command
-    PostMessageW(win->hwndFrame, WM_COMMAND, CmdCreateAnnotHighlight, 0);
+
+    // Dispatch synchronously so the native command sees the current text
+    // selection before toolbar focus changes clear it.
+    SendMessageW(win->hwndFrame, WM_COMMAND, CmdCreateAnnotHighlight, 0);
     return true;
 }
 
@@ -554,7 +594,8 @@ static bool DispatchSearch(const BridgeMessage& msg) {
     }
 
     bool wasModified = true;
-    if (str::EqI(msg.action, "step") || str::EqI(msg.action, "next") || str::EqI(msg.action, "prev") || str::EqI(msg.action, "previous")) {
+    if (str::EqI(msg.action, "step") || str::EqI(msg.action, "next") || str::EqI(msg.action, "prev") ||
+        str::EqI(msg.action, "previous")) {
         wasModified = false;
     } else if (str::IsEmpty(msg.action)) {
         TempStr currentFind = HwndGetTextTemp(win->hwndFindEdit);
@@ -669,6 +710,38 @@ static bool DispatchToggleDocumentInvert() {
     return true;
 }
 
+static bool DispatchSetDocumentInvertOn() {
+    MainWindow* win = GetTargetWindow();
+    if (!win) {
+        return false;
+    }
+
+    if (!gGlobalPrefs->fixedPageUI.invertColors) {
+        gGlobalPrefs->fixedPageUI.invertColors = true;
+        UpdateDocumentColors();
+        UpdateControlsColors(win);
+        SaveSettings();
+        SyncHybridToolbarTheme(win->hwndFrame);
+    }
+    return true;
+}
+
+static bool DispatchSetDocumentInvertOff() {
+    MainWindow* win = GetTargetWindow();
+    if (!win) {
+        return false;
+    }
+
+    if (gGlobalPrefs->fixedPageUI.invertColors) {
+        gGlobalPrefs->fixedPageUI.invertColors = false;
+        UpdateDocumentColors();
+        UpdateControlsColors(win);
+        SaveSettings();
+        SyncHybridToolbarTheme(win->hwndFrame);
+    }
+    return true;
+}
+
 static int ResolveBridgeCommandId(const char* commandName) {
     if (str::IsEmptyOrWhiteSpace(commandName)) {
         return 0;
@@ -708,10 +781,17 @@ static int ResolveBridgeCommandId(const char* commandName) {
     if (str::EqI(commandName, "highlightSelection")) return CmdCreateAnnotHighlight;
     if (str::EqI(commandName, "addAnnotation")) return CmdCreateAnnotText;
     if (str::EqI(commandName, "freeDraw")) return CmdCreateAnnotInk;
+    if (str::EqI(commandName, "createAnnotUnderline")) return CmdCreateAnnotUnderline;
+    if (str::EqI(commandName, "createAnnotStrikeOut")) return CmdCreateAnnotStrikeOut;
     return 0;
 }
 
 static bool DispatchExecCommand(const BridgeMessage& msg) {
+    if (LogBridgeMessages()) {
+        logf("[PrettySumatraBridge] execCommand received: command='%s' color='%s' hasCmdId=%d cmdId=%d\n",
+             msg.command ? msg.command : "", msg.color ? msg.color : "", msg.hasCmdId ? 1 : 0,
+             msg.hasCmdId ? msg.cmdId : 0);
+    }
     MainWindow* win = GetTargetWindow();
     if (!win) {
         return false;
@@ -729,6 +809,12 @@ static bool DispatchExecCommand(const BridgeMessage& msg) {
     if (str::EqI(msg.command, "toggleDocumentInvert")) {
         return DispatchToggleDocumentInvert();
     }
+    if (str::EqI(msg.command, "setDocumentInvertOn")) {
+        return DispatchSetDocumentInvertOn();
+    }
+    if (str::EqI(msg.command, "setDocumentInvertOff")) {
+        return DispatchSetDocumentInvertOff();
+    }
 
     int cmdId = 0;
     if (msg.hasCmdId) {
@@ -738,6 +824,21 @@ static bool DispatchExecCommand(const BridgeMessage& msg) {
     }
     if (cmdId <= CmdFirst || cmdId >= CmdLast) {
         return false;
+    }
+
+    // For annotation commands that require a text selection, show a notification
+    // if there's no selection (same UX as the built-in highlighter).
+    if (cmdId == CmdCreateAnnotUnderline || cmdId == CmdCreateAnnotStrikeOut) {
+        // If the bridge message included a color value, apply it to the pending color
+        if (msg.color && str::StartsWith(msg.color, "#") && str::Len(msg.color) == 7) {
+            if (cmdId == CmdCreateAnnotUnderline) {
+                str::BufSet(gPendingUnderlineColor, dimof(gPendingUnderlineColor), msg.color);
+            } else if (cmdId == CmdCreateAnnotStrikeOut) {
+                str::BufSet(gPendingStrikeoutColor, dimof(gPendingStrikeoutColor), msg.color);
+            }
+        }
+        SendMessageW(win->hwndFrame, WM_COMMAND, cmdId, 0);
+        return true;
     }
 
     PostMessageW(win->hwndFrame, WM_COMMAND, cmdId, 0);
@@ -758,6 +859,26 @@ static bool DispatchSetHighlightColor(const BridgeMessage& msg) {
     return true;
 }
 
+static bool DispatchSetUnderlineColor(const BridgeMessage& msg) {
+    MainWindow* win = GetTargetWindow();
+    if (!win) return false;
+    if (msg.color && str::StartsWith(msg.color, "#") && str::Len(msg.color) == 7) {
+        str::BufSet(gPendingUnderlineColor, dimof(gPendingUnderlineColor), msg.color);
+        return true;
+    }
+    return true;
+}
+
+static bool DispatchSetStrikeoutColor(const BridgeMessage& msg) {
+    MainWindow* win = GetTargetWindow();
+    if (!win) return false;
+    if (msg.color && str::StartsWith(msg.color, "#") && str::Len(msg.color) == 7) {
+        str::BufSet(gPendingStrikeoutColor, dimof(gPendingStrikeoutColor), msg.color);
+        return true;
+    }
+    return true;
+}
+
 static bool DispatchToolbarReady() {
     MainWindow* win = GetTargetWindow();
     if (!win) {
@@ -771,6 +892,8 @@ static bool DispatchToolbarReady() {
         SyncHybridToolbarPageState(win->hwndFrame, 1, 1);
         SyncHybridToolbarZoomState(win->hwndFrame, 100.0f);
     }
+    // ensure annotation availability is sent when the toolbar becomes ready
+    SyncHybridToolbarAnnotationAvailability(win->hwndFrame);
     return true;
 }
 
@@ -1004,6 +1127,12 @@ static bool DispatchKnownCommand(const BridgeMessage& msg) {
     if (str::Eq(msg.name, kToolbarReady)) {
         return DispatchToolbarReady();
     }
+    if (str::Eq(msg.name, "setUnderlineColor")) {
+        return DispatchSetUnderlineColor(msg);
+    }
+    if (str::Eq(msg.name, "setStrikeoutColor") || str::Eq(msg.name, "setStrikeOutColor")) {
+        return DispatchSetStrikeoutColor(msg);
+    }
     if (str::EqI(msg.name, "print")) {
         return DispatchPrint();
     }
@@ -1045,6 +1174,9 @@ void SyncHomePageTheme(HWND hwndFrame) {
 DispatchResult DispatchShellMessage(const char* msg) {
     if (!UseHybridShell()) {
         return DispatchResult::Disabled;
+    }
+    if (LogBridgeMessages()) {
+        logf("[PrettySumatraBridge] raw shell message: %s\n", msg);
     }
     if (str::IsEmptyOrWhiteSpace(msg)) {
         if (LogBridgeMessages()) {

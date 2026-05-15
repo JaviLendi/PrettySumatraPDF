@@ -21,6 +21,7 @@ extern "C" {
 #include "Commands.h"
 
 #include "utils/Log.h"
+#include <string.h>
 
 /*
 Vec<RectF> GetQuadPointsAsRect(Annotation*);
@@ -156,7 +157,12 @@ RectF GetBounds(Annotation* annot) {
         rc = pdf_bound_annot(ctx, a);
     }
     fz_catch(ctx) {
-        fz_report_error(ctx);
+        const char* mupdfErr = fz_caught_message(ctx);
+        if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+            logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+        } else {
+            fz_report_error(ctx);
+        }
         logf("GetBounds(): pdf_bound_annot() failed\n");
     }
     annot->bounds = ToRectF(rc);
@@ -192,7 +198,12 @@ void SetRect(Annotation* annot, RectF r) {
             pdf_update_annot(ctx, a);
         }
         fz_catch(ctx) {
-            fz_report_error(ctx);
+            const char* mupdfErr = fz_caught_message(ctx);
+            if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+                logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+            } else {
+                fz_report_error(ctx);
+            }
             // can happen for non-moveable annotations
             failed = true;
             logf("SetRect(): pdf_set_annot_rect() or pdf_update_annot() failed\n");
@@ -220,7 +231,12 @@ const char* Author(Annotation* annot) {
         s = pdf_annot_author(ctx, a);
     }
     fz_catch(ctx) {
-        fz_report_error(ctx);
+        const char* mupdfErr = fz_caught_message(ctx);
+        if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+            logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+        } else {
+            fz_report_error(ctx);
+        }
         s = nullptr;
     }
     if (!s || str::IsEmptyOrWhiteSpace(s)) {
@@ -239,7 +255,12 @@ int Quadding(Annotation* annot) {
         res = pdf_annot_quadding(ctx, a);
     }
     fz_catch(ctx) {
-        fz_report_error(ctx);
+        const char* mupdfErr = fz_caught_message(ctx);
+        if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+            logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+        } else {
+            fz_report_error(ctx);
+        }
         logf("Quadding(): pdf_annot_quadding() failed\n");
     }
     return res;

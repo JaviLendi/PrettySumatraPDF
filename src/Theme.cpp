@@ -45,7 +45,7 @@ static const char* themesTxt = R"(Themes [
         TextColor = #000000
         BackgroundColor = #f2f2f2
         ControlBackgroundColor = #ffffff
-        LinkColor = #0020a0
+        LinkColor = #eab308
         ColorizeControls = false
     ]
     [
@@ -53,7 +53,7 @@ static const char* themesTxt = R"(Themes [
         TextColor = #bac9d0
         BackgroundColor = #263238
         ControlBackgroundColor = #263238
-        LinkColor = #8aa3b0
+        LinkColor = #facc15
         ColorizeControls = true
     ]
     [
@@ -447,22 +447,6 @@ COLORREF ThemeNotificationsBackgroundColor() {
 
 COLORREF ThemeNotificationsTextColor() {
     return ThemeWindowTextColor();
-}
-
-COLORREF ThemeNotificationsHighlightColor() {
-    if (gCurrentTheme->colorizeControls) {
-        auto col = ThemeWindowBackgroundColor();
-        return AccentColor(col, 20);
-    }
-    return RgbToCOLORREF(0xFFEE70); // yellowish
-}
-
-COLORREF ThemeNotificationsHighlightTextColor() {
-    if (gCurrentTheme->colorizeControls) {
-        auto col = ThemeWindowTextColor();
-        return AccentColor(col, 20);
-    }
-    return RgbToCOLORREF(0x8d0801); // reddish
 }
 
 COLORREF ThemeNotificationsProgressColor() {

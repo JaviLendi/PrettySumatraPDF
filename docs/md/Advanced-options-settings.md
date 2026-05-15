@@ -295,16 +295,16 @@ ChmUI [
 ; default values for annotations in PDF documents (introduced in version 3.3)
 Annotations [
     ; highlight annotation color
-    HighlightColor = #ffff00
+    HighlightColor = #facc15
 
     ; underline annotation color
-    UnderlineColor = #00ff00
+    UnderlineColor = #22c55e
 
     ; squiggly annotation color (introduced in version 3.5)
-    SquigglyColor = #ff00ff
+    SquigglyColor = #ec4899
 
     ; strike out annotation color (introduced in version 3.5)
-    StrikeOutColor = #ff0000
+    StrikeOutColor = #ef4444
 
     ; text color of free text annotation (introduced in version 3.5)
     FreeTextColor = 

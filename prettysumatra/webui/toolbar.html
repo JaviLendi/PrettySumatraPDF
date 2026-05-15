@@ -81,8 +81,9 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 /* PAGINACIÓN Y BUSCADOR */
 .page-nav-btn { width: 30px; height: 30px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; transition: var(--transition); }
 .page-nav-btn:hover { background: var(--border-color); color: var(--brand-primary); }
-.modern-pagination-group .page-input { width: 40px; text-align: center; background: transparent; border: none; font-weight: 700; color: var(--text-main); outline: none; -moz-appearance: textfield; font-size: 0.95rem; margin: 0 2px; }
+.modern-pagination-group .page-input { width: calc(1ch + 0.9rem); min-width: 6px; max-width: 72px; text-align: center; background: transparent; border: none; font-weight: 700; color: var(--text-main); outline: none; appearance: textfield; -moz-appearance: textfield; font-size: 0.95rem; margin-left: -4px }
 .modern-pagination-group .page-input::-webkit-outer-spin-button, .modern-pagination-group .page-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.modern-pagination-group .page-meta { font-size: 0.88rem; color: var(--text-muted); font-weight: 600; min-width: 0; white-space: nowrap; margin-right: 4px; }
 
 .search-wrapper { position: relative; display: flex; align-items: center; width: auto; height: 40px; flex-shrink: 0; z-index: 100; transition: var(--transition); }
 .modern-search-group { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: 20px; padding: 0 14px; height: 100%; box-shadow: inset 0 1px 3px rgba(0,0,0,0.04); transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); cursor: text; }
@@ -179,6 +180,39 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 .invert-doc-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); background: transparent; border: none; transition: var(--transition); flex-shrink: 0;}
 .invert-doc-btn:hover, .invert-doc-btn.active { color: var(--brand-primary); }
 
+.annot-tools-container { display: flex; align-items: center; gap: 2px; }
+.tool-buttons { display: flex; align-items: flex-end; gap: 2px; }
+.annot-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 10px;
+}
+
+.annot-tool-button:hover { background: var(--bg-button-hover); }
+.annot-tool-button.active-tool {
+  color: var(--brand-primary);
+}
+.annot-tool-swatch {
+  width: 5px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--tool-color, var(--brand-primary));
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.annot-tool.is-active .annot-tool-swatch {
+  transform: scaleX(4);
+  height: 4px;
+  border-radius: 1px;
+}
+[data-theme="dark"] .annot-tool-swatch { border-color: rgba(255,255,255,0.14); }
+.color-selector-container { display: flex; align-items: center; }
+
+.annot-tool-button .fa-highlighter,
+.annot-tool-button .fa-underline,
+.annot-tool-button .fa-strikethrough { font-size: 0.95rem; }
+
 /* =========================================================
    MENÚ CONTEXTUAL NATIVO
    ========================================================= */
@@ -206,8 +240,8 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
 /* .custom-dropdown.inline { display: inline-flex; }
 .custom-dropdown.inline .dropdown-menu { position: static; top: auto; bottom: auto; left: auto; right: auto; transform: none; margin-top: 6px; opacity: 1; visibility: visible; pointer-events: auto; box-shadow: none; border-radius: 6px; padding: 4px; } */
 
-/* When any dropdown is inline-open, allow toolbar to grow vertically */
-.toolbar-container.inline-open { /*align-items: flex-start; height: auto; padding-bottom: 10px;*/ }
+/* When any dropdown is inline-open, allow toolbar to grow vertically.
+  Behavior is currently controlled only from JS classes; no CSS override needed. */
 .dropdown-menu li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.85rem; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: background 0.1s ease; position: relative; }
 .dropdown-menu li:hover { background: var(--bg-hover); }
 .dropdown-menu li .check-icon { position: absolute; right: 12px; font-size: 0.75rem; color: var(--brand-primary); opacity: 0; }
@@ -258,9 +292,10 @@ button, input, select, label, .control-group, .modern-pagination-group, .search-
   .toolbar-items { gap: 4px; }
   .control-group, .modern-pagination-group, .theme-control-group, .search-wrapper { height: 36px; padding: 2px 4px; }
   .btn--icon { width: 28px; height: 28px; font-size: 0.85rem; }
-height  .btn--primary { padding: 0; width: 32px; height: 28px; }
-  .page-nav-btn { width: 26px; : 26px; font-size: 0.85rem; }
-  .modern-pagination-group .page-input { width: 32px; font-size: 0.85rem; }
+  .btn--primary { padding: 0; width: 32px; height: 28px; }
+  .page-nav-btn { width: 26px; height: 26px; font-size: 0.85rem; }
+  .modern-pagination-group .page-input { min-width: 22px; max-width: 58px; font-size: 0.85rem; }
+  .modern-pagination-group .page-meta { font-size: 0.8rem; }
   .custom-select { height: 28px; font-size: 0.85rem; padding: 0 8px; }
   .divider { margin: 0 4px; height: 16px; }
   .modern-theme-switch { width: 88px; height: 28px; padding: 1px; }
@@ -274,7 +309,6 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
 @media (max-width: 850px) {
   .search-wrapper { width: 34px; height: 34px; }
   .modern-search-group { position: absolute; right: 0; top: 0; width: 34px; height: 34px; padding: 0; border-radius: 17px; justify-content: center; cursor: pointer; z-index: 100; }
-
   /* ELIMINAR DROPDOWNS EN VERSIÓN COMPACTA */
   .custom-dropdown { display: none !important; }
   .grp-zoom .divider { display: none !important; }
@@ -296,7 +330,8 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
   .btn--icon { width: 24px; height: 24px; font-size: 0.75rem; border-radius: 4px; }
   .btn--primary { width: 28px; height: 26px; border-radius: 4px; }
   .page-nav-btn { width: 22px; height: 22px; font-size: 0.75rem; }
-  .modern-pagination-group .page-input { width: 26px; font-size: 0.8rem; margin: 0; }
+  .modern-pagination-group .page-input { min-width: 20px; max-width: 48px; font-size: 0.8rem; margin: 0; }
+  .modern-pagination-group .page-meta { font-size: 0.75rem; }
   .divider { height: 12px; margin: 0 2px; }
   .grp-zoom .custom-select, .grp-zoom .divider, .grp-view .custom-select, .grp-view .divider { display: none; }
   .search-wrapper { width: 30px; height: 30px; }
@@ -435,12 +470,10 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
   min-width: 0;
 }
 
-
-
 /* =========================================================
-   HIGHLIGHTER INLINE COLOR PICKER
+   INLINE COLOR PICKERS (Highlight, Underline, Strikeout)
    ========================================================= */
-.highlight-combo {
+.color-combo {
   display: flex;
   align-items: center;
   border-radius: 999px;
@@ -449,13 +482,13 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
   transition: var(--transition);
 }
 
-.highlight-combo.open {
+.color-combo.open {
   background: var(--bg-hover);
   box-shadow: var(--shadow-sm), var(--btn-highlight);
 }
 
 .highlight-main-btn,
-.highlight-menu-btn {
+.color-menu-btn {
   position: relative;
   flex-shrink: 0;
 }
@@ -465,20 +498,24 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
   border-bottom-right-radius: 0;
 }
 
-.highlight-menu-btn {
-  width: 24px;
+.color-menu-btn {
+  width: 14px; /* Extrema compacidad */
+  font-size: 0.65rem; /* Flecha más pequeña */
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   color: var(--text-muted);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.highlight-menu-btn:hover {
+.color-menu-btn:hover {
   background: var(--border-color);
   color: var(--text-main);
 }
 
-.highlight-current-color {
-  --highlight-current: #facc15;
+.color-indicator {
   position: absolute;
   left: 50%;
   bottom: 4px;
@@ -486,14 +523,14 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
   width: 14px;
   height: 3px;
   border-radius: 999px;
-  background: var(--highlight-current);
+  background: var(--current-color);
   box-shadow: 0 0 0 1px rgba(0,0,0,0.06);
 }
 
-.highlight-inline-palette {
+.color-inline-palette {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   max-width: 0;
   opacity: 0;
   overflow: hidden;
@@ -502,41 +539,67 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
   pointer-events: none;
 }
 
-.highlight-combo.open .highlight-inline-palette {
+.color-combo.open .color-inline-palette {
   max-width: 220px;
   opacity: 1;
-  padding: 0 8px 0 6px;
+  padding: 0 8px 0 4px;
   pointer-events: auto;
 }
 
-.highlight-color-chip {
-  width: 18px;
-  height: 18px;
+/* Animación de la paleta expandible */
+.inline-color-palette {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none; /* Evita clics accidentales cuando está oculta */
+  transition: max-width 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, padding 0.3s ease;
+}
+
+.inline-color-palette.open {
+  max-width: 200px; /* Ancho suficiente para mostrar todos los círculos */
+  opacity: 1;
+  padding-left: 4px;
+  pointer-events: auto;
+}
+
+.color-chip {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 2px solid transparent;
-  background: var(--chip-color, #facc15);
+  background: var(--chip-color, #1d1d1f);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.08);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
 }
 
-.highlight-color-chip[data-color="#facc15"] { --chip-color: #facc15; }
-.highlight-color-chip[data-color="#86efac"] { --chip-color: #86efac; }
-.highlight-color-chip[data-color="#93c5fd"] { --chip-color: #93c5fd; }
-.highlight-color-chip[data-color="#f9a8d4"] { --chip-color: #f9a8d4; }
+/* Colors definition */
+.color-chip[data-color="#facc15"] { --chip-color: #facc15; }
+.color-chip[data-color="#22c55e"] { --chip-color: #22c55e; }
+.color-chip[data-color="#3b82f6"] { --chip-color: #3b82f6; }
+.color-chip[data-color="#ef4444"] { --chip-color: #ef4444; }
+.color-chip[data-color="#ec4899"] { --chip-color: #ec4899; }
+.color-chip[data-color="#f97316"] { --chip-color: #f97316; }
+.color-chip[data-color="#1d1d1f"] { --chip-color: #1d1d1f; }
 
-.highlight-color-chip:hover {
-  transform: scale(1.08);
+.color-chip:hover {
+  transform: scale(1.1);
 }
 
-.highlight-color-chip.active {
+.color-chip.active {
   border-color: var(--text-main);
   box-shadow: 0 0 0 3px var(--brand-focus-12);
 }
 
-[data-theme="dark"] .highlight-color-chip.active {
+[data-theme="dark"] .color-chip.active {
   border-color: #fff;
 }
+[data-theme="dark"] .color-chip[data-color="#1d1d1f"] { --chip-color: #f5f5f7; } /* Negro en dark mode -> Blanco */
 
 </style>
 </head>
@@ -557,6 +620,7 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
     <div class="modern-pagination-group" id="grp-nav" data-name="Navegación">
       <button id="pagePrevButton" class="page-nav-btn" data-cmd="goToPage" data-delta="-1" type="button"><i class="fa-solid fa-chevron-left"></i></button>
       <input id="pageInput" class="page-input page" type="number" min="1" value="1">
+      <span id="pageMeta" class="page-meta" aria-live="polite">/1</span>
       <button id="pageNextButton" class="page-nav-btn" data-cmd="goToPage" data-delta="1" type="button"><i class="fa-solid fa-chevron-right"></i></button>
     </div>
 
@@ -598,25 +662,48 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
     </div>
     
     <div class="control-group" id="grp-tools" data-name="Anotaciones">
-      <div class="highlight-combo" id="highlightCombo">
-        <button id="highlightButton" disabled aria-disabled="true" class="btn btn--icon highlight-main-btn" data-exec="highlightSelection" type="button" title="Resaltar">
-          <i class="fa-solid fa-highlighter"></i>
-          <span class="highlight-current-color" id="highlightCurrentColor"></span>
-        </button>
-        <button id="highlightMenuButton" class="btn btn--icon highlight-menu-btn" type="button" aria-expanded="false" aria-label="Elegir color" title="Color del resaltador">
-          <i class="fa-solid fa-chevron-down"></i>
-        </button>
-        <div class="highlight-inline-palette" id="highlightPalette" aria-hidden="true">
-          <button class="highlight-color-chip active" type="button" data-highlight-color="yellow" data-color="#facc15" title="Amarillo"></button>
-          <button class="highlight-color-chip" type="button" data-highlight-color="green" data-color="#86efac" title="Verde"></button>
-          <button class="highlight-color-chip" type="button" data-highlight-color="blue" data-color="#93c5fd" title="Azul"></button>
-          <button class="highlight-color-chip" type="button" data-highlight-color="pink" data-color="#f9a8d4" title="Rosa"></button>
+      <div class="annot-tools-container">
+        <div class="tool-buttons">
+          <div class="annot-tool is-active" data-annot-tool="highlight">
+            <button id="highlightButton" class="btn btn--icon annot-tool-button active-tool" data-exec="highlightSelection" data-tool="highlight" type="button" title="Resaltar">
+              <i class="fa-solid fa-highlighter"></i>
+            </button>
+            <span class="annot-tool-swatch" data-tool-swatch="highlight" aria-hidden="true" title="Color guardado para Resaltar"></span>
+          </div>
+
+          <div class="annot-tool" data-annot-tool="underline">
+            <button id="underlineButton" class="btn btn--icon annot-tool-button" data-exec="createAnnotUnderline" data-tool="underline" type="button" title="Subrayar">
+              <i class="fa-solid fa-underline"></i>
+            </button>
+            <span class="annot-tool-swatch" data-tool-swatch="underline" aria-hidden="true" title="Color guardado para Subrayar"></span>
+          </div>
+
+          <div class="annot-tool" data-annot-tool="strikeout">
+            <button id="strikeoutButton" class="btn btn--icon annot-tool-button" data-exec="createAnnotStrikeOut" data-tool="strikeout" type="button" title="Tachar">
+              <i class="fa-solid fa-strikethrough"></i>
+            </button>
+            <span class="annot-tool-swatch" data-tool-swatch="strikeout" aria-hidden="true" title="Color guardado para Tachar"></span>
+          </div>
+        </div>
+
+        <div class="divider" style="height: 24px; width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+
+        <div class="color-selector-container">
+          <button id="colorSelectorBtn" class="btn btn--icon" type="button" title="Elegir color de la herramienta actual">
+            <i class="fa-solid fa-palette"></i>
+          </button>
+
+          <div id="commonColorPalette" class="inline-color-palette">
+            <button class="color-chip active" type="button" data-name="yellow" data-color="#facc15" title="Amarillo"></button>
+            <button class="color-chip" type="button" data-name="green" data-color="#22c55e" title="Verde"></button>
+            <button class="color-chip" type="button" data-name="blue" data-color="#3b82f6" title="Azul"></button>
+            <button class="color-chip" type="button" data-name="red" data-color="#ef4444" title="Rojo"></button>
+            <button class="color-chip" type="button" data-name="magenta" data-color="#ec4899" title="Magenta"></button>
+            <button class="color-chip" type="button" data-name="orange" data-color="#f97316" title="Naranja"></button>
+            <button class="color-chip" type="button" data-name="black" data-color="#1d1d1f" title="Negro"></button>
+          </div>
         </div>
       </div>
-      <div class="divider"></div>
-      <button id="annotateButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button>
-      <div class="divider"></div>
-      <button id="drawButton" disabled aria-disabled="true" class="btn btn--icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button>
     </div>
 
     <div class="flex-spacer" id="grp-spacer" data-name="Espacio"></div>
@@ -633,7 +720,7 @@ height  .btn--primary { padding: 0; width: 32px; height: 28px; }
     </div>
 
     <div class="control-group" id="grp-actions" data-name="Acciones">
-      <button id="bookmarksToggle" class="btn btn--icon btn--toggle toggle active" data-exec="toggleBookmarks" type="button"><i class="fa-solid fa-bookmark"></i></button>
+      <button id="bookmarksToggle" class="btn btn--icon btn--toggle toggle" data-exec="toggleBookmarks" type="button"><i class="fa-solid fa-bookmark"></i></button>
       <button id="favoritesToggle" class="btn btn--icon btn--toggle toggle" data-exec="toggleFavorites" type="button"><i class="fa-solid fa-star"></i></button>
       <button id="commandPaletteButton" class="btn btn--icon" data-exec="commandPalette" type="button"><i class="fa-solid fa-terminal"></i></button>
       <button id="printButton" class="btn btn--icon" data-exec="print" type="button"><i class="fa-solid fa-print"></i></button>
@@ -679,6 +766,23 @@ function applyToolbarText(payload={}) {
 window.hybridToolbarApplyText=applyToolbarText; if(window.__hybridToolbarTextPayload) applyToolbarText(window.__hybridToolbarTextPayload);
 // `post` helper removed — use direct host invoke where needed.
 // debug badge removed: no on-screen transient notifications
+function updatePageMeta(t) {
+  if (!pageMeta) return;
+  pageMeta.textContent = '/' + String(t);
+}
+
+function updatePageInputWidth(rawValue) {
+  if (!pageInput) return;
+  const value = String(rawValue ?? pageInput.value ?? '').trim();
+  const digitCount = Math.max(1, (value.match(/\d/g) || []).length);
+  const viewport = window.innerWidth || 1200;
+  let maxDigits = 6;
+  if (viewport <= 650) maxDigits = 4;
+  else if (viewport <= 1000) maxDigits = 5;
+  const widthDigits = Math.max(1, Math.min(maxDigits, digitCount));
+  pageInput.style.width = `calc(${widthDigits}ch + 0.9rem)`;
+}
+
 function setPage(p) {
   const t = Math.max(1, parseInt(totalPages||'1', 10));
   let n = parseInt(p||'1', 10);
@@ -688,7 +792,9 @@ function setPage(p) {
   if (pageInput) {
     pageInput.max = String(t);
     pageInput.value = String(n);
+    updatePageInputWidth(pageInput.value);
   }
+  updatePageMeta(t);
   // update prev/next disabled state for accessibility
   if (pagePrevButton) { const prevDisabled = n <= 1; pagePrevButton.disabled = prevDisabled; pagePrevButton.setAttribute('aria-disabled', String(prevDisabled)); }
   if (pageNextButton) { const nextDisabled = n >= t; pageNextButton.disabled = nextDisabled; pageNextButton.setAttribute('aria-disabled', String(nextDisabled)); }
@@ -699,6 +805,7 @@ function setPageState(c, pCount) {
   const cP = Math.max(1, parseInt(c||'1', 10));
   const t = Math.max(1, parseInt(pCount||'1', 10));
   totalPages = t;
+  updatePageMeta(t);
   // delegate to setPage so clamping and nav updates happen in one place
   setPage(cP);
 }
@@ -766,6 +873,8 @@ function hybridToolbarSetFavoritesState(on) { setToggleStateById('favoritesToggl
 function hybridToolbarSetAnnotationAvailability(opts={}) {
   // opts: { highlight: bool, annotate: bool, draw: bool }
   setButtonEnabled('highlightButton', !!opts.highlight);
+  setButtonEnabled('underlineButton', !!opts.highlight);
+  setButtonEnabled('strikeoutButton', !!opts.highlight);
   setButtonEnabled('annotateButton', !!opts.annotate);
   setButtonEnabled('drawButton', !!opts.draw);
 }
@@ -818,6 +927,8 @@ window.hybridToolbarApplyTheme=hybridToolbarApplyTheme; if(window.__hybridToolba
 const serverSourcedToggles = new Set(['toggleFavorites','toggleBookmarks','toggleDocumentInvert','showPagesContinuously']);
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-exec]'); if (!b || isToolbarUnlocked) return;
+  // Ignore clicks on the small color menu toggle to avoid opening the palette
+  if (e.target.closest('.color-menu-btn')) return;
   if (b.classList.contains('toggle')) {
     // optimistic visual toggle for responsiveness
     const willActive = !b.classList.contains('active');
@@ -826,7 +937,29 @@ document.addEventListener('click', (e) => {
     // if state is server-owned, mark busy until native confirms (with timeout fallback)
     try { if (serverSourcedToggles.has(String(b.dataset.exec||''))) markBusy(b); } catch(e) {}
   }
-  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: b.dataset.exec||'' }, ts: Date.now() }));
+  try {
+    if (window.external && typeof window.external.invoke === 'function') {
+      const cmdName = String(b.dataset.exec||'');
+      const payload = { command: cmdName };
+      // If this is a text-annotation command that uses a color, include currently selected color
+      const colorCommands = new Set(['highlightSelection','createAnnotUnderline','createAnnotStrikeOut']);
+      if (colorCommands.has(cmdName)) {
+        const toolKey = String(b.dataset.tool || activeAnnotTool || '').toLowerCase();
+        const selectedHex = normalizeAnnotColorHex(
+          (annotColorState && annotColorState[toolKey]) ||
+          (defaultAnnotColors && defaultAnnotColors[toolKey])
+        );
+        if (selectedHex) {
+          payload.value = selectedHex;
+          const chip = typeof getAnnotChipByHex === 'function' ? getAnnotChipByHex(selectedHex) : null;
+          if (chip) {
+            payload.color = chip.dataset.name || chip.getAttribute('data-name') || '';
+          }
+        }
+      }
+      window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: payload, ts: Date.now() }));
+    }
+  } catch (e) { console.error('invoke execCommand error', e); }
 });
 
 // Busy helper with timeout fallback
@@ -855,7 +988,9 @@ document.querySelectorAll('[data-cmd]').forEach(b => b.addEventListener('click',
   }
 }));
 
-if(pageInput) { pageInput.addEventListener('change', () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: setPage(pageInput.value) }, ts: Date.now() })); }); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
+if(pageInput) { pageInput.addEventListener('input', () => { updatePageInputWidth(pageInput.value); }); pageInput.addEventListener('change', () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: setPage(pageInput.value) }, ts: Date.now() })); }); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
+window.addEventListener('resize', () => { updatePageInputWidth(pageInput?.value); });
+updatePageInputWidth(pageInput?.value);
 // wire up custom dropdowns
 function selectZoomOption(dropdown, li) {
   const menu = dropdown.querySelector('.dropdown-menu');
@@ -984,9 +1119,19 @@ if(themeSwitch) {
     btn.addEventListener('click', () => {
       if(isToolbarUnlocked) return;
       const val = btn.dataset.val;
-      if (val === 'auto') { if (!lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if ((lastWindowsDark && !lastDocInverted) || (!lastWindowsDark && lastDocInverted)) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleDocumentInvert' }, ts: Date.now() })); } } 
-      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (lastDocInverted) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleDocumentInvert' }, ts: Date.now() })); } } 
-      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (!lastDocInverted) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleDocumentInvert' }, ts: Date.now() })); } }
+      if (val === 'auto') { 
+        if (!lastFollowWindows) { 
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); 
+        }
+        // Ensure document invert matches Windows theme deterministically
+        if (lastWindowsDark) {
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' }, ts: Date.now() }));
+        } else {
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' }, ts: Date.now() }));
+        }
+      } 
+      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' }, ts: Date.now() })); } 
+      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' }, ts: Date.now() })); }
     });
   });
 }
@@ -1096,82 +1241,166 @@ function revealToolbar() {
 setTimeout(revealToolbar, 800);
 if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) revealToolbar();
 
+
 // =========================================================
-//   HIGHLIGHTER INLINE COLOR PICKER LOGIC
+//   COLOR PICKERS LOGIC (Highlight, Underline, Strikeout)
 // =========================================================
-const highlightCombo = document.getElementById('highlightCombo');
-const highlightMenuButton = document.getElementById('highlightMenuButton');
-const highlightCurrentColor = document.getElementById('highlightCurrentColor');
-const highlightColorChips = Array.from(document.querySelectorAll('.highlight-color-chip'));
-const highlightButton = document.getElementById('highlightButton');
+const colorCombos = Array.from(document.querySelectorAll('.color-combo'));
+const colorSelectorBtn = document.getElementById('colorSelectorBtn');
+const commonColorPalette = document.getElementById('commonColorPalette');
+const colorChips = Array.from(document.querySelectorAll('#commonColorPalette .color-chip'));
+const annotColorStorageKey = 'sumatra-toolbar-annot-colors-v1';
+const defaultAnnotColors = {
+  highlight: '#facc15',
+  underline: '#22c55e',
+  strikeout: '#ef4444',
+};
+const annotToolLabels = {
+  highlight: 'Resaltar',
+  underline: 'Subrayar',
+  strikeout: 'Tachar',
+};
 
-function setHighlightColorChip(chip) {
-  if (!chip) return;
+let activeAnnotTool = 'highlight';
+let annotColorState = loadAnnotColorState();
 
-  highlightColorChips.forEach(c => c.classList.toggle('active', c === chip));
+const annotButtons = [
+  { id: 'highlightButton', tool: 'highlight' },
+  { id: 'underlineButton', tool: 'underline' },
+  { id: 'strikeoutButton', tool: 'strikeout' },
+];
 
-  const color = chip.dataset.color || '#facc15';
-  const colorName = chip.dataset.highlightColor || 'yellow';
-
-  if (highlightCurrentColor) {
-    highlightCurrentColor.style.setProperty('--highlight-current', color);
-  }
-
-  highlightCombo?.classList.remove('open');
-  highlightMenuButton?.setAttribute('aria-expanded', 'false');
-
-  if (window.external && typeof window.external.invoke === 'function') {
-    window.external.invoke(JSON.stringify({
-      type: 'command',
-      name: 'setHighlightColor',
-      payload: { color: colorName, value: color },
-      ts: Date.now()
-    }));
-  }
+function normalizeAnnotColorHex(colorHex) {
+  const value = String(colorHex || '').trim().toLowerCase();
+  if (!value) return '';
+  return value.startsWith('#') ? value : `#${value}`;
 }
 
-highlightMenuButton?.addEventListener('click', (e) => {
-  e.stopPropagation();
-  const willOpen = !highlightCombo.classList.contains('open');
-
-  // Close other custom dropdowns if any
-  document.querySelectorAll('.custom-dropdown.open').forEach(d => {
-    d.classList.remove('open');
-  });
-
-  highlightCombo.classList.toggle('open', willOpen);
-  highlightMenuButton.setAttribute('aria-expanded', String(willOpen));
-});
-
-highlightColorChips.forEach(chip => {
-  chip.addEventListener('click', (e) => {
-    e.stopPropagation();
-    setHighlightColorChip(chip);
-  });
-});
-
-// Ensure clicking the main highlight button enters highlight mode (with current color)
-highlightButton?.addEventListener('pointerdown', (e) => {
+function loadAnnotColorState() {
+  const nextState = { ...defaultAnnotColors };
   try {
-    e.preventDefault();
-    e.stopPropagation();
-    const activeChip = document.querySelector('.highlight-color-chip.active');
-    const color = (activeChip && activeChip.dataset && activeChip.dataset.color) ? activeChip.dataset.color : '#facc15';
-    if (window.external && typeof window.external.invoke === 'function') {
-      window.external.invoke(JSON.stringify({
-        type: 'command',
-        name: 'execCommand',
-        payload: { command: 'highlightSelection', color: color },
-        ts: Date.now()
-      }));
+    const raw = localStorage.getItem(annotColorStorageKey);
+    if (!raw) return nextState;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return nextState;
+    Object.keys(defaultAnnotColors).forEach(tool => {
+      const saved = normalizeAnnotColorHex(parsed[tool]);
+      if (saved) nextState[tool] = saved;
+    });
+  } catch (e) {}
+  return nextState;
+}
+
+function saveAnnotColorState() {
+  try {
+    localStorage.setItem(annotColorStorageKey, JSON.stringify(annotColorState));
+  } catch (e) {}
+}
+
+function getAnnotChipByHex(colorHex) {
+  const target = normalizeAnnotColorHex(colorHex);
+  if (!target) return null;
+  return colorChips.find(chip => normalizeAnnotColorHex(chip.dataset.color) === target) || null;
+}
+
+function setPaletteActiveChip(colorHex) {
+  const targetChip = getAnnotChipByHex(colorHex);
+  colorChips.forEach(chip => chip.classList.toggle('active', chip === targetChip));
+}
+
+function syncAnnotToolSwatches() {
+  Object.keys(defaultAnnotColors).forEach(tool => {
+    const swatch = document.querySelector(`[data-tool-swatch="${tool}"]`);
+    if (!swatch) return;
+    const colorHex = normalizeAnnotColorHex(annotColorState[tool] || defaultAnnotColors[tool]);
+    swatch.style.setProperty('--tool-color', colorHex);
+    const chip = getAnnotChipByHex(colorHex);
+    const colorName = chip?.getAttribute('title') || chip?.getAttribute('data-name') || colorHex;
+    swatch.title = `Color guardado para ${annotToolLabels[tool] || tool}: ${colorName}`;
+  });
+}
+
+function syncActiveAnnotToolUI(tool) {
+  annotButtons.forEach(btnInfo => {
+    const btnEl = document.getElementById(btnInfo.id);
+    const wrapper = btnEl?.closest('.annot-tool');
+    const isActive = btnInfo.tool === tool;
+    if (btnEl) {
+      btnEl.classList.toggle('active-tool', isActive);
+      btnEl.setAttribute('aria-pressed', String(isActive));
     }
-  } catch (ex) {}
+    if (wrapper) wrapper.classList.toggle('is-active', isActive);
+  });
+}
+
+function setActiveAnnotTool(tool) {
+  if (!tool || !defaultAnnotColors[tool]) tool = 'highlight';
+  activeAnnotTool = tool;
+  syncActiveAnnotToolUI(tool);
+  setPaletteActiveChip(annotColorState[tool] || defaultAnnotColors[tool]);
+}
+
+function setAnnotToolColor(tool, colorHex) {
+  const normalized = normalizeAnnotColorHex(colorHex) || defaultAnnotColors[tool] || defaultAnnotColors.highlight;
+  annotColorState = { ...annotColorState, [tool]: normalized };
+  saveAnnotColorState();
+  syncAnnotToolSwatches();
+  if (tool === activeAnnotTool) setPaletteActiveChip(normalized);
+}
+
+annotButtons.forEach(btnInfo => {
+  const btnEl = document.getElementById(btnInfo.id);
+  if (!btnEl) return;
+  btnEl.addEventListener('click', () => {
+    setActiveAnnotTool(btnInfo.tool);
+  });
+});
+
+syncAnnotToolSwatches();
+setActiveAnnotTool(activeAnnotTool);
+
+colorSelectorBtn?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setPaletteActiveChip(annotColorState[activeAnnotTool] || defaultAnnotColors[activeAnnotTool]);
+  commonColorPalette.classList.toggle('open');
 });
 
 document.addEventListener('click', (e) => {
-  if (!highlightCombo || highlightCombo.contains(e.target)) return;
-  highlightCombo.classList.remove('open');
-  highlightMenuButton?.setAttribute('aria-expanded', 'false');
+  if (!commonColorPalette.contains(e.target) && !e.target.closest('#colorSelectorBtn')) {
+    commonColorPalette.classList.remove('open');
+  }
+});
+
+colorChips.forEach(chip => {
+  const colorHex = normalizeAnnotColorHex(chip.getAttribute('data-color'));
+  chip.style.backgroundColor = colorHex;
+
+  chip.addEventListener('click', () => {
+    const colorName = chip.getAttribute('data-name');
+    setAnnotToolColor(activeAnnotTool, colorHex);
+    setPaletteActiveChip(colorHex);
+
+    const commandName = `set${activeAnnotTool.charAt(0).toUpperCase() + activeAnnotTool.slice(1)}Color`;
+    if (window.external && typeof window.external.invoke === 'function') {
+      window.external.invoke(JSON.stringify({
+        type: 'command',
+        name: commandName,
+        payload: { color: colorName, value: colorHex },
+        ts: Date.now()
+      }));
+    }
+
+    commonColorPalette.classList.remove('open');
+  });
+});
+
+document.addEventListener('click', (e) => {
+  colorCombos.forEach(combo => {
+    if (!combo.contains(e.target)) {
+      combo.classList.remove('open');
+      combo.querySelector('.color-menu-btn')?.setAttribute('aria-expanded', 'false');
+    }
+  });
 });
 
 </script>
