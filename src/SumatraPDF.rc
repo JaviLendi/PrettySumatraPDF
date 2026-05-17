@@ -87,10 +87,6 @@ IDI_SUMATRAPDF          ICON "..\\gfx\\SumatraPDF-smaller.ico"
 
     /////////////////////////////////////////////////////////////////////////////
 
-IDB_RELOADING_CUE       BITMAP                  "reloading.bmp"
-
-/////////////////////////////////////////////////////////////////////////////
-
 IDD_DIALOG_GOTO_PAGE DIALOGEX 0, 0, 158, 45
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Go to page"

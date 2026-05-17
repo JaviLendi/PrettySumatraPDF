@@ -296,7 +296,7 @@ static void FixRoundedCorners(HBITMAP hbm, int w, int h, COLORREF bgColor, int r
 
     HDC hdc = GetDC(nullptr);
     if (w <= 0 || h <= 0) {
-         ReleaseDC(nullptr, hdc);
+        ReleaseDC(nullptr, hdc);
         return;
     }
     size_t sw = (size_t)w;

@@ -497,9 +497,8 @@ void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, bool sho
     }
     Edit_SetModify(win->hwndFindEdit, FALSE);
     // When search text is modified (new search), start from beginning of document
-    int startPage = wasModified ? 
-        ((direction == TextSearch::Direction::Backward) ? win->ctrl->PageCount() : 1) : 
-        -1;  // If not modified, use current position (default behavior)
+    int startPage = wasModified ? ((direction == TextSearch::Direction::Backward) ? win->ctrl->PageCount() : 1)
+                                : -1; // If not modified, use current position (default behavior)
     FindTextOnThread(win, direction, s, wasModified, showProgress, startPage);
 }
 

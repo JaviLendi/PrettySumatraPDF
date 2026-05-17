@@ -138,7 +138,18 @@ static bool RegisterWinClass() {
 static bool InstanceInit() {
     auto h = GetModuleHandleA(nullptr);
     gCursorDrag = LoadCursor(h, MAKEINTRESOURCE(IDC_CURSORDRAG));
-    gBitmapReloadingCue = LoadBitmap(h, MAKEINTRESOURCE(IDB_RELOADING_CUE));
+    // Register Material Icons font privately so we can draw the exact 'cached' ligature
+    char modulePath[MAX_PATH];
+    if (GetModuleFileNameA(h, modulePath, (DWORD)dimof(modulePath))) {
+        std::string base = modulePath;
+        // strip filename
+        auto pos = base.find_last_of("\\/");
+        if (pos != std::string::npos) base = base.substr(0, pos);
+        std::string fontPath =
+            base + "\\prettysumatra\\webui\\vendor\\material-icons\\fonts\\flUhRq6tzZclQEJ-Vdg-IuiaDsNZ.ttf";
+        // Add font privately for this process; ignore failures silently
+        AddFontResourceExA(fontPath.c_str(), FR_PRIVATE, 0);
+    }
     return true;
 }
 
@@ -234,7 +245,7 @@ static void OpenUsingDDE(HWND targetHwnd, const char* path, Flags& i, bool isFir
          i.startScroll.x != -1 && i.startScroll.y != -1) &&
         isFirstWin) {
         const char* viewModeStr = DisplayModeToString(i.startView);
-        cmd.AppendFmt("[SetView(\"%s\", \"%s\", %.2f, %d, %d)]", fullPath, viewModeStr, i.startZoom, i.startScroll.x,	
+        cmd.AppendFmt("[SetView(\"%s\", \"%s\", %.2f, %d, %d)]", fullPath, viewModeStr, i.startZoom, i.startScroll.x,
                       i.startScroll.y);
     }
     if (i.forwardSearchOrigin && i.forwardSearchLine) {
@@ -1833,7 +1844,6 @@ Exit:
 
     DeleteCachedCursors();
     DeleteCreatedFonts();
-    DeleteBitmap(gBitmapReloadingCue);
 
     CleanupEngineDjVu();
     destroy_system_font_list();

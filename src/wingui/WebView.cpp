@@ -276,6 +276,14 @@ void WebviewWnd::FailInit() {
 }
 
 void WebviewWnd::SetControllerVisible(bool visible) {
+    // Avoid redundant visibility calls during rapid resize; they can trigger extra compositor work.
+    if (visible == isVisible) {
+        // If state is already aligned and suspension state matches, nothing to do.
+        if ((visible && !isSuspended) || (!visible && isSuspended)) {
+            return;
+        }
+    }
+
     isVisible = visible;
     if (controller) {
         controller->put_IsVisible(visible ? TRUE : FALSE);
@@ -318,6 +326,16 @@ void WebviewWnd::OnControllerReady(ICoreWebView2Controller* ctrl) {
     SetWindowLong(hwnd, GWL_STYLE, style);
 
     controller->put_IsVisible(isVisible ? TRUE : FALSE);
+
+    // Reduce white flashes during resize/repaint by using transparent default background.
+    ICoreWebView2Controller2* controller2 = nullptr;
+    HRESULT bgHr = controller->QueryInterface(IID_PPV_ARGS(&controller2));
+    if (SUCCEEDED(bgHr) && controller2) {
+        COREWEBVIEW2_COLOR bg = {0, 0, 0, 0};
+        controller2->put_DefaultBackgroundColor(bg);
+        controller2->Release();
+    }
+
     isSuspended = false;
     RECT bounds = ClientRECT(hwnd);
     controller->put_Bounds(bounds);
@@ -595,9 +613,21 @@ HWND WebviewWnd::Create(const CreateWebViewArgs& args) {
 }
 
 LRESULT WebviewWnd::WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    if (msg == WM_SIZE) {
-        SetControllerVisible(wparam != SIZE_MINIMIZED);
+    if (msg == WM_ENTERSIZEMOVE) {
+        // Track interactive resize state and ask UI to disable expensive transitions/effects.
+        isInSizeMove = true;
+        Eval("if (window.__setHostResizing) window.__setHostResizing(true);");
+    } else if (msg == WM_EXITSIZEMOVE) {
+        // Interactive resize finished: restore normal UI effects and apply final bounds once.
+        isInSizeMove = false;
+        Eval("if (window.__setHostResizing) window.__setHostResizing(false);");
         UpdateWebviewSize();
+    } else if (msg == WM_SIZE) {
+        SetControllerVisible(wparam != SIZE_MINIMIZED);
+        // During interactive resize, defer bounds updates to WM_EXITSIZEMOVE.
+        if (!isInSizeMove) {
+            UpdateWebviewSize();
+        }
     } else if (msg == WM_SHOWWINDOW) {
         SetControllerVisible(wparam != FALSE);
         UpdateWebviewSize();

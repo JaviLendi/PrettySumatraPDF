@@ -10,23 +10,32 @@ $interFonts = Join-Path $interDir 'fonts'
 New-Item -ItemType Directory -Force -Path $faFonts | Out-Null
 New-Item -ItemType Directory -Force -Path $interFonts | Out-Null
 
-$faBase = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0'
-$faCssPath = Join-Path $faDir 'all.min.css'
-Invoke-WebRequest -Uri "$faBase/css/all.min.css" -OutFile $faCssPath
-$faCss = Get-Content -Raw $faCssPath
-$faNames = @('fa-solid-900.woff2','fa-regular-400.woff2','fa-brands-400.woff2')
-foreach ($name in $faNames) {
-    $src = "$faBase/webfonts/$name"
-    $dst = Join-Path $faFonts $name
-    Invoke-WebRequest -Uri $src -OutFile $dst
+$miDir = Join-Path $vendor 'material-icons'
+$miFonts = Join-Path $miDir 'fonts'
+
+New-Item -ItemType Directory -Force -Path $miFonts | Out-Null
+
+$miCssPath = Join-Path $miDir 'material-icons.css'
+$miGoogleUrl = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=block'
+Invoke-WebRequest -Uri $miGoogleUrl -OutFile $miCssPath
+$miCss = Get-Content -Raw $miCssPath
+$matches = [regex]::Matches($miCss, 'https://fonts\.gstatic\.com/[^\)\s]+\.(woff2|woff|ttf)')
+$seen = @{}
+foreach ($m in $matches) {
+    $url = $m.Value
+    if ($seen.ContainsKey($url)) { continue }
+    $seen[$url] = $true
+    $name = Split-Path $url -Leaf
+    Invoke-WebRequest -Uri $url -OutFile (Join-Path $miFonts $name)
+    $miCss = $miCss.Replace($url, "fonts/$name")
 }
-$faCss = $faCss.Replace('../webfonts/fa-solid-900.woff2', 'webfonts/fa-solid-900.woff2')
-$faCss = $faCss.Replace('../webfonts/fa-regular-400.woff2', 'webfonts/fa-regular-400.woff2')
-$faCss = $faCss.Replace('../webfonts/fa-brands-400.woff2', 'webfonts/fa-brands-400.woff2')
-Set-Content -Path $faCssPath -Value $faCss -Encoding utf8
+Set-Content -Path $miCssPath -Value $miCss -Encoding utf8
+$miCss = Get-Content -Raw $miCssPath
+$miCss = $miCss.Replace("  font-weight: normal;`n", "  font-optical-sizing: auto;`n  font-variation-settings: 'FILL' 0, 'wght' 100, 'GRAD' 20, 'opsz' 20;`n  font-weight: normal;`n")
+Set-Content -Path $miCssPath -Value $miCss -Encoding utf8
 
 $interCssPath = Join-Path $interDir 'inter.css'
-Invoke-WebRequest -Uri 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' -OutFile $interCssPath
+Invoke-WebRequest -Uri 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;400;500;600;700;800&display=swap' -OutFile $interCssPath
 $interCss = Get-Content -Raw $interCssPath
 $matches = [regex]::Matches($interCss, 'https://fonts\.gstatic\.com/[^\)\s]+\.ttf')
 $seen = @{}

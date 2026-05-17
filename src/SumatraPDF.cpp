@@ -247,7 +247,6 @@ bool SettingsRememberOpenedFiles() {
 static Kind kNotifPersistentWarning = "persistentWarning";
 static Kind kNotifZoom = "zoom";
 
-HBITMAP gBitmapReloadingCue;
 RenderCache* gRenderCache;
 HCURSOR gCursorDrag;
 
@@ -5227,6 +5226,15 @@ static bool FrameOnKeydown(MainWindow* win, WPARAM key, LPARAM lp) {
 
     if (VK_ESCAPE == key) {
         CancelDrag(win);
+        // If the mouse is outside the hybrid toolbar, notify the webview to exit edit mode / close dropdowns
+        if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+            POINT pt; GetCursorPos(&pt);
+            RECT r = {};
+            GetWindowRect(win->hybridToolbar->hwnd, &r);
+            if (!(pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom)) {
+                win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+            }
+        }
         return true;
     }
 
@@ -8359,6 +8367,34 @@ static LRESULT CustomCaptionFrameProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp,
                 *callDef = false;
                 return 0;
             }
+            // If click is outside the hybrid toolbar WebView, tell it to exit edit mode / close dropdowns
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
+                POINT ptScreen = pt;
+                ClientToScreen(hwnd, &ptScreen);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(ptScreen.x >= r.left && ptScreen.x < r.right && ptScreen.y >= r.top && ptScreen.y < r.bottom)) {
+                    // click outside webview
+                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                }
+            }
+        } break;
+
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        case WM_XBUTTONDOWN: {
+            // For other mouse buttons, also notify webview if click is outside it
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
+                POINT ptScreen = pt;
+                ClientToScreen(hwnd, &ptScreen);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(ptScreen.x >= r.left && ptScreen.x < r.right && ptScreen.y >= r.top && ptScreen.y < r.bottom)) {
+                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                }
+            }
         } break;
 
         case WM_LBUTTONUP: {
@@ -8504,8 +8540,62 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
                 RememberDefaultWindowPosition(win);
                 int dx = LOWORD(lp);
                 int dy = HIWORD(lp);
-                // dbglog::LogF("dx: %d, dy: %d", dx, dy);
-                FrameOnSize(win, dx, dy);
+                // During interactive resize, throttle relayout calls to reduce WebView flicker.
+                if (win->frameInSizeMove) {
+                    win->pendingFrameDx = dx;
+                    win->pendingFrameDy = dy;
+                    win->hasPendingFrameSize = true;
+
+                    ULONGLONG now = GetTickCount64();
+                    constexpr ULONGLONG kFrameResizeThrottleMs = 33;
+                    if ((now - win->lastFrameOnSizeTick) >= kFrameResizeThrottleMs) {
+                        FrameOnSize(win, dx, dy);
+                        win->lastFrameOnSizeTick = now;
+                        win->hasPendingFrameSize = false;
+                    }
+                } else {
+                    // dbglog::LogF("dx: %d, dy: %d", dx, dy);
+                    FrameOnSize(win, dx, dy);
+                    win->lastFrameOnSizeTick = GetTickCount64();
+                    win->hasPendingFrameSize = false;
+                }
+            }
+            break;
+
+        case WM_ENTERSIZEMOVE:
+            if (win) {
+                win->frameInSizeMove = true;
+                win->hasPendingFrameSize = false;
+                win->lastFrameOnSizeTick = 0;
+                // Temporarily stop redrawing the toolbar/rebar to avoid flicker while resizing
+                if (win->hwndReBar) SendMessageW(win->hwndReBar, WM_SETREDRAW, FALSE, 0);
+                if (win->hwndToolbar) SendMessageW(win->hwndToolbar, WM_SETREDRAW, FALSE, 0);
+            }
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                SendMessageW(win->hybridToolbar->hwnd, WM_ENTERSIZEMOVE, wp, lp);
+            }
+            break;
+
+        case WM_EXITSIZEMOVE:
+            if (win) {
+                win->frameInSizeMove = false;
+                if (win->hasPendingFrameSize) {
+                    FrameOnSize(win, win->pendingFrameDx, win->pendingFrameDy);
+                    win->hasPendingFrameSize = false;
+                    win->lastFrameOnSizeTick = GetTickCount64();
+                }
+                // Re-enable toolbar/rebar drawing and force a redraw to make UI stable
+                if (win->hwndReBar) {
+                    SendMessageW(win->hwndReBar, WM_SETREDRAW, TRUE, 0);
+                    RedrawWindow(win->hwndReBar, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+                }
+                if (win->hwndToolbar) {
+                    SendMessageW(win->hwndToolbar, WM_SETREDRAW, TRUE, 0);
+                    RedrawWindow(win->hwndToolbar, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+                }
+            }
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                SendMessageW(win->hybridToolbar->hwnd, WM_EXITSIZEMOVE, wp, lp);
             }
             break;
 
@@ -8574,8 +8664,25 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
         case WM_ACTIVATE:
             if (wp != WA_INACTIVE) {
                 gLastActiveFrameHwnd = hwnd;
+            } else {
+                // Window lost activation: tell hybrid toolbar to exit edit mode and close dropdowns
+                if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                }
             }
             break;
+
+        case WM_KILLFOCUS: {
+            // If focus moved outside the hybrid toolbar, tell it to exit edit mode/close dropdowns
+            HWND newFocus = (HWND)wp;
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                HWND hw = win->hybridToolbar->hwnd;
+                bool focusIsInWebview = (newFocus == hw) || (newFocus && IsChild(hw, newFocus));
+                if (!focusIsInWebview) {
+                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                }
+            }
+        } break;
 
         case WM_APPCOMMAND:
             // both keyboard and mouse drivers should produce WM_APPCOMMAND

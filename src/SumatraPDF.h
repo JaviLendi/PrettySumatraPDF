@@ -98,7 +98,6 @@ extern WNDPROC DefWndProcCloseButton;
 extern RenderCache* gRenderCache;
 
 extern bool gSupressNextAltMenuTrigger;
-extern HBITMAP gBitmapReloadingCue;
 extern HCURSOR gCursorDrag;
 extern bool gCrashOnOpen;
 extern HWND gLastActiveFrameHwnd;

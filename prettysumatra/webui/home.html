@@ -1,10 +1,10 @@
-<html lang="es" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none';">
 <title>PrettySumatraPDF - Home</title>
-<link rel="stylesheet" href="vendor/fontawesome/all.min.css">
+<link rel="stylesheet" href="vendor/material-icons/material-icons.css">
 <link rel="stylesheet" href="vendor/inter/inter.css">
 <style>
 :root {
@@ -55,7 +55,7 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
 .hero-title span { background: var(--brand-gradient); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .hero-subtitle { font-size: 1.15rem; color: var(--text-muted); max-width: 550px; margin-bottom: 36px; line-height: 1.5; }
 .search-container { width: 100%; max-width: 650px; position: relative; margin-bottom: 32px; }
-.search-container i.search-icon { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.3rem; z-index: 2; }
+.search-container .search-icon { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1.3rem; z-index: 2; }
 .search-input { width: 100%; height: 64px; background: var(--bg-input); backdrop-filter: blur(10px) saturate(130%); -webkit-backdrop-filter: blur(10px) saturate(130%); border: 1px solid var(--border-input); border-radius: var(--radius-xl); padding: 0 24px 0 60px; font-family: inherit; font-size: 1.15rem; color: var(--text-main); box-shadow: var(--shadow-sm); transition: var(--transition); }
 .search-input::placeholder { color: var(--text-muted); font-weight: 500; }
 .search-input:focus { outline: none; border-color: var(--brand-primary); box-shadow: 0 0 0 4px var(--brand-glow), var(--shadow-md); background: var(--bg-surface); }
@@ -108,28 +108,28 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
 <div class="hero">
   <img class="hero-logo" src="assets/SumatraPDF-256x256x32.png" alt="SumatraPDF">
   <div class="hero-title">Pretty<span>Sumatra</span>PDF</div>
-  <div class="hero-subtitle">Tu biblioteca digital, más elegante que nunca. Busca, abre o retoma tus lecturas al instante.</div>
+  <div class="hero-subtitle">Your digital library, more elegant than ever. Search, open, or resume your reading instantly.</div>
   <div class="search-container">
-    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-    <input type="text" id="searchInput" class="search-input" placeholder="Buscar documentos por nombre..." autocomplete="off">
+    <span class="material-symbols-rounded search-icon">search</span>
+    <input type="text" id="searchInput" class="search-input" placeholder="Search documents by name..." autocomplete="off">
   </div>
   <div class="quick-actions">
-    <button class="btn-action btn-primary-action" onclick="if(window.external&&typeof window.external.invoke==='function')window.external.invoke(JSON.stringify({type:'command',name:'openFile',payload:{},ts:Date.now()}))">
-      <i class="fa-solid fa-folder-open"></i> Explorar Archivos
+    <button class="btn-action btn-primary-action" onclick="if(window.external&&typeof window.external.invoke==='function')window.external.invoke(JSON.stringify({type:'command',name:'openFile',payload:{},ts:Date.now()}))" aria-label="Explore files">
+      <span class="material-symbols-rounded">folder_open</span> Explore files
     </button>
-    <button class="btn-action" onclick="if(window.external&&typeof window.external.invoke==='function')window.external.invoke(JSON.stringify({type:'command',name:'reopenLast',payload:{},ts:Date.now()}))">
-      <i class="fa-solid fa-clock-rotate-left"></i> Retomar Último
+    <button class="btn-action" onclick="if(window.external&&typeof window.external.invoke==='function')window.external.invoke(JSON.stringify({type:'command',name:'reopenLast',payload:{},ts:Date.now()}))" aria-label="Resume last document">
+      <span class="material-symbols-rounded">history</span> Resume last
     </button>
   </div>
 </div>
 
 <div class="recent-section">
   <div class="section-header">
-    <div class="section-title"><i class="fa-regular fa-clock"></i> Documentos Recientes</div>
+    <div class="section-title"><span class="material-symbols-rounded">access_time</span> Recent Documents</div>
   </div>
   <div class="file-grid" id="recentGrid">
-    <div class="file-card skeleton-card"><div class="file-card-header"><div class="file-icon"><i class="fa-solid fa-file"></i></div></div><div class="file-info"><div class="skel-block" style="height: 18px; width: 70%;"></div><div class="skel-block" style="height: 12px; width: 40%;"></div></div></div>
-    <div class="file-card skeleton-card" style="animation-delay: 0.2s"><div class="file-card-header"><div class="file-icon"><i class="fa-solid fa-file"></i></div></div><div class="file-info"><div class="skel-block" style="height: 18px; width: 85%;"></div><div class="skel-block" style="height: 12px; width: 50%;"></div></div></div>
+    <div class="file-card skeleton-card"><div class="file-card-header"><div class="file-icon"><span class="material-symbols-rounded">insert_drive_file</span></div></div><div class="file-info"><div class="skel-block" style="height: 18px; width: 70%;"></div><div class="skel-block" style="height: 12px; width: 40%;"></div></div></div>
+    <div class="file-card skeleton-card" style="animation-delay: 0.2s"><div class="file-card-header"><div class="file-icon"><span class="material-symbols-rounded">insert_drive_file</span></div></div><div class="file-info"><div class="skel-block" style="height: 18px; width: 85%;"></div><div class="skel-block" style="height: 12px; width: 50%;"></div></div></div>
   </div>
 </div>
 
@@ -154,12 +154,12 @@ function filterFiles(files, query) {
 function renderRecentFiles(files) {
   const grid = document.getElementById('recentGrid'); grid.innerHTML = '';
   if (!files || files.length === 0) {
-    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted); animation: slideUp 0.5s;"><i class="fa-regular fa-folder-open" style="font-size: 3rem; opacity: 0.5; margin-bottom: 16px;"></i><h3 style="font-weight: 600; margin-bottom: 8px;">No hay archivos recientes</h3><p style="font-size: 0.95rem;">Los documentos que abras aparecerán aquí mágicamente.</p></div>`; return;
+    grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--text-muted); animation: slideUp 0.5s;"><span class="material-symbols-rounded" style="font-size: 3rem; opacity: 0.5; margin-bottom: 16px;">folder_open</span><h3 style="font-weight: 600; margin-bottom: 8px;">No recent files</h3><p style="font-size: 0.95rem;">Documents you open will appear here.</p></div>`; return;
   }
   files.forEach((file, index) => {
     const card = document.createElement('div'); card.className = 'file-card'; card.style.animation = `slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${index * 0.05}s both`;
     card.onclick = () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'openRecent', payload: { path: file.path }, ts: Date.now() })); };
-    card.innerHTML = `<div class="file-card-header"><div class="file-icon"><i class="fa-solid fa-file-pdf"></i></div><i class="fa-solid fa-arrow-right file-action-icon"></i></div><div class="file-info"><div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div><div class="file-path" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</div></div>`;
+    card.innerHTML = `<div class="file-card-header"><div class="file-icon"><span class="material-symbols-rounded">picture_as_pdf</span></div><span class="material-symbols-rounded file-action-icon">arrow_forward</span></div><div class="file-info"><div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div><div class="file-path" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</div></div>`;
     grid.appendChild(card);
   });
 }

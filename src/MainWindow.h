@@ -234,6 +234,13 @@ struct MainWindow {
     int windowStateBeforePresentation = 0;
     bool suppressFrameRedraw = false;
 
+    // Coalesce WM_SIZE-driven relayouts while user is dragging window borders.
+    bool frameInSizeMove = false;
+    bool hasPendingFrameSize = false;
+    int pendingFrameDx = 0;
+    int pendingFrameDy = 0;
+    ULONGLONG lastFrameOnSizeTick = 0;
+
     long nonFullScreenWindowStyle = 0;
     Rect nonFullScreenFrameRect;
 

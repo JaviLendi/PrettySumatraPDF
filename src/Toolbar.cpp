@@ -722,15 +722,9 @@ void UpdateToolbarState(MainWindow* win) {
     }
 
     if (prettysumatra::bridge::HasHybridToolbar(win->hwndFrame) && win->ctrl) {
-        prettysumatra::bridge::SyncHybridToolbarPageState(
-            win->hwndFrame,
-            win->ctrl->CurrentPageNo(),
-            win->ctrl->PageCount()
-        );
-        prettysumatra::bridge::SyncHybridToolbarZoomState(
-            win->hwndFrame,
-            win->ctrl->GetZoomVirtual(true)
-        );
+        prettysumatra::bridge::SyncHybridToolbarPageState(win->hwndFrame, win->ctrl->CurrentPageNo(),
+                                                          win->ctrl->PageCount());
+        prettysumatra::bridge::SyncHybridToolbarZoomState(win->hwndFrame, win->ctrl->GetZoomVirtual(true));
     }
 
     HWND hwnd = win->hwndToolbar;
@@ -961,15 +955,8 @@ void UpdateToolbarPageText(MainWindow* win, int pageCount, bool updateOnly) {
         if (total <= 0) {
             total = win->ctrl->PageCount();
         }
-        prettysumatra::bridge::SyncHybridToolbarPageState(
-            win->hwndFrame,
-            win->ctrl->CurrentPageNo(),
-            total
-        );
-        prettysumatra::bridge::SyncHybridToolbarZoomState(
-            win->hwndFrame,
-            win->ctrl->GetZoomVirtual(true)
-        );
+        prettysumatra::bridge::SyncHybridToolbarPageState(win->hwndFrame, win->ctrl->CurrentPageNo(), total);
+        prettysumatra::bridge::SyncHybridToolbarZoomState(win->hwndFrame, win->ctrl->GetZoomVirtual(true));
     }
 }
 

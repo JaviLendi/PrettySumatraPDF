@@ -843,7 +843,8 @@ void ShowProperties(HWND parent, DocController* ctrl) {
     DWORD editStyle =
         WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | ES_AUTOHSCROLL;
     DWORD editExStyle = PrettyStyleEnabled() ? 0 : WS_EX_CLIENTEDGE;
-    HWND hwndEdit = CreateWindowExW(editExStyle, WC_EDITW, L"", editStyle, 0, 0, cRc.dx, editDy, hwnd, nullptr, h, nullptr);
+    HWND hwndEdit =
+        CreateWindowExW(editExStyle, WC_EDITW, L"", editStyle, 0, 0, cRc.dx, editDy, hwnd, nullptr, h, nullptr);
     layoutData->hwndEdit = hwndEdit;
 
     if (!DefWndProcPropertiesEdit) {
