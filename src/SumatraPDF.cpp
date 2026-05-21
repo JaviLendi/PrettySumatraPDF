@@ -2314,6 +2314,7 @@ extern void SetTabState(WindowTab* tab, TabState* state);
 
 // Call SaveSettings asynchronously to avoid running it in the middle of
 // document/tab transitions during document load completion.
+// Fixes crashes with dangling tab->ctrl under rapid DDE opens + hooks.
 static void SaveSettingsVoid() {
     SaveSettings();
 }
@@ -2354,6 +2355,10 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
         tab->SetFilePath(fullPath);
         win->currentTabTemp = AddTabToWindow(win, tab);
 
+        if (!IsMainWindowValid(win) || win->isBeingClosed) {
+            return nullptr;
+        }
+
         // logf("LoadDocument: !forceReuse, created win->CurrentTab() at 0x%p\n", win->CurrentTab());
     } else {
         win->CurrentTab()->SetFilePath(fullPath);
@@ -2387,6 +2392,10 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
             InvalidateRect(win->hwndCanvas, nullptr, TRUE);
             UpdateWindow(win->hwndCanvas);
         }
+    }
+
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        return nullptr;
     }
 
     if (gPluginMode) {
