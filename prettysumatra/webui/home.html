@@ -2,6 +2,70 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// Monkeypatch addEventListener early to neutralize webview JS keyboard handlers (Home page).
+(function(){
+  const blockedKeys = new Set(['f','o','p','s','b','k','t','a','c','v','x','z','y','r','n']);
+  function isEditableElement(el){ if(!el) return false; const t=(el.tagName||'').toUpperCase(); return t==='INPUT'||t==='TEXTAREA'||el.isContentEditable; }
+
+  const origAdd = EventTarget.prototype.addEventListener;
+  const origRemove = EventTarget.prototype.removeEventListener;
+  const perTargetMap = new WeakMap();
+  function shouldWrapForKeyboard(type){ return typeof type === 'string' && /^(keydown|keypress|keyup)$/.test(type); }
+  function makeWrapper(listener){
+    return function(e){
+      try{
+        const active = document.activeElement;
+        const editable = isEditableElement(active);
+        if ((e.ctrlKey||e.metaKey) && !editable) {
+          const k = (e.key||'').toLowerCase();
+          if (blockedKeys.has(k)) return;
+        }
+        if (!editable && e.key === 'F3') return;
+      } catch (_) {}
+      return listener.apply(this, arguments);
+    };
+  }
+  EventTarget.prototype.addEventListener = function(type, listener, options){
+    try{
+      if (shouldWrapForKeyboard(type) && typeof listener === 'function') {
+        let map = perTargetMap.get(this);
+        if (!map) { map = new Map(); perTargetMap.set(this, map); }
+        if (map.has(listener)) return origAdd.call(this, type, map.get(listener), options);
+        const wrapped = makeWrapper(listener);
+        map.set(listener, wrapped);
+        return origAdd.call(this, type, wrapped, options);
+      }
+    } catch (e) {}
+    return origAdd.call(this, type, listener, options);
+  };
+  EventTarget.prototype.removeEventListener = function(type, listener, options){
+    try{
+      if (shouldWrapForKeyboard(type) && typeof listener === 'function') {
+        const map = perTargetMap.get(this);
+        const wrapped = map && map.get(listener);
+        if (wrapped) { map.delete(listener); return origRemove.call(this, type, wrapped, options); }
+      }
+    } catch (e) {}
+    return origRemove.call(this, type, listener, options);
+  };
+
+  function homeCtrlFHandler(e){
+    try{
+      const active = document.activeElement;
+      if ((e.ctrlKey||e.metaKey) && (e.key||'').toLowerCase() === 'f' && !isEditableElement(active)) {
+        const s = document.getElementById('searchInput');
+        if (s) { s.focus(); s.select && s.select(); e.stopPropagation(); }
+      }
+      if ((e.key === 'F3') && !isEditableElement(document.activeElement)) {
+        if (e.shiftKey) document.getElementById('searchPrev')?.click(); else document.getElementById('searchNext')?.click();
+        e.stopPropagation();
+      }
+    } catch (_) {}
+  }
+  window.addEventListener('keydown', homeCtrlFHandler, { capture: true });
+})();
+</script>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none';">
 <title>PrettySumatraPDF - Home</title>
 <link rel="stylesheet" href="vendor/material-icons/material-icons.css">
@@ -179,6 +243,43 @@ window.applyTheme = function(isDark) {
 };
 
 if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'homePageReady', payload: {}, ts: Date.now() }));
+</script>
+<script>
+// Shortcut guard for home page search: block global shortcuts and focus search on Ctrl+F
+(function() {
+  function isEditableElement(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
+
+  window.addEventListener('keydown', (e) => {
+    try {
+      const active = document.activeElement;
+      const editable = isEditableElement(active);
+      if ((e.ctrlKey || e.metaKey) && !editable) {
+        const k = (e.key || '').toLowerCase();
+        const blocked = ['f','o','p','s','b','k','t','a','c','v','x','z','y','r','n'];
+        if (blocked.indexOf(k) >= 0) {
+          e.preventDefault(); e.stopPropagation();
+          if (k === 'f') {
+            const s = document.getElementById('searchInput');
+            if (s) { s.focus(); if (typeof s.select === 'function') s.select(); }
+          }
+        }
+      }
+
+      if (!editable && e.key === 'F3') {
+        e.preventDefault(); e.stopPropagation();
+        // On Home there is no per-document next/prev; trigger a search (Enter)
+        const s = document.getElementById('searchInput');
+        if (s && s.value && s.value.trim()) {
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'searchFiles', payload: { query: s.value }, ts: Date.now() }));
+        }
+      }
+    } catch (err) { try { console.error('home shortcut-guard error', err); } catch(e){} }
+  }, { capture: true });
+})();
 </script>
 </body>
 </html>

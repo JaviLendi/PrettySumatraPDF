@@ -1486,14 +1486,17 @@ static bool showTocByDefault(const char* path) {
 // placeWindow : if true then the Window will be moved/sized according
 //   to the 'state' information even if the window was already placed
 //   before (isNewWindow=false)
-static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, FileState* fs) {
+static bool ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, FileState* fs) {
     MainWindow* win = args->win;
     if (win && win->homePageWebView) {
         HomePageHide(win);
     }
     ReportIf(!win);
     if (!win) {
-        return;
+        return false;
+    }
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        return false;
     }
     WindowTab* tab = win->CurrentTab();
     ReportIf(!tab);
@@ -1698,6 +1701,9 @@ static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
     // cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2541
     // ReportIf(win->IsDocLoaded() && args->showWin && win->canvasRc.IsEmpty() && !win->AsChm());
 
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        return true;
+    }
     SetSidebarVisibility(win, showToc, gGlobalPrefs->showFavorites);
     // restore scroll state after the canvas size has been restored
     if ((args->showWin || ss.page != 1) && win->AsFixed()) {
@@ -1708,7 +1714,7 @@ static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
 
     if (!win->IsDocLoaded()) {
         win->RedrawAll(true);
-        return;
+        return true;
     }
 
     TempStr unsupported = win->ctrl->GetPropertyTemp(kPropUnsupportedFeatures);
@@ -1733,6 +1739,8 @@ static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
     if (!args->isNewWindow && win->presentation && win->ctrl) {
         win->ctrl->SetInPresentation(true);
     }
+
+    return true;
 }
 
 void ReloadDocument(MainWindow* win, bool autoRefresh) {
@@ -1821,7 +1829,10 @@ void ReloadDocument(MainWindow* win, bool autoRefresh) {
     LoadArgs args(tab->filePath, win);
     args.showWin = true;
     args.placeWindow = false;
-    ReplaceDocumentInCurrentTab(&args, ctrl, fs);
+    if (!ReplaceDocumentInCurrentTab(&args, ctrl, fs)) {
+        DeleteFileState(fs);
+        return;
+    }
 
     if (!ctrl) {
         DeleteFileState(fs);
@@ -2301,6 +2312,12 @@ void ShowErrorLoadingNotification(MainWindow* win, const char* path, bool noSave
 
 extern void SetTabState(WindowTab* tab, TabState* state);
 
+// Call SaveSettings asynchronously to avoid running it in the middle of
+// document/tab transitions during document load completion.
+static void SaveSettingsVoid() {
+    SaveSettings();
+}
+
 MainWindow* LoadDocumentFinish(LoadArgs* args) {
     MainWindow* win = args->win;
     const char* fullPath = args->FilePath();
@@ -2324,6 +2341,13 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
         }
         CloseDocumentInCurrentTab(win, true, args->forceReuse);
     }
+
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        delete args->ctrl;
+        args->ctrl = nullptr;
+        return nullptr;
+    }
+
     if (!args->forceReuse) {
         // insert a new tab for the loaded document
         WindowTab* tab = new WindowTab(win);
@@ -2343,11 +2367,21 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
     args->placeWindow = !SettingsUseTabs();
     bool lazyLoad = args->lazyLoad;
     if (!lazyLoad) {
+        if (!IsMainWindowValid(win) || win->isBeingClosed) {
+            delete args->ctrl;
+            args->ctrl = nullptr;
+            return nullptr;
+        }
         if (win->homePageWebView) {
             HomePageHide(win);
         }
 
-        ReplaceDocumentInCurrentTab(args, args->ctrl, nullptr);
+        if (!ReplaceDocumentInCurrentTab(args, args->ctrl, nullptr)) {
+            delete args->ctrl;
+            args->ctrl = nullptr;
+            return nullptr;
+        }
+        args->ctrl = nullptr;
 
         if (win->hwndCanvas) {
             InvalidateRect(win->hwndCanvas, nullptr, TRUE);
@@ -2404,7 +2438,8 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
         // TODO: this seems to save the state of file that we just opened
         // add a way to skip saving currTab?
         if (!args->noSavePrefs) {
-            SaveSettings();
+            auto fn = MkFunc0Void(SaveSettingsVoid);
+            uitask::Post(fn, "SaveSettingsAfterDocLoad");
         }
     }
 
@@ -5215,8 +5250,6 @@ static bool ChmForwardKey(WPARAM key) {
     return false;
 }
 
- 
-
 static bool FrameOnKeydown(MainWindow* win, WPARAM key, LPARAM lp) {
     // TODO: how does this interact with new accelerators?
     if (PM_BLACK_SCREEN == win->presentation || PM_WHITE_SCREEN == win->presentation) {
@@ -5228,11 +5261,14 @@ static bool FrameOnKeydown(MainWindow* win, WPARAM key, LPARAM lp) {
         CancelDrag(win);
         // If the mouse is outside the hybrid toolbar, notify the webview to exit edit mode / close dropdowns
         if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
-            POINT pt; GetCursorPos(&pt);
+            POINT pt;
+            GetCursorPos(&pt);
             RECT r = {};
             GetWindowRect(win->hybridToolbar->hwnd, &r);
             if (!(pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom)) {
-                win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                win->hybridToolbar->Eval(
+                    "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                    "window.__closeAllDropdowns();");
             }
         }
         return true;
@@ -5687,12 +5723,14 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
 
     // Notify hybrid toolbar WebView (if present) about panel state changes
     if (win->hybridToolbar) {
-        TempStr jsFav = str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('favorites',%s);}catch(e){};",
-                                      showFavorites ? "true" : "false");
+        TempStr jsFav =
+            str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('favorites',%s);}catch(e){};",
+                            showFavorites ? "true" : "false");
         win->hybridToolbar->Eval(jsFav);
 
-        TempStr jsToc = str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('bookmarks',%s);}catch(e){};",
-                                      tocVisible ? "true" : "false");
+        TempStr jsToc =
+            str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('bookmarks',%s);}catch(e){};",
+                            tocVisible ? "true" : "false");
         win->hybridToolbar->Eval(jsToc);
     }
 }
@@ -7549,7 +7587,7 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
                 return 0;
             }
             AnnotCreateArgs args{annotType};
-            
+
             // Check if there's a pending color from the bridge (for highlight/underline/strikeout from webui toolbar)
             const char* bridgeColor = nullptr;
             if (cmdId == CmdCreateAnnotHighlight) {
@@ -7574,7 +7612,8 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
             }
             if (prettysumatra::bridge::LogBridgeMessages()) {
                 logf("[PrettySumatraBridge] Creating annotation cmdId=%d bridgeColor=%s cmdDef=%s selectionOnPage=%d\n",
-                     cmdId, bridgeColor ? bridgeColor : "(null)", cmd ? cmd->definition : "(none)", tab->selectionOnPage ? 1 : 0);
+                     cmdId, bridgeColor ? bridgeColor : "(null)", cmd ? cmd->definition : "(none)",
+                     tab->selectionOnPage ? 1 : 0);
             }
 
             SetAnnotCreateArgs(args, cmd);
@@ -8369,14 +8408,16 @@ static LRESULT CustomCaptionFrameProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp,
             }
             // If click is outside the hybrid toolbar WebView, tell it to exit edit mode / close dropdowns
             if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
-                POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
+                POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
                 POINT ptScreen = pt;
                 ClientToScreen(hwnd, &ptScreen);
                 RECT r = {};
                 GetWindowRect(win->hybridToolbar->hwnd, &r);
                 if (!(ptScreen.x >= r.left && ptScreen.x < r.right && ptScreen.y >= r.top && ptScreen.y < r.bottom)) {
                     // click outside webview
-                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
                 }
             }
         } break;
@@ -8386,13 +8427,15 @@ static LRESULT CustomCaptionFrameProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp,
         case WM_XBUTTONDOWN: {
             // For other mouse buttons, also notify webview if click is outside it
             if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
-                POINT pt = { GET_X_LPARAM(lp), GET_Y_LPARAM(lp) };
+                POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
                 POINT ptScreen = pt;
                 ClientToScreen(hwnd, &ptScreen);
                 RECT r = {};
                 GetWindowRect(win->hybridToolbar->hwnd, &r);
                 if (!(ptScreen.x >= r.left && ptScreen.x < r.right && ptScreen.y >= r.top && ptScreen.y < r.bottom)) {
-                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
                 }
             }
         } break;
@@ -8667,7 +8710,9 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
             } else {
                 // Window lost activation: tell hybrid toolbar to exit edit mode and close dropdowns
                 if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
-                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
                 }
             }
             break;
@@ -8679,7 +8724,9 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
                 HWND hw = win->hybridToolbar->hwnd;
                 bool focusIsInWebview = (newFocus == hw) || (newFocus && IsChild(hw, newFocus));
                 if (!focusIsInWebview) {
-                    win->hybridToolbar->Eval("window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && window.__closeAllDropdowns();");
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
                 }
             }
         } break;

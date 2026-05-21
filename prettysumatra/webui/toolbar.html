@@ -2,6 +2,81 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
+<script>
+// Monkeypatch addEventListener early to neutralize webview JS keyboard handlers.
+(function(){
+  const blockedKeys = new Set(['f','o','p','s','b','k','t','a','c','v','x','z','y','r','n']);
+  function isEditableElement(el){ if(!el) return false; const t=(el.tagName||'').toUpperCase(); return t==='INPUT'||t==='TEXTAREA'||el.isContentEditable; }
+
+  const origAdd = EventTarget.prototype.addEventListener;
+  const origRemove = EventTarget.prototype.removeEventListener;
+  const perTargetMap = new WeakMap(); // element -> Map(originalListener -> wrapped)
+
+  function shouldWrapForKeyboard(type){ return typeof type === 'string' && /^(keydown|keypress|keyup)$/.test(type); }
+
+  function makeWrapper(listener){
+    return function(e){
+      try{
+        const active = document.activeElement;
+        const editable = isEditableElement(active);
+        if ((e.ctrlKey||e.metaKey) && !editable) {
+          const k = (e.key||'').toLowerCase();
+          if (blockedKeys.has(k)) return; // neutralize webview handlers
+        }
+        if (!editable && e.key === 'F3') return;
+      } catch (_) {}
+      return listener.apply(this, arguments);
+    };
+  }
+
+  EventTarget.prototype.addEventListener = function(type, listener, options){
+    try{
+      if (shouldWrapForKeyboard(type) && typeof listener === 'function') {
+        let map = perTargetMap.get(this);
+        if (!map) { map = new Map(); perTargetMap.set(this, map); }
+        if (map.has(listener)) {
+          return origAdd.call(this, type, map.get(listener), options);
+        }
+        const wrapped = makeWrapper(listener);
+        map.set(listener, wrapped);
+        return origAdd.call(this, type, wrapped, options);
+      }
+    } catch (e) { /* fallthrough to default */ }
+    return origAdd.call(this, type, listener, options);
+  };
+
+  EventTarget.prototype.removeEventListener = function(type, listener, options){
+    try{
+      if (shouldWrapForKeyboard(type) && typeof listener === 'function') {
+        const map = perTargetMap.get(this);
+        const wrapped = map && map.get(listener);
+        if (wrapped) {
+          map.delete(listener);
+          return origRemove.call(this, type, wrapped, options);
+        }
+      }
+    } catch (e) {}
+    return origRemove.call(this, type, listener, options);
+  };
+
+  // Our own handler to focus the toolbar search on Ctrl+F and navigate with F3
+  function toolbarCtrlFHandler(e){
+    try{
+      const active = document.activeElement;
+      if ((e.ctrlKey||e.metaKey) && (e.key||'').toLowerCase() === 'f' && !isEditableElement(active)) {
+        const s = document.getElementById('searchInput');
+        if (s) { s.focus(); s.select && s.select(); e.stopPropagation(); }
+      }
+      if ((e.key === 'F3') && !isEditableElement(document.activeElement)) {
+        if (e.shiftKey) document.getElementById('searchPrev')?.click(); else document.getElementById('searchNext')?.click();
+        e.stopPropagation();
+      }
+    } catch (_) {}
+  }
+  window.addEventListener('keydown', toolbarCtrlFHandler, { capture: true });
+
+})();
+</script>
 <meta content="default-src 'self' data: blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none';" http-equiv="Content-Security-Policy"/>
 <title>PrettySumatraPDF</title>
 <link href="vendor/material-icons/material-icons.css" rel="stylesheet"/>
@@ -2287,6 +2362,51 @@ colorChips.forEach(chip => {
   setTimeout(updateToolbarScale, 100);
 })();
 
+</script>
+<script>
+// Shortcut guard: block webview global shortcuts and route Ctrl+F to the toolbar search.
+(function() {
+  function isEditableElement(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
+
+  window.addEventListener('keydown', (e) => {
+    try {
+      const active = document.activeElement;
+      const editable = isEditableElement(active);
+
+      // Block webview JS handlers but don't prevent defaults so the native app shortcuts still work.
+      if ((e.ctrlKey || e.metaKey) && !editable) {
+        const k = (e.key || '').toLowerCase();
+        const blocked = ['f','o','p','s','b','k','t','a','c','v','x','z','y','r','n'];
+        if (blocked.indexOf(k) >= 0) {
+          e.stopPropagation();
+          e.stopImmediatePropagation && e.stopImmediatePropagation();
+          // Special-case: Ctrl+F / Cmd+F should focus the toolbar search input
+          if (k === 'f') {
+            const s = document.getElementById('searchInput');
+            if (s) {
+              s.focus();
+              if (typeof s.select === 'function') s.select();
+            }
+          }
+        }
+      }
+
+      // Handle F3 / Shift+F3 to navigate search results when toolbar search exists
+      if (!editable && e.key === 'F3') {
+        e.stopPropagation();
+        e.stopImmediatePropagation && e.stopImmediatePropagation();
+        if (e.shiftKey) document.getElementById('searchPrev')?.click();
+        else document.getElementById('searchNext')?.click();
+      }
+    } catch (err) {
+      try { console.error('shortcut-guard error', err); } catch(e){}
+    }
+  }, { capture: true });
+})();
 </script>
 </body>
 </html>
