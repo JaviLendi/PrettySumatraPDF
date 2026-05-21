@@ -72,30 +72,39 @@
 <link rel="stylesheet" href="vendor/inter/inter.css">
 <style>
 :root {
-  --bg-app: #F2F2F2FF; --bg-surface: rgba(255, 255, 255, 0.65);
-  --bg-card: rgba(255, 255, 255, 0.45); --bg-card-hover: rgba(255, 255, 255, 0.85);
-  --bg-button: rgba(255, 255, 255, 0.5); --bg-button-hover: rgba(255, 255, 255, 0.9);
-  --bg-input: rgba(255, 255, 255, 0.7); --text-main: #1d1d1f; --text-muted: #86868b;
-  --border-color: rgba(0, 0, 0, 0.06); --border-input: rgba(0, 0, 0, 0.1); --border-hover: rgba(234, 179, 8, 0.4);
+  /* Default Light theme colors - will be overridden by C++ theme injection */
+  --canvas: #f2f2f2; --panel: #f2f2f2; --panel2: #ffffff;
+  --stroke: rgba(0, 0, 0, 0.06); --text: #1d1d1f; --muted: #86868b;
+  --btn: #ffffff; --accent: #eab308;
+  /* Brand colors stay stable (gold) */
   --brand-primary: #eab308; --brand-gradient: linear-gradient(135deg, #facc15 0%, #ca8a04 100%);
-  --brand-glow: rgba(234, 179, 8, 0.25); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-md: 0 8px 32px rgba(0,0,0,0.06); --shadow-hover: 0 12px 40px rgba(234, 179, 8, 0.15);
-  --radius-md: 14px; --radius-lg: 20px; --radius-xl: 24px; --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --brand-glow: rgba(234, 179, 8, 0.25);
+  /* Derived colors based on canvas/panel */
+  --bg-app: var(--canvas);
+  --bg-surface: color-mix(in srgb, var(--panel) 65%, transparent);
+  --bg-card: color-mix(in srgb, var(--panel2) 45%, transparent);
+  --bg-card-hover: color-mix(in srgb, var(--panel2) 85%, transparent);
+  --bg-button: color-mix(in srgb, var(--btn) 50%, transparent);
+  --bg-button-hover: color-mix(in srgb, var(--btn) 90%, transparent);
+  --bg-input: color-mix(in srgb, var(--btn) 70%, transparent);
+  --text-main: var(--text);
+  --text-muted: var(--muted);
+  --border-color: var(--stroke);
+  --border-input: color-mix(in srgb, var(--stroke) 150%, transparent);
+  --border-hover: color-mix(in srgb, var(--accent) 40%, transparent);
+  /* Shadows and spacing */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.06);
+  --shadow-hover: 0 12px 40px rgba(234, 179, 8, 0.15);
+  --radius-md: 14px; --radius-lg: 20px; --radius-xl: 24px;
+  --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 [data-theme="dark"] {
-  --bg-app: #0f0f11;
-  --bg-surface: rgba(28, 28, 30, 0.8);
-  --bg-card: rgba(44, 44, 46, 0.5);
-  --bg-card-hover: rgba(58, 58, 60, 0.85);
-  --bg-button: rgba(44, 44, 46, 0.7);
-  --bg-button-hover: rgba(72, 72, 74, 0.95);
-  --bg-input: rgba(44, 44, 46, 0.7);
-  --text-main: #F2F2F2FF;
-  --text-muted: #a1a1a6;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-input: rgba(255, 255, 255, 0.15);
-  --border-hover: rgba(234, 179, 8, 0.6);
-  --brand-glow: rgba(234, 179, 8, 0.2);
+  /* These values will be overridden by C++ theme injection - kept as fallbacks */
+  --canvas: #0f0f11; --panel: #0f0f11; --panel2: #1a1a1d;
+  --stroke: rgba(255, 255, 255, 0.08); --text: #F2F2F2FF; --muted: #a1a1a6;
+  --btn: #1a1a1d; --accent: #eab308;
+  /* Shadows adjusted for dark mode */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.4);
   --shadow-hover: 0 12px 40px rgba(234, 179, 8, 0.2);
@@ -238,11 +247,30 @@ window.setRecentFiles = function(files) {
   renderRecentFiles(window._recentFiles);
 };
 
-window.applyTheme = function(isDark) { 
+window.applyHomePageTheme = function(themePayload) {
+  if (!themePayload) return;
+  const root = document.documentElement;
+  // Apply dynamic colors from theme payload (all except brand, which stays stable)
+  if (themePayload.canvas) root.style.setProperty('--canvas', themePayload.canvas);
+  if (themePayload.panel) root.style.setProperty('--panel', themePayload.panel);
+  if (themePayload.panel2) root.style.setProperty('--panel2', themePayload.panel2);
+  if (themePayload.stroke) root.style.setProperty('--stroke', themePayload.stroke);
+  if (themePayload.text) root.style.setProperty('--text', themePayload.text);
+  if (themePayload.muted) root.style.setProperty('--muted', themePayload.muted);
+  if (themePayload.btn) root.style.setProperty('--btn', themePayload.btn);
+  if (themePayload.accent) root.style.setProperty('--accent', themePayload.accent);
+  // Set data-theme attribute for media queries and dark mode detection
+  root.dataset.theme = themePayload.appDark ? 'dark' : 'light';
+};
+
+// Legacy support: only set data-theme
+window.applyTheme = function(isDark) {
   document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
 };
 
 if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'homePageReady', payload: {}, ts: Date.now() }));
+// If theme payload was already injected via C++, apply it immediately
+if (window.__homePageThemePayload) { window.applyHomePageTheme(window.__homePageThemePayload); }
 </script>
 <script>
 // Shortcut guard for home page search: block global shortcuts and focus search on Ctrl+F

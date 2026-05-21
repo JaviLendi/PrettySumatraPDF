@@ -169,7 +169,7 @@ COLORREF PrettySurfaceAltColor() {
 }
 
 COLORREF PrettyBorderColor() {
-    return ThemeWindowTextDisabledColor();
+    return AccentColor(ThemeWindowControlBackgroundColor(), 40);
 }
 
 COLORREF PrettyAccentColor() {

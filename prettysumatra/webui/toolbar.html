@@ -1686,8 +1686,14 @@ window.notifyPanelState = notifyPanelState;
 window.panelStateChanged = notifyPanelState;
 
 function hybridToolbarApplyTheme(p={}) {
-  const root=document.documentElement; const keys=['canvas','panel','panel2','stroke','text','muted','btn','accent','brand1','brand2'];
-  for(const k of keys) { if(p[k]) root.style.setProperty('--'+k, p[k]); }
+  const root=document.documentElement;
+  // Map payload colors to toolbar.html CSS variables for proper theme updating
+  if(p.canvas) root.style.setProperty('--bg-app', p.canvas);
+  if(p.panel) root.style.setProperty('--bg-toolbar', p.panel);
+  if(p.panel2) root.style.setProperty('--bg-button', p.panel2);
+  if(p.text) root.style.setProperty('--text-main', p.text);
+  if(p.muted) root.style.setProperty('--text-muted', p.muted);
+  if(p.stroke) root.style.setProperty('--border-color', p.stroke);
   const aD=!!p.appDark; root.dataset.theme=aD?'dark':'light';
   lastFollowWindows = !!p.followWindows; lastAppDark = aD; lastWindowsDark = !!p.windowsDark;
   if(themeSwitch) themeSwitch.setAttribute('data-state', lastFollowWindows ? 'auto' : (aD ? 'dark' : 'light'));

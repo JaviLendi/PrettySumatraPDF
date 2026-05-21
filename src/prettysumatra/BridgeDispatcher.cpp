@@ -111,10 +111,6 @@ static MainWindow* FindWindowForFrame(HWND hwndFrame) {
     return FindMainWindowByHwnd(hwndFrame);
 }
 
-static bool HomePageUsesDarkTheme() {
-    return DarkMode::isColorDark(ThemeMainWindowBackgroundColor());
-}
-
 static TempStr HybridToolbarThemeJs(HWND hwndFrame) {
     MainWindow* win = FindWindowForFrame(hwndFrame);
     if (!win || !win->hybridToolbar) {
@@ -146,6 +142,28 @@ static TempStr HybridToolbarThemeJs(HWND hwndFrame) {
         ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), ColorToCssHex(brand1), ColorToCssHex(brand2),
         appDark ? "true" : "false", docInverted ? "true" : "false", windowsDark ? "true" : "false",
         followWindows ? "true" : "false");
+}
+
+// Generate JavaScript to inject theme colors into home page
+// Similar to HybridToolbarThemeJs but for home page
+static TempStr HomePageThemeJs() {
+    COLORREF canvas = ThemeMainWindowBackgroundColor();
+    COLORREF panel = ThemeMainWindowBackgroundColor();
+    COLORREF panel2 = PrettyStyleEnabled() ? PrettySurfaceColor() : ThemeWindowControlBackgroundColor();
+    COLORREF stroke = PrettyBorderColor();
+    COLORREF text = ThemeWindowTextColor();
+    COLORREF muted = ThemeWindowTextDisabledColor();
+    COLORREF btn = ThemeControlBackgroundColor();
+    COLORREF accent = PrettyAccentColor();
+    bool appDark = DarkMode::isColorDark(panel);
+
+    // Build JavaScript payload with all theme colors
+    return str::FormatTemp(
+        "window.__homePageThemePayload={canvas:'%s',panel:'%s',panel2:'%s',stroke:'%s',"
+        "text:'%s',muted:'%s',btn:'%s',accent:'%s',appDark:%s};"
+        "if(window.applyHomePageTheme){window.applyHomePageTheme(window.__homePageThemePayload);}",
+        ColorToCssHex(canvas), ColorToCssHex(panel), ColorToCssHex(panel2), ColorToCssHex(stroke), ColorToCssHex(text),
+        ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), appDark ? "true" : "false");
 }
 
 static const char* JsQuoted(const char* s) {
@@ -677,6 +695,7 @@ static bool DispatchToggleThemeFollowWindows() {
     MainWindow* win = GetTargetWindow();
     if (win) {
         SyncHybridToolbarTheme(win->hwndFrame);
+        SyncHomePageTheme(win->hwndFrame);
     }
     return true;
 }
@@ -692,6 +711,7 @@ static bool DispatchToggleThemeLightDark() {
     MainWindow* win = GetTargetWindow();
     if (win) {
         SyncHybridToolbarTheme(win->hwndFrame);
+        SyncHomePageTheme(win->hwndFrame);
     }
     return true;
 }
@@ -1051,10 +1071,11 @@ static bool DispatchHomePageReady() {
     char* js = str::FormatTemp("window.setRecentFiles && window.setRecentFiles(%s);", recentFilesJson);
     win->homePageWebView->Eval(js);
 
-    // Apply current theme
-    bool isDarkMode = HomePageUsesDarkTheme();
-    char* themeJs = str::FormatTemp("window.applyTheme && window.applyTheme(%s);", isDarkMode ? "true" : "false");
-    win->homePageWebView->Eval(themeJs);
+    // Apply current theme with full color payload
+    TempStr themeJs = HomePageThemeJs();
+    if (themeJs) {
+        win->homePageWebView->Eval(themeJs);
+    }
 
     return true;
 }
@@ -1165,10 +1186,10 @@ void SyncHomePageTheme(HWND hwndFrame) {
     if (!win || !win->homePageWebView) {
         return;
     }
-    // Apply the actual app theme so the home page stays in sync with manual theme changes.
-    bool isDarkMode = HomePageUsesDarkTheme();
-    char* themeJs = str::FormatTemp("window.applyTheme && window.applyTheme(%s);", isDarkMode ? "true" : "false");
-    win->homePageWebView->Eval(themeJs);
+    TempStr js = HomePageThemeJs();
+    if (js) {
+        win->homePageWebView->Eval(js);
+    }
 }
 
 DispatchResult DispatchShellMessage(const char* msg) {
