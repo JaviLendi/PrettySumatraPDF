@@ -1900,6 +1900,21 @@ document.getElementById('searchPrev')?.addEventListener('click', () => { if(!isT
 document.getElementById('searchNext')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('forward')});
 searchInput?.addEventListener('keydown', (e) => { if(e.key==='Enter' && !isToolbarUnlocked) runSearch('forward'); });
 
+function focusToolbarSearch() {
+  if (!searchInput) return false;
+  try {
+    searchInput.focus();
+    if (typeof searchInput.select === 'function') searchInput.select();
+    return document.activeElement === searchInput;
+  } catch (e) {
+    return false;
+  }
+}
+window.hybridToolbarFocusSearch = function() {
+  if (focusToolbarSearch()) return;
+  setTimeout(() => { focusToolbarSearch(); }, 0);
+};
+
 if(themeSwitch) {
   themeSwitch.querySelectorAll('.mts-btn').forEach(btn => {
     btn.addEventListener('click', () => {
