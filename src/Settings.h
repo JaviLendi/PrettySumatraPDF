@@ -674,10 +674,10 @@ static const FieldInfo gChmUIFields[] = {
 static const StructInfo gChmUIInfo = {sizeof(ChmUI), 1, gChmUIFields, "UseFixedPageUI"};
 
 static const FieldInfo gAnnotationsFields[] = {
-    {offsetof(Annotations, highlightColor), SettingType::Color, (intptr_t)"#ffff00"},
-    {offsetof(Annotations, underlineColor), SettingType::Color, (intptr_t)"#00ff00"},
-    {offsetof(Annotations, squigglyColor), SettingType::Color, (intptr_t)"#ff00ff"},
-    {offsetof(Annotations, strikeOutColor), SettingType::Color, (intptr_t)"#ff0000"},
+    {offsetof(Annotations, highlightColor), SettingType::Color, (intptr_t)"#facc15"},
+    {offsetof(Annotations, underlineColor), SettingType::Color, (intptr_t)"#22c55e"},
+    {offsetof(Annotations, squigglyColor), SettingType::Color, (intptr_t)"#ec4899"},
+    {offsetof(Annotations, strikeOutColor), SettingType::Color, (intptr_t)"#ef4444"},
     {offsetof(Annotations, freeTextColor), SettingType::Color, (intptr_t)""},
     {offsetof(Annotations, freeTextBackgroundColor), SettingType::Color, (intptr_t)""},
     {offsetof(Annotations, freeTextOpacity), SettingType::Int, 100},

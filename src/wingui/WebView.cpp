@@ -151,6 +151,71 @@ class webview2_com_handler : public ICoreWebView2CreateCoreWebView2ControllerCom
     ULONG m_refCount = 1;
 };
 
+// Handler to intercept accelerator key events coming from the WebView2 control.
+class webview2_accel_handler : public ICoreWebView2AcceleratorKeyPressedEventHandler {
+  public:
+    explicit webview2_accel_handler(HWND hwnd) : m_hwnd(hwnd) {}
+    ULONG STDMETHODCALLTYPE AddRef() { return ++m_refCount; }
+    ULONG STDMETHODCALLTYPE Release() {
+        ULONG n = --m_refCount;
+        if (n == 0) delete this;
+        return n;
+    }
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID* ppv) {
+        if (!ppv) return E_POINTER;
+        *ppv = nullptr;
+        if (riid == IID_IUnknown || riid == __uuidof(ICoreWebView2AcceleratorKeyPressedEventHandler)) {
+            *ppv = static_cast<ICoreWebView2AcceleratorKeyPressedEventHandler*>(this);
+            AddRef();
+            return S_OK;
+        }
+        return E_NOINTERFACE;
+    }
+
+    HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2Controller* /*sender*/,
+                                     ICoreWebView2AcceleratorKeyPressedEventArgs* args) {
+        if (!args) return S_OK;
+        COREWEBVIEW2_KEY_EVENT_KIND kind;
+        if (FAILED(args->get_KeyEventKind(&kind))) return S_OK;
+        // Only act on key down events
+        if (kind != COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN) return S_OK;
+
+        UINT vk = 0;
+        if (FAILED(args->get_VirtualKey(&vk))) return S_OK;
+
+        // detect modifier state via GetKeyState (current physical state)
+        bool ctrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+        bool shift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+
+        // keys we want to neutralize inside the webview (but let host handle)
+        bool isAppAccel = false;
+        // Common app accelerators that should execute in host
+        if (ctrl && (vk == 'O' || vk == 'P' || vk == 'S' || vk == 'F' || vk == 'G' || vk == 'C' || vk == 'V' ||
+                     vk == 'W' || vk == 'N' || vk == 'K'))
+            isAppAccel = true;
+        if (vk == VK_F3) isAppAccel = true;
+
+        if (isAppAccel) {
+            // Prevent WebView from handling it
+            args->put_Handled(TRUE);
+            // Re-post the key to the top-level window so the normal accelerator processing runs
+            HWND root = GetAncestor(m_hwnd, GA_ROOT);
+            if (root && ::IsWindow(root)) {
+                PostMessageW(root, WM_KEYDOWN, (WPARAM)vk, 0);
+                PostMessageW(root, WM_KEYUP, (WPARAM)vk, 0);
+            }
+            return S_OK;
+        }
+
+        // For other keys we don't interfere
+        return S_OK;
+    }
+
+  private:
+    ULONG m_refCount = 1;
+    HWND m_hwnd = nullptr;
+};
+
 class webview2_env_handler : public ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler {
   public:
     using env_ready_cb_t = void (*)(HRESULT, ICoreWebView2Environment*);
@@ -276,6 +341,14 @@ void WebviewWnd::FailInit() {
 }
 
 void WebviewWnd::SetControllerVisible(bool visible) {
+    // Avoid redundant visibility calls during rapid resize; they can trigger extra compositor work.
+    if (visible == isVisible) {
+        // If state is already aligned and suspension state matches, nothing to do.
+        if ((visible && !isSuspended) || (!visible && isSuspended)) {
+            return;
+        }
+    }
+
     isVisible = visible;
     if (controller) {
         controller->put_IsVisible(visible ? TRUE : FALSE);
@@ -318,6 +391,16 @@ void WebviewWnd::OnControllerReady(ICoreWebView2Controller* ctrl) {
     SetWindowLong(hwnd, GWL_STYLE, style);
 
     controller->put_IsVisible(isVisible ? TRUE : FALSE);
+
+    // Reduce white flashes during resize/repaint by using transparent default background.
+    ICoreWebView2Controller2* controller2 = nullptr;
+    HRESULT bgHr = controller->QueryInterface(IID_PPV_ARGS(&controller2));
+    if (SUCCEEDED(bgHr) && controller2) {
+        COREWEBVIEW2_COLOR bg = {0, 0, 0, 0};
+        controller2->put_DefaultBackgroundColor(bg);
+        controller2->Release();
+    }
+
     isSuspended = false;
     RECT bounds = ClientRECT(hwnd);
     controller->put_Bounds(bounds);
@@ -338,6 +421,21 @@ void WebviewWnd::OnControllerReady(ICoreWebView2Controller* ctrl) {
         settings->put_IsStatusBarEnabled(FALSE);
         settings->put_IsZoomControlEnabled(FALSE);
         settings->Release();
+    }
+
+    // Register an accelerator handler so the host can intercept shortcuts
+    // and prevent the WebView from handling them (while forwarding to host).
+    {
+        webview2_accel_handler* accelHandler = new webview2_accel_handler(hwnd);
+        ::EventRegistrationToken token = {};
+        // controller should implement add_AcceleratorKeyPressed on supported versions
+        // If not supported, this call will fail gracefully.
+        if (SUCCEEDED(controller->add_AcceleratorKeyPressed(accelHandler, &token))) {
+            // keep handler alive by relying on controller ref; release local ref
+            accelHandler->Release();
+        } else {
+            accelHandler->Release();
+        }
     }
 
     Init("window.external={invoke:s=>window.chrome.webview.postMessage(s)}");
@@ -595,9 +693,21 @@ HWND WebviewWnd::Create(const CreateWebViewArgs& args) {
 }
 
 LRESULT WebviewWnd::WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    if (msg == WM_SIZE) {
-        SetControllerVisible(wparam != SIZE_MINIMIZED);
+    if (msg == WM_ENTERSIZEMOVE) {
+        // Track interactive resize state and ask UI to disable expensive transitions/effects.
+        isInSizeMove = true;
+        Eval("if (window.__setHostResizing) window.__setHostResizing(true);");
+    } else if (msg == WM_EXITSIZEMOVE) {
+        // Interactive resize finished: restore normal UI effects and apply final bounds once.
+        isInSizeMove = false;
+        Eval("if (window.__setHostResizing) window.__setHostResizing(false);");
         UpdateWebviewSize();
+    } else if (msg == WM_SIZE) {
+        SetControllerVisible(wparam != SIZE_MINIMIZED);
+        // During interactive resize, defer bounds updates to WM_EXITSIZEMOVE.
+        if (!isInSizeMove) {
+            UpdateWebviewSize();
+        }
     } else if (msg == WM_SHOWWINDOW) {
         SetControllerVisible(wparam != FALSE);
         UpdateWebviewSize();

@@ -67,6 +67,7 @@ struct WebviewWnd : Wnd {
     bool initFailed = false;
     bool isVisible = true;
     bool isSuspended = false;
+    bool isInSizeMove = false;
     RECT lastBounds = {};
     bool hasLastBounds = false;
     std::wstring userDataFolder;

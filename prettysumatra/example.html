@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor con Estilo Heroicons</title>
+  
+  <style>
+    :root {
+      --icon-color: #4b5563; /* Gris pizarra (text-gray-600 en Tailwind) */
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: white;
+      padding: 0.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+      border: 1px solid #e2e8f0;
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 24px;
+      background-color: #e2e8f0;
+      margin: 0 0.5rem;
+    }
+
+    /* --- Botones --- */
+    .toolbar-btn {
+      background: transparent;
+      border: none;
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--icon-color);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .toolbar-btn:hover {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    /* Estándar de tamaño Heroicons (w-6 h-6 en Tailwind) */
+    .hero-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* --- Línea de Color Inferior --- */
+    .btn-color::after {
+      content: '';
+      position: absolute;
+      bottom: 4px; 
+      width: 16px;
+      height: 3px;
+      border-radius: 2px;
+      background-color: var(--active-color);
+    }
+
+    /* Reducimos el margen para acomodar la línea inferior */
+    .btn-color .hero-icon {
+      margin-bottom: 4px;
+    }
+
+    /* Variables de color de Tailwind */
+    .btn-highlight { --active-color: #fbbf24; } /* yellow-400 */
+    .btn-underline { --active-color: #3b82f6; } /* blue-500 */
+    .btn-strike    { --active-color: #ef4444; } /* red-500 */
+
+    /* Botón del picker (Ajuste para que el icono principal y el chevron se vean bien) */
+    .btn-picker {
+      gap: 2px;
+      padding-right: 0.25rem;
+    }
+    
+    .btn-picker .hero-chevron {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2; /* Un poco más grueso al ser más pequeño */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    
+    <!-- Resaltador -->
+    <button class="toolbar-btn btn-color btn-highlight" aria-label="Resaltar">
+      <!-- Todos usan el formato base de Heroicons -->
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hero-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m9 11-6 6v3h9l3-3" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4" />
+      </svg>
+    </button>
+
+    <!-- Subrayado -->
+    <button class="toolbar-btn btn-color btn-underline" aria-label="Subrayar">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hero-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 4v6a6 6 0 0 0 12 0V4" />
+      </svg>
+    </button>
+
+    <!-- Tachado -->
+    <button class="toolbar-btn btn-color btn-strike" aria-label="Tachar">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hero-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16 4H9a3 3 0 0 0-2.83 4M14 12a4 4 0 0 1 0 8H6M3 12h18" />
+      </svg>
+    </button>
+
+    <!-- Separador -->
+    <div class="toolbar-divider" aria-hidden="true"></div>
+
+    <!-- Selector Neutro (Swatch circular + Chevron) -->
+    <button class="toolbar-btn btn-picker" aria-label="Seleccionar color">
+      <!-- Swatch circular customizado bajo normas Heroicons -->
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="hero-icon">
+        <!-- Círculo exterior (borde del swatch) -->
+        <circle cx="12" cy="12" r="8" stroke-linecap="round" stroke-linejoin="round" />
+        <!-- Pequeño detalle interior para darle más entidad de herramienta de color (opcional, como un reflejo) -->
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5A4.5 4.5 0 0 0 8.5 15.5" opacity="0.4" />
+      </svg>
+      
+      <!-- Heroicon Chevron Down original -->
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="hero-chevron">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+      </svg>
+    </button>
+
+  </div>
+
+</body>
+</html>

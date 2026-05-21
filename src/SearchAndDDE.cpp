@@ -34,6 +34,7 @@
 #include "Toolbar.h"
 #include "SumatraDialogs.h"
 #include "Translations.h"
+#include "prettysumatra/BridgeDispatcher.h"
 
 #include "utils/Log.h"
 
@@ -88,6 +89,12 @@ void FindFirst(MainWindow* win) {
                 Edit_SetModify(win->hwndFindEdit, FALSE);
             }
         }
+    }
+
+    // If using hybrid toolbar (WebView2), focus the web-based search
+    if (prettysumatra::bridge::UseHybridToolbar()) {
+        prettysumatra::bridge::FocusHybridToolbarSearch(win->hwndFrame);
+        return;
     }
 
     // Don't show a dialog if we don't have to - use the Toolbar instead
@@ -225,14 +232,17 @@ struct FindThreadData {
     MainWindow* win = nullptr;
     TextSearch::Direction direction = TextSearch::Direction::Forward;
     bool wasModified = false;
+    int startPage = -1;
     AutoFreeWStr text;
     HANDLE thread = nullptr;
 
-    FindThreadData(MainWindow* win, TextSearch::Direction direction, const char* text, bool wasModified) {
+    FindThreadData(MainWindow* win, TextSearch::Direction direction, const char* text, bool wasModified,
+                   int startPage) {
         this->win = win;
         this->direction = direction;
         this->text = ToWStr(text);
         this->wasModified = wasModified;
+        this->startPage = startPage;
     }
     ~FindThreadData() { CloseHandle(thread); }
 
@@ -370,9 +380,13 @@ static void FindThread(FindThreadData* ftd) {
     TextSel* rect;
     textSearch->progressCb = MkFunc1<FindThreadData, ProgressUpdateData*>(UpdateSearchProgress, ftd);
     textSearch->SetDirection(ftd->direction);
+    int searchStartPage = ftd->startPage;
+    if (searchStartPage <= 0 || !ctrl->ValidPageNo(searchStartPage)) {
+        searchStartPage = ctrl->CurrentPageNo();
+    }
     if (ftd->wasModified || !ctrl->ValidPageNo(textSearch->GetCurrentPageNo()) ||
         !dm->GetPageInfo(textSearch->GetCurrentPageNo())->visibleRatio) {
-        rect = textSearch->FindFirst(ctrl->CurrentPageNo(), ftd->text);
+        rect = textSearch->FindFirst(searchStartPage, ftd->text);
     } else {
         rect = textSearch->FindNext();
     }
@@ -438,12 +452,12 @@ bool AbortFinding(MainWindow* win, bool hideMessage) {
 //   if false, searching for the next occurence of previous term
 // TODO: should detect wasModified by comparing with the last search result
 void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, const char* text, bool wasModified,
-                      bool showProgress) {
+                      bool showProgress, int startPage) {
     AbortFinding(win, false);
     if (str::IsEmpty(text)) {
         return;
     }
-    FindThreadData* ftd = new FindThreadData(win, direction, text, wasModified);
+    FindThreadData* ftd = new FindThreadData(win, direction, text, wasModified, startPage);
     ftd->ShowUI(showProgress);
     win->findThread = nullptr;
     auto fn = MkFunc0(FindThread, ftd);
@@ -482,7 +496,10 @@ void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, bool sho
         }
     }
     Edit_SetModify(win->hwndFindEdit, FALSE);
-    FindTextOnThread(win, direction, s, wasModified, showProgress);
+    // When search text is modified (new search), start from beginning of document
+    int startPage = wasModified ? ((direction == TextSearch::Direction::Backward) ? win->ctrl->PageCount() : 1)
+                                : -1; // If not modified, use current position (default behavior)
+    FindTextOnThread(win, direction, s, wasModified, showProgress, startPage);
 }
 
 void PaintForwardSearchMark(MainWindow* win, HDC hdc) {
@@ -783,7 +800,7 @@ static const char* HandleSearchCmd(const char* cmd, bool* ack) {
     }
     bool wasModified = true;
     bool showProgress = true;
-    FindTextOnThread(win, TextSearch::Direction::Forward, term, wasModified, showProgress);
+    FindTextOnThread(win, TextSearch::Direction::Forward, term, wasModified, showProgress, 1);
     win->Focus();
     *ack = true;
     return next;

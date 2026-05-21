@@ -21,6 +21,8 @@
 #include "wingui/Layout.h"
 #include "wingui/WinGui.h"
 
+#include "wingui/WebView.h"
+
 #include "wingui/FrameRateWnd.h"
 
 #include "Settings.h"
@@ -1842,11 +1844,7 @@ static bool DrawDocument(MainWindow* win, HDC hdc, RECT* rcArea) {
             continue;
         }
 
-        HDC bmpDC = CreateCompatibleDC(hdc);
-        if (!bmpDC) {
-            continue;
-        }
-        SelectObject(bmpDC, gBitmapReloadingCue);
+        // Draw reload icon from PNG file using GDI+
         int size = DpiScale(win->hwndFrame, 16);
         int cx = std::min(bounds.dx, 2 * size);
         int cy = std::min(bounds.dy, 2 * size);
@@ -1854,8 +1852,23 @@ static bool DrawDocument(MainWindow* win, HDC hdc, RECT* rcArea) {
         int y = bounds.y + std::max((cy - size) / 2, 0);
         int dxDest = std::min(cx, size);
         int dyDest = std::min(cy, size);
-        StretchBlt(hdc, x, y, dxDest, dyDest, bmpDC, 0, 0, 16, 16, SRCCOPY);
-        DeleteDC(bmpDC);
+
+        WCHAR modulePath[MAX_PATH];
+        GetModuleFileNameW(nullptr, modulePath, (DWORD)dimof(modulePath));
+        WCHAR* lastSlash = wcsrchr(modulePath, L'\\');
+        if (lastSlash) {
+            *lastSlash = L'\0';
+            // Go up two levels: out/dbg64/ -> project root
+            wcsncat_s(modulePath, dimof(modulePath), L"\\..\\..\\gfx\\reload-icon.png", _TRUNCATE);
+
+            Gdiplus::Image img(modulePath);
+            if (img.GetLastStatus() == Gdiplus::Ok) {
+                Gdiplus::Graphics gg(hdc);
+                gg.SetSmoothingMode(Gdiplus::SmoothingModeHighQuality);
+                Gdiplus::RectF destRect((float)x, (float)y, (float)dxDest, (float)dyDest);
+                gg.DrawImage(&img, destRect);
+            }
+        }
     }
 
     WindowTab* tab = win->CurrentTab();
@@ -2604,6 +2617,18 @@ static LRESULT WndProcCanvasFixedPageUI(MainWindow* win, HWND hwnd, UINT msg, WP
             return 0;
 
         case WM_LBUTTONDOWN:
+            // Notify hybrid toolbar if click happened outside the webview
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt;
+                GetCursorPos(&pt);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom)) {
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
+            }
             OnMouseLeftButtonDown(win, x, y, wp);
             return 0;
 
@@ -2618,6 +2643,17 @@ static LRESULT WndProcCanvasFixedPageUI(MainWindow* win, HWND hwnd, UINT msg, WP
         case WM_MBUTTONDOWN:
             SetTimer(hwnd, SMOOTHSCROLL_TIMER_ID, SMOOTHSCROLL_DELAY_IN_MS, nullptr);
             // TODO: Create window that shows location of initial click for reference
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt;
+                GetCursorPos(&pt);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom)) {
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
+            }
             OnMouseMiddleButtonDown(win, x, y, wp);
             return 0;
 
@@ -2626,6 +2662,17 @@ static LRESULT WndProcCanvasFixedPageUI(MainWindow* win, HWND hwnd, UINT msg, WP
             return 0;
 
         case WM_RBUTTONDOWN:
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt;
+                GetCursorPos(&pt);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom)) {
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
+            }
             OnMouseRightButtonDown(win, x, y);
             return 0;
 

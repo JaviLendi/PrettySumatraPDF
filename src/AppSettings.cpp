@@ -414,7 +414,10 @@ bool SaveSettings() {
     }
     logf("SaveSettings\n");
     // update display states for all tabs
-    for (MainWindow* win : gWindows) {
+    // Snapshot windows first because SaveSettings() can now be posted from
+    // document-load completion while tabs/windows are changing.
+    Vec<MainWindow*> windows = gWindows;
+    for (MainWindow* win : windows) {
         for (WindowTab* tab : win->Tabs()) {
             UpdateTabFileDisplayStateForTab(tab);
         }

@@ -1,714 +1,2412 @@
-
-<html lang="es" data-theme="light">
+<html data-theme="light" lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none';">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<script>
+// Monkeypatch addEventListener early to neutralize webview JS keyboard handlers.
+(function(){
+  const blockedKeys = new Set(['f','o','p','s','b','k','t','a','c','v','x','z','y','r','n']);
+  function isEditableElement(el){ if(!el) return false; const t=(el.tagName||'').toUpperCase(); return t==='INPUT'||t==='TEXTAREA'||el.isContentEditable; }
+
+  const origAdd = EventTarget.prototype.addEventListener;
+  const origRemove = EventTarget.prototype.removeEventListener;
+  const perTargetMap = new WeakMap(); // element -> Map(originalListener -> wrapped)
+
+  function shouldWrapForKeyboard(type){ return typeof type === 'string' && /^(keydown|keypress|keyup)$/.test(type); }
+
+  function makeWrapper(listener){
+    return function(e){
+      try{
+        const active = document.activeElement;
+        const editable = isEditableElement(active);
+        if ((e.ctrlKey||e.metaKey) && !editable) {
+          const k = (e.key||'').toLowerCase();
+          if (blockedKeys.has(k)) return; // neutralize webview handlers
+        }
+        if (!editable && e.key === 'F3') return;
+      } catch (_) {}
+      return listener.apply(this, arguments);
+    };
+  }
+
+  EventTarget.prototype.addEventListener = function(type, listener, options){
+    try{
+      if (shouldWrapForKeyboard(type) && typeof listener === 'function') {
+        let map = perTargetMap.get(this);
+        if (!map) { map = new Map(); perTargetMap.set(this, map); }
+        if (map.has(listener)) {
+          return origAdd.call(this, type, map.get(listener), options);
+        }
+        const wrapped = makeWrapper(listener);
+        map.set(listener, wrapped);
+        return origAdd.call(this, type, wrapped, options);
+      }
+    } catch (e) { /* fallthrough to default */ }
+    return origAdd.call(this, type, listener, options);
+  };
+
+  EventTarget.prototype.removeEventListener = function(type, listener, options){
+    try{
+      if (shouldWrapForKeyboard(type) && typeof listener === 'function') {
+        const map = perTargetMap.get(this);
+        const wrapped = map && map.get(listener);
+        if (wrapped) {
+          map.delete(listener);
+          return origRemove.call(this, type, wrapped, options);
+        }
+      }
+    } catch (e) {}
+    return origRemove.call(this, type, listener, options);
+  };
+
+  // Our own handler to focus the toolbar search on Ctrl+F and navigate with F3
+  function toolbarCtrlFHandler(e){
+    try{
+      const active = document.activeElement;
+      if ((e.ctrlKey||e.metaKey) && (e.key||'').toLowerCase() === 'f' && !isEditableElement(active)) {
+        const s = document.getElementById('searchInput');
+        if (s) { s.focus(); s.select && s.select(); e.stopPropagation(); }
+      }
+      if ((e.key === 'F3') && !isEditableElement(document.activeElement)) {
+        if (e.shiftKey) document.getElementById('searchPrev')?.click(); else document.getElementById('searchNext')?.click();
+        e.stopPropagation();
+      }
+    } catch (_) {}
+  }
+  window.addEventListener('keydown', toolbarCtrlFHandler, { capture: true });
+
+})();
+</script>
+<meta content="default-src 'self' data: blob:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'none';" http-equiv="Content-Security-Policy"/>
 <title>PrettySumatraPDF</title>
-<link rel="stylesheet" href="vendor/fontawesome/all.min.css">
-<link rel="stylesheet" href="vendor/inter/inter.css">
+<link href="vendor/material-icons/material-icons.css" rel="stylesheet"/>
+<link href="vendor/inter/inter.css" rel="stylesheet"/>
 <style>
 :root {
-  --bg-app: #F2F2F2FF; --bg-toolbar: rgba(255, 255, 255, 0.75); --bg-button: rgba(255, 255, 255, 0.5);
-  --bg-button-hover: rgba(255, 255, 255, 0.9); --bg-button-active: rgba(230, 230, 230, 0.9); --bg-input: rgba(255, 255, 255, 0.8);
-  --text-main: #1d1d1f; --text-muted: #86868b; --border-color: rgba(0, 0, 0, 0.08); --border-input: rgba(0, 0, 0, 0.1);
-  --brand-primary: #eab308; --brand-primary-hover: #ca8a04; --brand-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04); --shadow-md: 0 4px 12px rgba(0,0,0,0.05);
-  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px; --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --white: #ffffff; --black: #000000; --brand-dark: #eab308; --brand-darker: #5a4300;
+  --bg-app: #F2F2F2FF; --bg-toolbar: rgba(255, 255, 255, 0.75); --bg-button: rgba(255, 255, 255, 0.6);
+  --bg-surface: var(--bg-input);
+  --bg-hover: var(--bg-button-hover);
+  --bg-button-hover: rgba(255, 255, 255, 0.95); --bg-input: rgba(255, 255, 255, 0.8);
+  --text-main: #1d1d1f; --text-muted: #6e6e73; --border-color: rgba(0, 0, 0, 0.08); --border-input: rgba(0, 0, 0, 0.1);
+  --brand-primary: #eab308; --brand-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  --brand-light-08: rgba(250, 204, 21, 0.08); --brand-medium-16: rgba(234, 179, 8, 0.16); --brand-shadow-3: rgba(234, 179, 8, 0.3);
+  --brand-shadow-2: rgba(234, 179, 8, 0.2); --brand-focus-12: rgba(234, 179, 8, 0.15); --brand-shimmer: rgba(234, 179, 8, 0.35);
+  --accent-win11: #0078D4; 
+  --shadow-sm: 0 1px 1px rgba(0,0,0,0.01); --shadow-md: 0 2px 4px rgba(0,0,0,0.015);
+  --inset-white-1: rgba(255,255,255,0.1); --inset-white-55: rgba(255,255,255,0.55); --inset-white-7: rgba(255,255,255,0.7); --inset-white-45: rgba(255,255,255,0.45);
+  --inset-dark-04: rgba(0,0,0,0.04); --inset-dark-02: rgba(0,0,0,0.02); --inset-dark-012: rgba(0,0,0,0.012);
+  --slider-dark-bg: #2c2c2e; --inset-white-05: rgba(255,255,255,0.05); --inset-white-14: rgba(255,255,255,0.14);
+  --skeleton-bg: #F2F2F2FF;
+  --btn-highlight: inset 0 0 0 0 rgba(255,255,255,0);
+  --radius-sm: 6px; --radius-md: 10px; --transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
+
 [data-theme="dark"] {
-  --bg-app: #0f0f11; --bg-toolbar: rgba(28, 28, 30, 0.75); --bg-button: rgba(44, 44, 46, 0.6);
-  --bg-button-hover: rgba(58, 58, 60, 0.9); --bg-button-active: rgba(72, 72, 74, 0.9); --bg-input: rgba(44, 44, 46, 0.8);
-  --text-main: #f5f5f7; --text-muted: #a1a1a6; --border-color: rgba(255, 255, 255, 0.08);
-  --border-input: rgba(255, 255, 255, 0.1); --brand-primary: #facc15; --brand-primary-hover: #fef08a;
+  --bg-app: #121214; --bg-toolbar: rgba(28, 28, 30, 0.85); --bg-button: rgba(44, 44, 46, 0.5);
+  --bg-button-hover: rgba(68, 68, 70, 0.8); --bg-input: rgba(0, 0, 0, 0.3);
+  --text-main: #f5f5f7; --text-muted: #98989f; --border-color: rgba(255, 255, 255, 0.1); --border-input: rgba(255, 255, 255, 0.12); 
+  --brand-primary: #facc15; --shadow-sm: 0 1px 2px rgba(0,0,0,0.08); --shadow-md: 0 3px 8px rgba(0,0,0,0.12);
+  --inset-white-55: rgba(255,255,255,0.55); --inset-white-7: rgba(255,255,255,0.7); --inset-white-45: rgba(255,255,255,0.45);
+  --inset-dark-08: rgba(0,0,0,0.08); --inset-dark-2: rgba(0,0,0,0.2); --inset-dark-3: rgba(0,0,0,0.3); --inset-dark-4: rgba(0,0,0,0.4);
+  --slider-dark-bg: #2c2c2e; --inset-white-05: rgba(255,255,255,0.05);
+  --btn-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --skeleton-bg: rgba(200, 200, 200, 0.15);
+  --brand-light-08: rgba(250, 204, 21, 0.08); --brand-medium-16: rgba(234, 179, 8, 0.16); --brand-shadow-3: rgba(234, 179, 8, 0.3);
+  --brand-shadow-2: rgba(234, 179, 8, 0.2); --brand-focus-12: rgba(234, 179, 8, 0.15); --brand-shimmer: rgba(234, 179, 8, 0.35);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background-color: var(--bg-app); color: var(--text-main); height: 100vh; padding: 16px; display: block; overflow: hidden; }
-.toolbar-container { display: flex; align-items: center; justify-content: safe center; width: 100%; max-width: 1600px; margin: 0 auto; background: var(--bg-toolbar); backdrop-filter: blur(10px) saturate(130%); -webkit-backdrop-filter: blur(10px) saturate(130%); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 10px 16px; box-shadow: var(--shadow-md); gap: 16px; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; }
-.toolbar-container::-webkit-scrollbar { display: none; }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-.brand-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3); overflow: hidden; background: linear-gradient(135deg, rgba(250, 204, 21, 0.08), rgba(234, 179, 8, 0.16)); }
-.brand-icon img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
-.brand-text { display: flex; flex-direction: column; }
-.brand-title { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; white-space: nowrap; }
-.brand-title span { color: var(--brand-primary); }
-.brand-subtitle { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; white-space: nowrap; }
 
-.toolbar-section { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; flex-shrink: 0; }
-.control-group { display: flex; align-items: center; background: var(--bg-button); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 4px; transition: var(--transition); flex-shrink: 0; }
-.control-group:hover { box-shadow: var(--shadow-sm); }
-.btn { background: transparent; border: none; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; font-size: 0.95rem; border-radius: var(--radius-sm); transition: var(--transition); flex-shrink: 0; }
-.btn-icon { width: 32px; height: 32px; color: var(--text-muted); }
-.btn-icon:hover { background: var(--bg-button-hover); color: var(--text-main); transform: translateY(-1px); }
-.btn-icon:active { background: var(--bg-button-active); transform: translateY(0); }
-.btn-primary { background: var(--brand-gradient); color: white; padding: 0 16px; height: 36px; font-weight: 600; border-radius: var(--radius-md); box-shadow: 0 2px 6px rgba(234, 179, 8, 0.2); }
-.btn-primary:hover { box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3); transform: translateY(-1px); }
-.btn.active { background: var(--bg-button-active); color: var(--brand-primary); }
-.divider { width: 1px; height: 20px; background: var(--border-color); margin: 0 4px; flex-shrink: 0; }
-.page-input { width: 44px; height: 28px; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--radius-sm); color: var(--text-main); text-align: center; font-family: inherit; font-size: 0.9rem; font-weight: 500; flex-shrink: 0; }
-.page-input:focus { outline: 2px solid var(--brand-primary); border-color: transparent; }
-.page-meta { font-size: 0.85rem; color: var(--text-muted); margin: 0 6px 0 2px; font-weight: 500; white-space: nowrap; }
-.custom-select { background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 500; padding: 4px 8px; cursor: pointer; appearance: none; -webkit-appearance: none; outline: none; }
-.select-wrapper { position: relative; display: flex; align-items: center; flex-shrink: 0; }
-.select-wrapper i { position: absolute; right: 8px; pointer-events: none; font-size: 0.75rem; color: var(--text-muted); }
-.search-box { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-input); border-radius: var(--radius-md); padding: 0 4px 0 12px; height: 36px; transition: var(--transition); flex-shrink: 0; }
-.search-box:focus-within { border-color: var(--brand-primary); box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2); }
-.search-input { border: none; background: transparent; color: var(--text-main); font-family: inherit; font-size: 0.9rem; width: 100px; outline: none; transition: var(--transition); }
-.search-input::placeholder { color: var(--text-muted); }
-.btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+* {
+  box-sizing: border-box; margin: 0; padding: 0;
+}
 
-/* =========================================================
-   MODERN MINIMALIST 3-STATE THEME SWITCH
-   ========================================================= */
-.theme-pill-container { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif; background-color: var(--bg-app); color: var(--text-main); height: 100vh; overflow: hidden; user-select: none; -webkit-user-select: none;
+}
+
+input, textarea {
+  user-select: auto; -webkit-user-select: auto;
+}
+
+.toolbar-container {
+  position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: flex-start; 
+  width: 100%; height: 56px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); 
+  padding: 8px 16px; gap: 8px; -webkit-app-region: drag; overflow: hidden; position: relative;
+}
+
+/* Host-driven resize mode: minimize expensive paints while user drags window edges */
+html.host-resizing .toolbar-container {
+  contain: paint;
+}
+
+html.host-resizing * {
+  transition: none !important;
+  animation: none !important;
+}
+
+input, select, label, .control-group, .modern-pagination-group, .search-wrapper, .brand, .theme-control-group {
+  -webkit-app-region: no-drag;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-right: 8px; cursor: default;
+}
+
+.brand-icon {
+  display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: var(--radius-md); box-shadow: 0 2px 8px var(--brand-shadow-3); background: linear-gradient(135deg, var(--brand-light-08), var(--brand-medium-16));
+}
+
+.brand-icon img {
+  width: 100%; height: 100%; object-fit: contain;
+}
+
+.brand-title {
+  font-weight: 700; font-size: 1.05rem; white-space: nowrap;
+}
+
+.brand-title span {
+  color: var(--brand-primary);
+}
+
+.brand-subtitle {
+  font-size: 0.75rem; color: var(--text-muted); font-weight: 500;
+}
+
+.toolbar-items {
+  display: flex; align-items: center; gap: 8px; flex: 1 1 auto; height: 100%; min-width: 0;
+}
+
+.toolbar-items.toolbar-items--compact {
+  gap: 6px;
+}
+
+.toolbar-items.toolbar-items--compact .control-group,
+.toolbar-items.toolbar-items--compact .modern-pagination-group,
+.toolbar-items.toolbar-items--compact .theme-control-group,
+.toolbar-items.toolbar-items--compact .search-wrapper {
+  padding: 1px 3px;
+}
+
+.toolbar-items.toolbar-items--compact .btn {
+  height: 26px;
+  padding: 0 10px;
+}
+
+.toolbar-items.toolbar-items--compact .btn--icon {
+  width: 28px;
+}
+
+.toolbar-items.toolbar-items--compact .custom-dropdown .dropdown-trigger {
+  padding: 0 6px;
+}
+
+/* Hide dropdowns entirely in compact mode to save space */
+.toolbar-items.toolbar-items--compact .custom-dropdown {
+  display: none !important;
+}
+
+/* Hide dividers that separate dropdowns from other buttons in compact mode */
+.toolbar-items.toolbar-items--compact .custom-dropdown + .divider,
+.toolbar-items.toolbar-items--compact .divider + .custom-dropdown {
+  display: none !important;
+}
+
+/* Compact group styles when toolbar is tight */
+.grp-zoom.compact, .grp-view.compact, .modern-pagination-group.compact {
+  gap: 4px;
+}
+
+.grp-zoom.compact .btn--icon, .grp-view.compact .btn--icon {
+  width: 28px;
+  height: 28px;
+}
+
+.grp-zoom.compact .dropdown-trigger {
+  padding: 0 6px; font-size: 0.8rem;
+}
+
+/* Compact variants for groups that used to be auto-hidden */
+.grp-actions.compact, .grp-theme.compact, .grp-tools.compact {
+  padding: 2px 4px; gap: 6px;
+}
+
+.grp-actions.compact .btn, .grp-theme.compact .btn, .grp-tools.compact .btn {
+  height: 28px; padding: 0 8px; font-size: 0.85rem;
+}
+
+.flex-spacer {
+  flex: 1 1 auto; min-width: 20px; height: 100%; -webkit-app-region: drag;
+}
+
+[data-name].auto-hidden {
+  /* Keep element visible but visually de-emphasized when auto-compact runs */
+  display: flex !important; opacity: 0.85; pointer-events: auto; transform: none !important; padding: 2px 4px !important;
+}
+
+/* In compact mode, auto-hidden elements are actually hidden */
+.toolbar-items.toolbar-items--compact [data-name].auto-hidden {
+  display: none !important;
+}
+
+.control-group, .modern-pagination-group, .theme-control-group {
+  display: flex; align-items: center; justify-content: center; background: var(--bg-button); 
+  border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px 6px; height: 40px; 
+  transition: var(--transition); flex-shrink: 0; box-shadow: var(--btn-highlight);
+}
+
+.control-group:hover, .modern-pagination-group:hover, .theme-control-group:hover {
+  background: var(--bg-button-hover); box-shadow: var(--shadow-sm), var(--btn-highlight);
+}
+
+.theme-control-group {
+  border-radius: 20px; gap: 6px;
+}
+
+#openButton {
+  gap: 7px;
+  padding: 0 13px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 62%, var(--border-color) 38%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--bg-toolbar) 86%, var(--white) 14%) 0%, color-mix(in srgb, var(--bg-button) 88%, var(--white) 12%) 100%);
+  color: color-mix(in srgb, var(--brand-primary) 72%, var(--brand-dark) 28%);
+  box-shadow: inset 0 1px 0 var(--inset-white-55), 0 1px 2px var(--inset-dark-012);
+  text-shadow: none;
+}
+
+#openButton:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand-primary) 78%, var(--white) 22%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 15%, var(--white) 85%) 0%, color-mix(in srgb, var(--brand-primary) 22%, var(--white) 78%) 100%);
+  color: color-mix(in srgb, var(--brand-primary) 82%, var(--brand-darker) 18%);
+  box-shadow: inset 0 1px 0 var(--inset-white-7), 0 2px 4px color-mix(in srgb, var(--brand-primary) 6%, transparent);
+}
+
+#openButton:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: inset 0 1px 0 var(--inset-white-45), 0 1px 2px color-mix(in srgb, var(--brand-primary) 4%, transparent);
+}
+
+#openButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-focus-12), inset 0 1px 0 var(--inset-white-55), 0 3px 6px color-mix(in srgb, var(--brand-primary) 8%, transparent);
+}
+
+#openButton .material-symbols-rounded {
+  font-size: 1.25rem;
+  opacity: 0.95;
+}
+
+#openButtonText {
+  letter-spacing: 0.01em;
+}
+
+.divider {
+  width: 1px; height: 20px; background: var(--border-input); margin: 0 6px; flex-shrink: 0;
+}
+
+.custom-select {
+  background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.9rem; font-weight: 600; padding: 0 10px; height: 32px; cursor: pointer; border-radius: 6px; -webkit-appearance: none; appearance: none; outline: none; text-align: center; transition: var(--transition);
+}
+
+.custom-select:hover {
+  background: var(--border-color); color: var(--brand-primary);
+}
+
+.custom-select:focus {
+  background: var(--bg-app); box-shadow: 0 0 0 2px var(--brand-focus-12);
+}
+
+.modern-pagination-group .page-input {
+  width: calc(1ch + 0.9rem); min-width: 6px; max-width: 72px; text-align: center; background: transparent; border: none; font-weight: 700; color: var(--text-main); outline: none; appearance: textfield; -moz-appearance: textfield; font-size: 0.95rem; margin-left: -4px;
+}
+
+.modern-pagination-group .page-input::-webkit-outer-spin-button, .modern-pagination-group .page-input::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+
+.modern-pagination-group .page-meta {
+  font-size: 0.88rem; color: var(--text-muted); font-weight: 600; min-width: 0; white-space: nowrap; margin-right: 4px; display: flex; align-items: center;
+}
+
+.search-wrapper {
+  position: relative; display: flex; align-items: center; width: auto; height: 40px; flex-shrink: 0; z-index: 100; transition: var(--transition);
+}
+
+.modern-search-group {
+  display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; padding: 0 14px; height: 100%; box-shadow: inset 0 1px 2px var(--inset-dark-02); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor: text; width: 160px;
+}
+
+[data-theme="dark"] .modern-search-group {
+  box-shadow: inset 0 1px 2px var(--inset-dark-2);
+}
+
+.modern-search-group:focus-within {
+  background: var(--bg-input); border-color: var(--border-color); width: 280px;
+}
+
+.modern-search-group:hover:not(:focus-within) {
+  border-color: var(--border-hover);
+  box-shadow: inset 0 1px 2px var(--inset-dark-02);
+}
+
+.modern-search-group .search-input {
+  border: none; background: transparent; color: var(--text-main); outline: none; flex: 1; min-width: 20px; font-size: 0.85rem;
+}
+
+.modern-search-group:focus-within .search-input {
+  width: auto;
+}
+
+.modern-search-group .search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-nav {
+  display: flex; align-items: center; margin-left: 4px;
+}
+
+.modern-search-group .search-icon {
+  color: var(--text-muted); font-size: 1.1rem; margin-right: 8px; pointer-events: none; flex-shrink: 0;
+}
+
+/* =========================================
+   MODERN THEME SWITCH (Rediseño Mejorado)
+   ========================================= */
 
 .modern-theme-switch {
   position: relative;
   display: flex;
-  background: var(--bg-button);
-  border: 1px solid var(--border-color);
-  border-radius: 20px;
+  align-items: center;
+  /* Fondo interno tipo 'pozo' */
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: 999px;
   padding: 3px;
-  gap: 2px;
-  flex-shrink: 0;
+  width: 108px; /* Ancho optimizado para 3 iconos */
+  height: 36px;
+  box-shadow: inset 0 2px 5px var(--inset-dark-04);
   transition: var(--transition);
+  cursor: pointer;
 }
-.modern-theme-switch:hover { box-shadow: var(--shadow-sm); }
 
-/* Indicador deslizante (El fondo activo) */
-.mts-slider {
+[data-theme="dark"] .modern-theme-switch {
+  box-shadow: inset 0 2px 5px var(--inset-dark-2);
+}
+
+/* El elemento deslizante (la caja que resalta el botón activo) */
+.modern-theme-switch .mts-slider {
   position: absolute;
-  top: 3px; left: 3px;
-  width: 28px; height: 28px;
-  background: var(--bg-toolbar);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 32px;
+  height: 28px;
+  background: var(--bg-app); /* Contrasta con el fondo */
+  border-radius: 999px;
+  /* Sombra para dar efecto de relieve sobre el pozo */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease;
   z-index: 1;
+}
+
+[data-theme="dark"] .modern-theme-switch .mts-slider {
+  background: var(--bg-toolbar);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--inset-white-05);
+}
+
+/* Botones individuales (Sol, Luna, Auto) */
+.modern-theme-switch .mts-btn {
+  position: relative;
+  flex: 1; /* Distribute space evenly */
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 0;
+  margin: 0;
+  z-index: 2; /* Siempre por encima del slider */
+  border-radius: 999px;
+  transition: color 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.modern-theme-switch .mts-btn .material-symbols-rounded {
+  font-size: 1.25rem; /* Iconos un poco más legibles */
+}
+
+.modern-theme-switch .mts-btn:hover {
+  color: var(--text-main);
+  transform: scale(1.05); /* Pequeño efecto pop al pasar el ratón */
+}
+
+/* Resaltado del botón activo (el que coincide con el estado general) */
+.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"],
+.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"],
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] {
+  color: var(--brand-primary);
+  /* Se elimina el transform scale aquí para que quede en reposo sobre el slider */
+  transform: none;
+}
+
+/* Foco de accesibilidad */
+.modern-theme-switch .mts-btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--brand-focus-12);
+}
+
+/* Posiciones exactas del slider dependiendo del estado */
+/* (108px total - 6px padding) = 102px inner space / 3 buttons = 34px per button */
+.modern-theme-switch[data-state="light"] .mts-slider {
+  transform: translateX(1px); /* Posición Izquierda */
+}
+
+.modern-theme-switch[data-state="dark"] .mts-slider {
+  transform: translateX(34px); /* Posición Centro */
+}
+
+.modern-theme-switch[data-state="auto"] .mts-slider {
+  transform: translateX(67px); /* Posición Derecha */
+}
+
+/* Ajustes Responsive (Para los media queries ya existentes al final de tu archivo) */
+@media (max-width: 1000px) {
+  .modern-theme-switch {
+    width: 90px;
+    height: 32px;
+    padding: 2px;
+  }
+  .modern-theme-switch .mts-slider {
+    width: 27px;
+    height: 26px;
+  }
+  .modern-theme-switch .mts-btn .material-symbols-rounded {
+    font-size: 1rem;
+  }
+  .modern-theme-switch[data-state="light"] .mts-slider { transform: translateX(1px); }
+  .modern-theme-switch[data-state="dark"] .mts-slider { transform: translateX(29px); }
+  .modern-theme-switch[data-state="auto"] .mts-slider { transform: translateX(58px); }
+}
+
+@media (max-width: 650px) {
+  .modern-theme-switch {
+    display: none !important; /* Si quieres seguir ocultándolo en móvil como en el original */
+  }
+}
+
+.win11-icon {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 12px; height: 12px;
+}
+
+.win11-icon i {
+  background: currentColor; border-radius: 1px;
+}
+
+/* Custom colored SVG icons for annotation tools */
+:root {
+  --icon-size: 20px;
+  --icon-ink-color: #e5e7eb;
+}
+
+.custom-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  display: block;
+}
+
+.custom-icon .pen-body {
+  stroke: var(--text-main);
+  fill: none;
+}
+
+.custom-icon .pen-ink {
+  stroke: var(--icon-ink-color);
+  fill: none;
+}
+
+.toolbar-btn, .annot-tool-button {
+  background: transparent; border: none; padding: 6px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+
+.toolbar-btn:hover, .annot-tool-button:hover { background: rgba(0,0,0,0.03); }
+
+.btn-highlight { --icon-ink-color: #fbbf24; }
+.btn-underline { --icon-ink-color: #22c55e; }
+.btn-strike { --icon-ink-color: #ef4444; }
+
+.annot-tools-container {
+  display: flex; align-items: center; gap: 2px;
+}
+
+.tool-buttons {
+  display: flex; align-items: flex-end; gap: 2px;
+}
+
+.annot-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 10px;
+}
+
+.annot-tool-swatch {
+  background: var(--tool-color, var(--brand-primary));
+}
+
+[data-theme="dark"] .annot-tool-swatch {
+  border-color: var(--inset-white-14);
+}
+
+.color-selector-container {
+  display: flex; align-items: center;
+}
+
+.native-context-menu {
+  position: fixed; background: var(--bg-toolbar); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-md), 0 4px 12px rgba(0,0,0,0.06);
+  padding: 6px; min-width: 220px; z-index: 10000; display: none; flex-direction: column; opacity: 0; transform: scale(0.98); transition: opacity 0.1s, transform 0.1s;
+}
+
+.native-context-menu.show {
+  display: flex; opacity: 1; transform: scale(1);
+}
+
+.cm-item {
+  display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; color: var(--text-main); font-weight: 500; transition: background 0.1s;
+}
+
+.cm-item:hover {
+  background: var(--brand-primary); color: white;
+}
+
+.dropdown-trigger {
+  display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; padding: 0 10px; height: 32px; cursor: pointer; border-radius: 6px; transition: var(--transition);
+}
+
+.dropdown-menu {
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.03); padding: 6px; min-width: 140px; list-style: none; margin: 0; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; pointer-events: none;
+}
+
+.custom-dropdown.open .dropdown-menu {
+  opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto;
+}
+
+.custom-dropdown.dropup .dropdown-menu {
+  top: auto; bottom: calc(100% + 6px); transform: translateX(-50%) translateY(0);
+}
+
+.custom-dropdown .dropdown-menu.clamped-left {
+  left: 8px; transform: translateX(0) translateY(0);
+}
+
+.custom-dropdown .dropdown-menu.clamped-right {
+  left: auto; right: 8px; transform: translateX(0) translateY(0);
+}
+
+.dropdown-menu li {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.85rem; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: background 0.1s ease; position: relative;
+}
+
+.dropdown-menu li:hover {
+  background: var(--bg-hover);
+}
+
+.dropdown-menu li .check-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--brand-primary);
+  opacity: 0;
+}
+
+.dropdown-menu li.selected .check-icon {
+  opacity: 1;
+}
+
+.menu-icon {
+  font-size: 0.95rem; color: var(--text-muted); width: 18px; text-align: center;
+}
+
+[data-name].is-hidden {
+  display: none !important;
+}
+
+.toolbar-container.edit-mode [data-name] {
+  position: relative; cursor: grab;
+}
+
+.toolbar-container.edit-mode [data-name].dragging {
+  opacity: 0.2; transform: scale(0.95);
+}
+
+.toolbar-container.edit-mode .flex-spacer {
+  background: rgba(150,150,150,0.1); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--inset-dark-04); display: flex; align-items: center; justify-content: center;
+}
+
+.toolbar-container.edit-mode .flex-spacer::after {
+  content: 'Spacer'; font-size: 0.75rem; color: var(--text-muted);
+}
+
+.toolbar-container.edit-mode [data-name].is-hidden {
+  display: flex !important; opacity: 0.4;
+}
+
+.toolbar-container.edit-mode [data-name] * {
   pointer-events: none;
 }
-.modern-theme-switch[data-state="light"] .mts-slider { transform: translateX(0); }
-.modern-theme-switch[data-state="dark"] .mts-slider { transform: translateX(30px); }
-.modern-theme-switch[data-state="auto"] .mts-slider { transform: translateX(60px); }
 
-/* Efecto de resplandor sutil según el estado */
-.modern-theme-switch[data-state="light"] .mts-slider { box-shadow: 0 0 6px rgba(234, 179, 8, 0.2); border: 1px solid rgba(234, 179, 8, 0.1); }
-.modern-theme-switch[data-state="auto"] .mts-slider { box-shadow: 0 0 6px rgba(0, 120, 212, 0.2); border: 1px solid rgba(0, 120, 212, 0.1); }
-
-/* Botones individuales (Zonas de clic) */
-.mts-btn {
-  position: relative;
-  width: 28px; height: 28px;
-  background: transparent; border: none; border-radius: 50%;
-  color: var(--text-muted); font-size: 0.9rem; cursor: pointer;
-  z-index: 2; display: flex; align-items: center; justify-content: center;
-  transition: color 0.3s ease, transform 0.2s ease;
-}
-.mts-btn:hover { color: var(--text-main); }
-
-/* Colores activos */
-.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"] { color: var(--brand-primary); }
-.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"] { color: var(--text-main); }
-
-/* --- ANIMACIÓN ESTADO: CLARO (SOL) --- */
-.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"] i {
-  transform: rotate(0deg);
-}
-@keyframes sunSpin { 100% { transform: rotate(360deg); } }
-
-/* --- ANIMACIÓN ESTADO: OSCURO (LUNA) --- */
-.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"] i {
-  transform: rotate(-15deg); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.mts-tiny-star { position: absolute; background: currentColor; border-radius: 50%; opacity: 0; pointer-events: none; }
-.ts-1 { width: 2px; height: 2px; top: 6px; right: 6px; }
-.ts-2 { width: 1.5px; height: 1.5px; bottom: 8px; left: 4px; }
-.modern-theme-switch[data-state="dark"] .ts-1 { animation: mtsTwinkle 0.9s ease-out 1 0.15s; }
-.modern-theme-switch[data-state="dark"] .ts-2 { animation: mtsTwinkle 0.9s ease-out 1 0.3s; }
-@keyframes mtsTwinkle { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 0.8; transform: scale(1); } }
-
-/* --- ANIMACIÓN ESTADO: AUTO (WIN11) --- */
-.win11-icon { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 12px; height: 12px; }
-.win11-icon i { background: currentColor; border-radius: 0.5px; transition: all 0.3s ease; }
-
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i { background: #0078D4; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon { animation: winBreathe 0.8s ease-in-out 1 0.15s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(1) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.0s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(2) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.1s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(3) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; }
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(4) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.3s; }
-
-@keyframes winPop { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes winBreathe { 0% { filter: drop-shadow(0 0 0px rgba(0, 120, 212, 0)); } 100% { filter: drop-shadow(0 0 3px rgba(0, 120, 212, 0.4)); } }
-
-/* Botón de invertir documento */
-.invert-doc-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); background: var(--bg-button); border: 1px solid var(--border-color); transition: var(--transition); flex-shrink: 0; margin-left: 4px; }
-.invert-doc-btn:hover { color: var(--text-main); background: var(--bg-button-hover); }
-.invert-doc-btn.active { background: var(--bg-button-active); color: var(--brand-primary); }
-
-/* ===== RESPONSIVE BREAKPOINTS ===== */
-
-/* Large screens (1600px+): Full toolbar with all features */
-@media (max-width: 1600px) {
-  .toolbar-container { max-width: 100%; }
+.edit-badge {
+  display: none; position: absolute; top: -8px; right: -8px; width: 22px; height: 22px;
+  border-radius: 50%; cursor: pointer; z-index: 100; align-items: center; justify-content: center;
+  font-size: 11px; box-shadow: 0 1px 3px var(--inset-dark-3); pointer-events: auto !important; transition: transform 0.1s;
+  box-sizing: border-box; padding: 0; overflow: hidden;
 }
 
-/* Medium-Large screens (1200px - 1599px): Compact spacing */
-@media (max-width: 1200px) {
-  .toolbar-container {
-    padding: 6px 10px;
-    gap: 10px;
-    flex-wrap: nowrap;
-  }
-  .toolbar-section {
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-  .btn-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 0.9rem;
-  }
-  .divider {
-    height: 16px;
-    margin: 0 2px;
-  }
-  #openButtonText {
-    display: none;
-  }
-  .btn-primary {
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-  }
-  .btn-primary i {
-    margin: 0;
-    font-size: 0.9rem;
-  }
-  .page-input {
-    width: 36px;
-    height: 24px;
-    font-size: 0.85rem;
-  }
-  .page-meta {
-    font-size: 0.8rem;
-  }
-  .brand-subtitle {
-    display: none;
-  }
-  .control-group:has(#zoomSelect) .select-wrapper,
-  .control-group:has(#zoomSelect) .divider,
-  .control-group:has(#viewModeSelect) .select-wrapper,
-  .control-group:has(#viewModeSelect) .divider {
-    display: none;
-  }
-  .search-box {
-    position: relative;
-    width: 32px;
-    padding: 0;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
-  }
-  .search-box i.fa-magnifying-glass {
-    min-width: 32px;
-    text-align: center;
-    pointer-events: none;
-  }
-  .search-box:not(:focus-within) .search-input {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-  .search-box:not(:focus-within) #searchPrev,
-  .search-box:not(:focus-within) #searchNext {
-    display: none;
-  }
-  .search-box:focus-within {
-    width: 100px;
-    padding: 0 4px 0 8px;
-    justify-content: flex-start;
-  }
-  .search-box:focus-within .search-input {
-    position: relative;
-    width: 100px;
-    opacity: 1;
-    cursor: text;
-  }
+.edit-badge:active {
+  transform: scale(0.85);
 }
 
-/* Tablet screens (900px - 1199px): More compact */
-@media (max-width: 1024px) {
-  .toolbar-container {
-    padding: 6px 8px;
-    gap: 8px;
-  }
-  .toolbar-section {
-    gap: 5px;
-  }
-  .btn-icon {
-    width: 26px;
-    height: 26px;
-    font-size: 0.85rem;
-  }
-  .brand-icon {
-    width: 32px;
-    height: 32px;
-  }
-  .brand-title {
-    font-size: 0.95rem;
-  }
-  .search-box:focus-within {
-    width: 120px;
-  }
-  .search-box:focus-within .search-input {
-    width: 90px;
-  }
-}
-
-@media (max-width: 900px) {
-  .brand {
-    display: none;
-  }
-  .toolbar-container {
-    padding: 5px 6px;
-    gap: 6px;
-  }
-  .toolbar-section {
-    gap: 4px;
-  }
-  .search-box:focus-within {
-    width: 140px;
-  }
-  .search-box:focus-within .search-input {
-    width: 70px;
-  }
-  .control-group {
-    padding: 3px;
-  }
-}
-
-/* Mobile landscape / Small tablet (768px - 899px): Minimal layout */
-@media (max-width: 768px) {
-  .toolbar-container {
-    gap: 6px;
-    padding: 4px 8px;
-    height: auto;
-    min-height: 44px;
-    flex-wrap: nowrap;
-  }
-  .toolbar-section {
-    gap: 4px;
-    flex-wrap: nowrap;
-  }
-  .btn-icon {
-    width: 24px;
-    height: 24px;
-    font-size: 0.8rem;
-  }
-  .page-input {
-    width: 32px;
-    height: 22px;
-    font-size: 0.8rem;
-  }
-  .divider {
-    height: 14px;
-    margin: 0 1px;
-  }
-  .search-box {
-    width: 28px;
-  }
-  .search-box:focus-within {
-    width: 120px;
-  }
-  .search-box:focus-within .search-input {
-    width: 60px;
-  }
-  .control-group {
-    padding: 2px;
-  }
-}
-
-/* Mobile portrait / Small screens (480px - 767px): Stacked layout */
-@media (max-width: 480px) {
-  .toolbar-container {
-    gap: 4px;
-    padding: 4px 4px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .toolbar-section {
-    width: auto;
-    gap: 3px;
-    flex-wrap: nowrap;
-  }
-  .btn-icon {
-    width: 22px;
-    height: 22px;
-    font-size: 0.75rem;
-  }
-  .btn-primary {
-    width: 24px;
-    height: 24px;
-  }
-  .btn-primary i {
-    font-size: 0.8rem;
-  }
-  .page-input {
-    width: 28px;
-    height: 20px;
-    font-size: 0.75rem;
-  }
-  .divider {
-    height: 12px;
-    margin: 0 1px;
-  }
-  .search-box {
-    width: 24px;
-  }
-  .search-box:focus-within {
-    width: 100px;
-  }
-  .search-box:focus-within .search-input {
-    width: 50px;
-    font-size: 0.8rem;
-  }
-  .control-group {
-    padding: 2px;
-    gap: 2px;
-  }
-  .theme-pill-container {
-    order: -1;
-  }
-}
-
-/* Extra small screens (<480px): Ultra minimal */
-@media (max-width: 380px) {
-  .toolbar-container {
-    gap: 3px;
-    padding: 3px;
-  }
-  .btn-icon {
-    width: 20px;
-    height: 20px;
-    font-size: 0.7rem;
-  }
-  .btn-primary {
-    width: 22px;
-    height: 22px;
-    padding: 0;
-  }
-  .page-input {
-    width: 24px;
-    height: 18px;
-    font-size: 0.7rem;
-  }
-  .divider {
-    height: 10px;
-    margin: 0 0.5px;
-  }
-  .search-box {
-    width: 20px;
-  }
-  .search-box:focus-within {
-    width: 90px;
-  }
-  .control-group {
-    padding: 1px;
-    gap: 1px;
-  }
-  .invert-doc-btn {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-/* ===== SKELETON LOADER RESPONSIVE ===== */
-.skeleton-container {
+.toolbar-container.edit-mode .edit-badge {
   display: flex !important;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  width: 100%;
-  max-width: 1600px;
-  height: 58px;
-  margin: 0 auto;
-  background: var(--bg-toolbar);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 10px 16px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-md);
-  z-index: 999;
 }
+
+.toolbar-container.edit-mode .edit-badge * {
+  pointer-events: none;
+}
+
+/* Ensure Material Symbols inside the edit badge are visually centered */
+.edit-badge > * {
+  display: flex; align-items: center; justify-content: center; width: auto; height: auto; padding: 0; margin: 0;
+}
+.edit-badge .material-symbols-rounded,
+.edit-badge .icon-remove,
+.edit-badge .icon-add {
+  line-height: 1; font-size: 12px; vertical-align: middle; display: inline-flex;
+}
+
+.toolbar-container.edit-mode [data-name]:not(.is-hidden) .edit-badge {
+  background: #ef4444; color: white; border: 1px solid #dc2626;
+}
+
+.toolbar-container.edit-mode [data-name]:not(.is-hidden) .icon-add {
+  display: none;
+}
+
+.toolbar-container.edit-mode [data-name].is-hidden .edit-badge {
+  background: #22c55e; color: white; border: 1px solid #16a34a;
+}
+
+.toolbar-container.edit-mode [data-name].is-hidden .icon-remove {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  #openButtonText, .brand-subtitle, .brand-title { display: none;
+}
+
+.toolbar-container {
+  gap: 6px; padding: 6px 12px; height: 52px;
+}
+
+.toolbar-items {
+  gap: 4px;
+}
+
+.control-group, .modern-pagination-group, .theme-control-group, .search-wrapper {
+  height: 36px; padding: 2px 4px;
+}
+
+.modern-pagination-group .page-input {
+  min-width: 22px; max-width: 58px; font-size: 0.85rem;
+}
+
+.modern-pagination-group .page-meta {
+  font-size: 0.8rem;
+}
+
+.custom-select {
+  height: 28px; font-size: 0.85rem; padding: 0 8px;
+}
+
+.divider {
+  margin: 0 4px; height: 16px;
+}
+
+.modern-theme-switch {
+  width: 88px; height: 28px; padding: 1px;
+}
+
+.mts-slider {
+  width: 27px; height: 22px;
+}
+
+.modern-theme-switch[data-state="dark"] .mts-slider {
+  transform: translateX(28.5px);
+}
+
+.modern-theme-switch[data-state="auto"] .mts-slider {
+  transform: translateX(55px);
+}
+
+.modern-search-group .search-input {
+  width: 100px;
+}
+
+}
+
+@media (max-width: 850px) {
+  .search-wrapper { width: 34px; height: 34px;
+}
+
+.modern-search-group {
+  position: absolute; right: 0; top: 0; width: 34px; height: 34px; padding: 0; border-radius: 17px; justify-content: center; cursor: pointer; z-index: 100;
+}
+
+.modern-search-group:focus-within {
+  width: 260px; padding: 0 14px; border-radius: 20px;
+}
+
+.custom-dropdown {
+  min-width: 80px;
+}
+
+.custom-dropdown .dropdown-trigger {
+  padding: 0 6px; font-size: 0.75rem;
+}
+
+.dropdown-menu {
+  min-width: 100px;
+}
+
+.dropdown-menu li {
+  padding: 6px 8px; font-size: 0.8rem;
+}
+
+.grp-zoom .divider {
+  margin: 0 2px; height: 12px;
+}
+
+.grp-view .divider {
+  margin: 0 2px; height: 12px;
+}
+
+.grp-view {
+  gap: 2px;
+}
+
+.modern-search-group .search-icon {
+  margin: 0; pointer-events: none;
+}
+
+.modern-search-group:focus-within .search-icon {
+  margin-right: 8px;
+}
+
+.modern-search-group:not(:focus-within) .search-input {
+  width: 0; opacity: 0; padding: 0; position: absolute;
+}
+
+.modern-search-group:not(:focus-within) .search-nav {
+  display: none;
+}
+
+.modern-search-group:focus-within {
+  width: 240px; max-width: calc(100vw - 32px); padding: 0 12px; justify-content: flex-start; background: var(--bg-input); border-color: var(--border-color);
+}
+
+.modern-search-group:focus-within .search-input {
+  width: 100%; opacity: 1; position: relative;
+}
+
+.modern-search-group:focus-within .search-nav {
+  display: flex;
+}
+
+}
+
+@media (max-width: 650px) {
+  .toolbar-container {
+    padding: 4px; height: 44px; gap: 4px;
+  }
+
+  .toolbar-items {
+    gap: 2px;
+    padding: 0 28px;
+  }
+
+  .control-group, .modern-pagination-group {
+    height: 32px; padding: 1px 2px; border-radius: 6px;
+  }
+
+  .modern-pagination-group .page-input {
+    min-width: 20px; max-width: 48px; font-size: 0.8rem; margin: 0;
+  }
+
+  .modern-pagination-group .page-meta {
+    font-size: 0.75rem;
+  }
+
+  .divider {
+    height: 12px; margin: 0 2px;
+  }
+
+  .custom-dropdown .dropdown-trigger {
+    padding: 0 4px; font-size: 0.7rem; height: 28px;
+  }
+
+  .grp-zoom, .grp-view {
+    height: 28px;
+  }
+
+  .btn {
+    width: 28px; height: 28px; font-size: 0.9rem;
+  }
+
+  .btn span {
+    font-size: 0.9rem;
+  }
+
+  .search-wrapper {
+    width: 28px; height: 28px;
+  }
+
+  .modern-search-group {
+    width: 28px; height: 28px; border-radius: 14px;
+  }
+
+  .theme-control-group {
+    height: 28px; padding: 1px 2px;
+  }
+
+  .modern-theme-switch {
+    width: 72px; height: 24px; padding: 1px;
+  }
+
+  .mts-slider {
+    width: 22px; height: 18px;
+  }
+
+}
+
+.skeleton-container {
+  position: sticky; top: 0; z-index: 999; display: flex !important; align-items: center; justify-content: center; gap: 16px; width: 100%; height: 56px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); padding: 8px 16px; overflow: hidden; -webkit-app-region: drag;
+}
+
 .skel-shape {
-  background: rgba(150, 150, 150, 0.3);
-  height: 36px;
-  border-radius: var(--radius-md);
+  background: var(--skeleton-bg); height: 36px; border-radius: var(--radius-md); -webkit-app-region: no-drag;
 }
+
 .skel-circle {
-  width: 36px;
-  border-radius: 50%;
+  width: 36px; border-radius: 50%;
 }
+
 .skel-box {
   width: 90px;
 }
+
 .skel-large {
   width: 160px;
 }
-.skeleton-container::after {
-  content: "";
+
+::-webkit-scrollbar {
+  width: 8px; height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.3); border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.5);
+}
+
+.toolbar-container {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
+}
+
+.custom-dropdown.open .dropdown-menu {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+  border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .custom-dropdown.open .dropdown-menu {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12), 0 1px 3px var(--inset-dark-08);
+}
+
+.custom-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: transparent;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.custom-dropdown.open {
+  background: var(--bg-hover);
+  box-shadow: 0 0 0 1px var(--border-color), var(--shadow-sm);
+}
+
+.custom-dropdown .dropdown-trigger {
+  position: relative;
+  z-index: 2;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-width: 0; 
+  flex-shrink: 0;
+}
+
+.custom-dropdown .dropdown-menu {
+  position: static !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  opacity: 0;
+  width: max-content !important;
+  max-width: 0;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0;
+  margin: 0;
+  transform: none !important; 
+  transition: max-width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
+  pointer-events: none;
+}
+
+.custom-dropdown.open .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  max-width: 500px;
+  padding: 0 8px 0 0;
+  pointer-events: auto;
+}
+
+.custom-dropdown .dropdown-menu li {
+  padding: 3px 5px;
+  margin-left: 2px; 
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.custom-dropdown .dropdown-menu li:hover {
+  background: var(--border-color);
+  color: var(--text-main);
+}
+
+.custom-dropdown .dropdown-menu li.selected {
+  background: var(--bg-app);
+  color: var(--brand-primary);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0 0 0 1px color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.inline-color-palette {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0;
+  pointer-events: none; 
+  transition: max-width 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, padding 0.3s ease;
+}
+
+.inline-color-palette.open {
+  max-width: 200px; 
+  opacity: 1;
+  padding-left: 4px;
+  pointer-events: auto;
+}
+
+.color-chip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--chip-color, #1d1d1f);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.color-chip[data-color="#facc15"] {
+  --chip-color: #facc15;
+}
+
+.color-chip[data-color="#22c55e"] {
+  --chip-color: #22c55e;
+}
+
+.color-chip[data-color="#3b82f6"] {
+  --chip-color: #3b82f6;
+}
+
+.color-chip[data-color="#ef4444"] {
+  --chip-color: #ef4444;
+}
+
+.color-chip[data-color="#ec4899"] {
+  --chip-color: #ec4899;
+}
+
+.color-chip[data-color="#f97316"] {
+  --chip-color: #f97316;
+}
+
+.color-chip[data-color="#1d1d1f"] {
+  --chip-color: #1d1d1f;
+}
+
+.color-chip:hover {
+  transform: scale(1.04);
+}
+
+.color-chip.active {
+  border-color: var(--text-main);
+  box-shadow: 0 0 0 3px var(--brand-focus-12);
+}
+
+[data-theme="dark"] .color-chip.active {
+  border-color: #fff;
+}
+
+[data-theme="dark"] .color-chip[data-color="#1d1d1f"] {
+  --chip-color: #f5f5f7;
+}
+
+.toolbar-container .control-group, 
+.toolbar-container .modern-pagination-group, 
+.toolbar-container .theme-control-group {
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.05);
+  background: var(--bg-button);
+  transition: all 0.2s ease;
+}
+
+.toolbar-container .annot-tools-container {
+  gap: 4px;
+}
+
+.toolbar-container .tool-buttons {
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.toolbar-container .annot-tool {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+#colorSelectorBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.toolbar-container .modern-pagination-group:not(.control-group) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  gap: 4px;
+  padding: 0;
+}
+
+.toolbar-container .page-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  height: 36px;
+  padding: 0 8px;
+  box-shadow: inset 0 1px 1px var(--inset-dark-012);
+  transition: all 0.2s ease;
+}
+
+.toolbar-container .page-input-wrapper:focus-within {
+  background: var(--bg-app);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px var(--brand-focus-12);
+}
+
+.toolbar-container .page-input {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+}
+
+.toolbar-container .page-input:focus {
+  outline: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.toolbar-container .page-meta {
+  margin-left: 4px;
+  padding-left: 4px;
+  border-left: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.toolbar-container .search-wrapper {
+  width: 34px;
+  height: 34px;
+  position: relative;
+  transition: width 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.toolbar-container .search-wrapper:focus-within {
+  width: min(280px, 40vw);
+}
+
+.toolbar-container .modern-search-group {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border-radius: 17px;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.toolbar-container .modern-search-group .search-icon {
+  margin: 0;
+  pointer-events: none;
+}
+
+.toolbar-container .modern-search-group:not(:focus-within) .search-input {
+  width: 0;
+  opacity: 0;
+  padding: 0;
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(234, 179, 8, 0.35), transparent);
-  animation: shimmer 1.2s linear 1;
-}
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
 }
 
-@media (max-width: 1200px) {
-  .skeleton-container {
-    height: 44px;
-    gap: 10px;
-  }
-  .skel-shape {
-    height: 30px;
-  }
-  .skel-circle {
+.toolbar-container .modern-search-group:not(:focus-within) .search-nav {
+  display: none;
+}
+
+.toolbar-container .modern-search-group:focus-within {
+  padding: 0 12px;
+  justify-content: flex-start;
+  background: var(--bg-app);
+  border-color: var(--border-color);
+}
+
+.toolbar-container .modern-search-group:focus-within .search-icon {
+  margin-right: 8px;
+}
+
+.toolbar-container .modern-search-group:focus-within .search-input {
+  width: 100%;
+  opacity: 1;
+  position: relative;
+}
+
+.toolbar-container .modern-search-group:focus-within .search-nav {
+  display: flex;
+}
+
+@media (max-width: 650px) {
+  .toolbar-container .search-wrapper {
     width: 30px;
-  }
+    height: 30px;
 }
 
-@media (max-width: 768px) {
-  .skeleton-container {
-    height: 40px;
-    gap: 8px;
-    padding: 8px 12px;
-  }
-  .skel-shape {
-    height: 28px;
-  }
-  .skel-circle {
-    width: 28px;
-  }
-  .skel-box {
-    width: 70px;
-  }
-  .skel-large {
-    width: 120px;
-  }
+.toolbar-container .search-wrapper:focus-within {
+  width: min(220px, calc(100vw - 24px));
 }
 
-@media (max-width: 480px) {
-  .skeleton-container {
-    height: 36px;
-    gap: 6px;
-    padding: 6px 8px;
-  }
-  .skel-shape {
-    height: 24px;
-  }
-  .skel-circle {
-    width: 24px;
-  }
-  .skel-box {
-    width: 50px;
-  }
-  .skel-large {
-    width: 80px;
-  }
+.toolbar-container .modern-search-group {
+  border-radius: 15px;
 }
+
+}
+
+
+/* ==========================================================================
+   COMPONENTES: BOTONES (.btn)
+   ========================================================================== */
+
+/* 1. CLASE BASE: Estructura compartida por TODOS los botones */
+.btn {
+  all: unset;
+  box-sizing: border-box;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--text-main);
+  background: transparent;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 2. ESTADOS GLOBALES */
+.btn:hover:not(:disabled) {
+  background: var(--bg-button-hover);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--brand-focus-12);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+/* Estado activo (Toggle) */
+.btn.is-active,
+.btn.active,
+.btn.active-tool,
+.btn[aria-pressed="true"] {
+  background: var(--brand-focus-12);
+  color: var(--brand-dark);
+  border-color: var(--brand-primary);
+}
+
+.btn.active .material-symbols-rounded,
+.btn.is-active .material-symbols-rounded {
+  color: var(--brand-dark);
+}
+
+/* ==========================================================================
+   MODIFICADORES
+   ========================================================================== */
+
+.btn--icon {
+  width: 32px;
+  padding: 0;
+  font-size: 1rem;
+}
+
+/* Ensure material icons are perfectly centered inside buttons */
+.btn .material-symbols-rounded {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Icon-only buttons shouldn't have extra right margin */
+.btn--icon .material-symbols-rounded {
+  margin-right: 0;
+  font-size: 1.25rem;
+}
+
+/* Dropdown trigger that contains only an icon: center it */
+.dropdown-trigger .dropdown-value .material-symbols-rounded {
+  margin-right: 0;
+  font-size: 1.25rem;
+}
+
+.btn--primary {
+  background: var(--brand-gradient);
+  color: var(--white);
+  border: none;
+  box-shadow: inset 0 1px var(--inset-white-1), 0 2px 4px var(--brand-shadow-2);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--brand-primary);
+  box-shadow: 0 4px 8px var(--brand-shadow-3);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-color);
+}
+
 </style>
 </head>
-
 <body>
-<div id="skeletonToolbar" class="skeleton-container">
-  <div class="skel-shape skel-circle"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-large"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-circle"></div>
+<!-- SKELETON -->
+<div class="skeleton-container" id="skeletonToolbar">
+<div class="skel-shape skel-circle"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-large"></div><div class="skel-shape skel-box"></div><div class="skel-shape skel-circle"></div>
 </div>
-<div id="mainToolbar" class="toolbar-container" style="display: none !important;">
-  <div class="brand"><div class="brand-icon"><img src="assets/SumatraPDF-256x256x32.png" alt="SumatraPDF"></div><div class="brand-text"><div class="brand-title">Pretty<span>Sumatra</span>PDF</div><div id="toolbarSubtitle" class="brand-subtitle subtitle">Focused reading</div></div></div>
-  <div class="toolbar-section">
-    <button id="openButton" class="btn btn-primary" data-exec="openFile" type="button" title="Open File (Ctrl+O)"><i class="fa-regular fa-folder-open"></i><span id="openButtonText">Open</span></button>
-    <div class="control-group"><button id="pagePrevButton" class="btn btn-icon" data-cmd="goToPage" data-delta="-1" type="button"><i class="fa-solid fa-chevron-left"></i></button><div class="divider"></div><input id="pageInput" class="page-input page" type="number" min="1" value="1"><div class="divider"></div><button id="pageNextButton" class="btn btn-icon" data-cmd="goToPage" data-delta="1" type="button"><i class="fa-solid fa-chevron-right"></i></button></div>
-    <div class="control-group"><button id="zoomOutButton" class="btn btn-icon" data-exec="zoomOut" type="button"><i class="fa-solid fa-magnifying-glass-minus"></i></button><div class="divider"></div><div class="select-wrapper"><select id="zoomSelect" class="custom-select" style="padding-right: 24px;"><option value="0.75">75%</option><option value="1" selected>100%</option><option value="1.25">125%</option><option value="1.5">150%</option></select><i class="fa-solid fa-chevron-down"></i></div><div class="divider"></div><button id="zoomInButton" class="btn btn-icon" data-exec="zoomIn" type="button"><i class="fa-solid fa-magnifying-glass-plus"></i></button></div>
-    <div class="control-group"><div class="select-wrapper"><select id="viewModeSelect" class="custom-select" style="padding-right: 24px;"><option value="singlePage" selected>Single Page</option><option value="facing">Facing</option><option value="bookView">Book View</option></select><i class="fa-solid fa-chevron-down"></i></div><div class="divider"></div><button id="continuousToggle" class="btn btn-icon toggle active" type="button"><i class="fa-solid fa-arrows-up-down"></i></button></div>
-  </div>
-  <div class="toolbar-section">
-    <div class="control-group"><button id="highlightButton" disabled class="btn btn-icon" data-exec="highlightSelection" type="button"><i class="fa-solid fa-highlighter"></i></button><div class="divider"></div><button id="annotateButton" disabled class="btn btn-icon" data-exec="addAnnotation" type="button"><i class="fa-solid fa-comment-dots"></i></button><div class="divider"></div><button id="drawButton" disabled class="btn btn-icon" data-exec="freeDraw" type="button"><i class="fa-solid fa-pen"></i></button></div>
-    <div class="search-box"><i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); font-size: 0.9rem; margin-right: 0.5rem;"></i><input id="searchInput" type="search" class="search-input search" placeholder="Search text"><button id="searchPrev" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-up"></i></button><button id="searchNext" class="btn btn-icon" style="width: 28px; height: 28px;" type="button"><i class="fa-solid fa-angle-down"></i></button></div>
-    <div class="control-group">
-      <button id="bookmarksToggle" class="btn btn-icon toggle active" data-exec="toggleBookmarks" type="button" title="Marcadores"><i class="fa-solid fa-bookmark"></i></button>
-      <button id="favoritesToggle" class="btn btn-icon toggle" data-exec="toggleFavorites" type="button" title="Favoritos"><i class="fa-solid fa-star"></i></button>
-      <button id="commandPaletteButton" class="btn btn-icon" data-exec="commandPalette" type="button"><i class="fa-solid fa-terminal"></i></button>
-      <button id="printButton" class="btn btn-icon" data-exec="print" type="button"><i class="fa-solid fa-print"></i></button>
-    </div>
-    
-    <div class="theme-pill-container">
-      <div id="themeSwitch" class="modern-theme-switch" data-state="auto">
-        <!-- El fondo que se desliza suavemente -->
-        <div class="mts-slider"></div>
-        
-        <!-- Botones (Iconos con animaciones sutiles incrustadas) -->
-        <button class="mts-btn" data-val="light" title="Tema Claro">
-          <i class="fa-solid fa-sun"></i>
-        </button>
-        <button class="mts-btn" data-val="dark" title="Tema Oscuro">
-          <i class="fa-solid fa-moon"></i>
-          <span class="mts-tiny-star ts-1"></span>
-          <span class="mts-tiny-star ts-2"></span>
-        </button>
-        <button class="mts-btn" data-val="auto" title="Seguir Sistema (Windows 11)">
-          <div class="win11-icon"><i></i><i></i><i></i><i></i></div>
-        </button>
-      </div>
-      
-      <button id="documentInvertToggle" class="invert-doc-btn toggle" type="button" title="Invertir Documento"><i class="fa-solid fa-circle-half-stroke"></i></button>
-    </div>
-  </div>
+<!-- MAIN TOOLBAR -->
+<div class="toolbar-container" id="mainToolbar" style="display: none !important;">
+<div class="brand"><div class="brand-icon"><img alt="SumatraPDF" src="assets/SumatraPDF-256x256x32.png"/></div><div class="brand-text"><div class="brand-title">Pretty<span>Sumatra</span>PDF</div><div class="brand-subtitle subtitle" id="toolbarSubtitle">Focused reading</div></div></div>
+<div class="toolbar-items" id="toolbarItems">
+<div class="control-group" data-name="Open File" id="grp-file"><button aria-label="Open file" class="btn btn--primary" data-exec="openFile" id="openButton" title="Open File (Ctrl+O)" type="button"><span class="material-symbols-rounded">folder_open</span><span id="openButtonText">Open</span></button></div>
+<div class="search-wrapper" data-name="Search" id="grp-search">
+<label class="modern-search-group">
+<span aria-hidden="true" class="material-symbols-rounded search-icon">search</span>
+<input class="search-input search" id="searchInput" placeholder="Search..." type="search"/>
+<div class="search-nav">
+<button aria-label="Previous search result" class="btn btn--icon" id="searchPrev" title="Previous search result" type="button"><span class="material-symbols-rounded">keyboard_arrow_up</span></button>
+<button aria-label="Next search result" class="btn btn--icon" id="searchNext" title="Next search result" type="button"><span class="material-symbols-rounded">keyboard_arrow_down</span></button>
 </div>
-
+</label>
+</div>
+<div class="control-group modern-pagination-group" data-name="Navigation" id="grp-nav">
+<button aria-label="Previous page" class="btn btn--icon" data-cmd="goToPage" data-delta="-1" id="pagePrevButton" title="Previous page" type="button"><span class="material-symbols-rounded">chevron_left</span></button>
+<input class="page-input page" id="pageInput" min="1" type="number" value="1"/>
+<span aria-live="polite" class="page-meta" id="pageMeta">1</span>
+<button aria-label="Next page" class="btn btn--icon" data-cmd="goToPage" data-delta="1" id="pageNextButton" title="Next page" type="button"><span class="material-symbols-rounded">chevron_right</span></button>
+</div>
+<div class="control-group grp-zoom" data-name="Zoom" id="grp-zoom">
+<button aria-label="Zoom out" class="btn btn--icon" data-exec="zoomOut" id="zoomOutButton" title="Zoom out" type="button"><span class="material-symbols-rounded">zoom_out</span></button>
+<div class="divider"></div>
+<div class="custom-dropdown" id="zoomDropdown" title="Select zoom level">
+<button aria-expanded="false" aria-label="Zoom options" class="btn dropdown-trigger" title="Zoom options" type="button">
+<span class="dropdown-value">100%</span>
+</button>
+<ul class="dropdown-menu">
+<li data-value="0.75">75%</li>
+<li class="selected" data-value="1">100%</li>
+<li data-value="1.25">125%</li>
+<li data-value="1.5">150%</li>
+</ul>
+</div>
+<div class="divider"></div>
+<button aria-label="Zoom in" class="btn btn--icon" data-exec="zoomIn" id="zoomInButton" title="Zoom in" type="button"><span class="material-symbols-rounded">zoom_in</span></button>
+<div class="divider"></div>
+<button aria-label="Fit page" class="btn btn--icon" data-exec="fitPage" id="fitPageButton" title="Fit Page (F)" type="button"><span class="material-symbols-rounded">fit_page_width</span></button>
+</div>
+<div class="control-group" data-name="Rotate" id="grp-rotate"><button aria-label="Rotate left" class="btn btn--icon" data-exec="rotateLeft" id="rotateLeftButton" title="Rotate left" type="button"><span class="material-symbols-rounded">rotate_90_degrees_ccw</span></button><div class="divider"></div><button aria-label="Rotate right" class="btn btn--icon" data-exec="rotateRight" id="rotateRightButton" title="Rotate right" type="button"><span class="material-symbols-rounded">rotate_90_degrees_cw</span></button></div>
+<div class="control-group grp-view" data-name="View Mode" id="grp-view">
+<div class="custom-dropdown" id="viewModeDropdown" title="Change reading mode">
+<button aria-expanded="false" aria-label="View mode options" class="btn dropdown-trigger" title="View mode options" type="button">
+<span class="dropdown-value"><span class="material-symbols-rounded">description</span></span>
+</button>
+<ul class="dropdown-menu">
+<li class="selected" data-value="singlePage"><span class="material-symbols-rounded">description</span> Single Page</li>
+<li data-value="facing"><span class="material-symbols-rounded">two_pager</span> Facing</li>
+<li data-value="bookView"><span class="material-symbols-rounded">menu_book</span> Book View</li>
+</ul>
+</div>
+<div class="divider"></div>
+<button aria-label="Toggle continuous view" class="btn btn--icon btn--toggle toggle active" data-exec="showPagesContinuously" id="continuousToggle" title="Toggle continuous view" type="button"><span class="material-symbols-rounded">swap_vert</span></button>
+</div>
+<div class="control-group" data-name="Annotations" id="grp-tools">
+<div class="annot-tools-container">
+<div class="tool-buttons">
+<div class="annot-tool is-active" data-annot-tool="highlight">
+<button aria-label="Highlight selection" class="btn btn--icon btn--ghost annot-tool-button active-tool btn-highlight" data-exec="highlightSelection" data-tool="highlight" id="highlightButton" title="Highlight" type="button">
+<svg aria-hidden="true" class="custom-icon" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path class="pen-body" d="m9 11-6 6v3h9l3-3"></path>
+<path class="pen-body" d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
+<path class="pen-ink" d="M3 22h18" stroke-width="3"></path>
+</svg>
+</button>
+<span aria-hidden="true" class="annot-tool-swatch" data-tool-swatch="highlight" title="Saved color for Highlight"></span>
+</div>
+<div class="annot-tool" data-annot-tool="underline">
+<button aria-label="Underline selection" class="btn btn--icon btn--ghost annot-tool-button btn-underline" data-exec="createAnnotUnderline" data-tool="underline" id="underlineButton" title="Underline" type="button">
+<svg aria-hidden="true" class="custom-icon" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path class="pen-body" d="M6 4v6a6 6 0 0 0 12 0V4"></path>
+<path class="pen-ink" d="M4 21h16" stroke-width="3"></path>
+</svg>
+</button>
+<span aria-hidden="true" class="annot-tool-swatch" data-tool-swatch="underline" title="Saved color for Underline"></span>
+</div>
+<div class="annot-tool" data-annot-tool="strikeout">
+<button aria-label="Strikeout selection" class="btn btn--icon btn--ghost annot-tool-button btn-strike" data-exec="createAnnotStrikeOut" data-tool="strikeout" id="strikeoutButton" title="Strikeout" type="button">
+<svg aria-hidden="true" class="custom-icon" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path class="pen-body" d="M16 4H9a3 3 0 0 0-2.83 4"></path>
+<path class="pen-body" d="M14 12a4 4 0 0 1 0 8H6"></path>
+<path class="pen-ink" d="M3 12h18" stroke-width="3"></path>
+</svg>
+</button>
+<span aria-hidden="true" class="annot-tool-swatch" data-tool-swatch="strikeout" title="Saved color for Strikeout"></span>
+</div>
+</div>
+<div class="divider" style="height: 24px; width: 1px; background: var(--border-color); margin: 0 4px;"></div>
+<div class="color-selector-container">
+<button aria-label="Choose color for current tool" class="btn btn--icon" id="colorSelectorBtn" title="Choose current tool color" type="button">
+<span class="material-symbols-rounded">palette</span>
+</button>
+<div class="inline-color-palette" id="commonColorPalette">
+<button aria-label="Choose yellow" class="color-chip active" data-color="#facc15" data-name="yellow" title="Yellow" type="button"></button>
+<button aria-label="Choose green" class="color-chip" data-color="#22c55e" data-name="green" title="Green" type="button"></button>
+<button aria-label="Choose blue" class="color-chip" data-color="#3b82f6" data-name="blue" title="Blue" type="button"></button>
+<button aria-label="Choose red" class="color-chip" data-color="#ef4444" data-name="red" title="Red" type="button"></button>
+<button aria-label="Choose magenta" class="color-chip" data-color="#ec4899" data-name="magenta" title="Magenta" type="button"></button>
+<button aria-label="Choose orange" class="color-chip" data-color="#f97316" data-name="orange" title="Orange" type="button"></button>
+<button aria-label="Choose black" class="color-chip" data-color="#1d1d1f" data-name="black" title="Black" type="button"></button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-spacer" data-name="Spacer" id="grp-spacer"></div>
+<div class="control-group" data-name="Actions" id="grp-actions">
+<button aria-label="Toggle bookmarks" class="btn btn--icon btn--toggle" data-exec="toggleBookmarks" id="bookmarksToggle" title="Toggle bookmarks" type="button"><span class="material-symbols-rounded">collections_bookmark</span></button>
+<button aria-label="Toggle favorites" class="btn btn--icon btn--toggle" data-exec="toggleFavorites" id="favoritesToggle" title="Toggle favorites" type="button"><span class="material-symbols-rounded">cards_star</span></button>
+<button aria-label="Open command palette" class="btn btn--icon" data-exec="commandPalette" id="commandPaletteButton" title="Open command palette" type="button"><span class="material-symbols-rounded">keyboard_command_key</span></button>
+<button aria-label="Print document" class="btn btn--icon" data-exec="print" id="printButton" title="Print document" type="button"><span class="material-symbols-rounded">print</span></button>
+</div>
+<div class="theme-control-group" data-name="Theme" id="grp-theme">
+<div class="modern-theme-switch" data-state="auto" id="themeSwitch">
+<div class="mts-slider"></div>
+<button aria-label="Set theme to light" class="btn btn--icon mts-btn" data-val="light" title="Set theme to light"><span class="material-symbols-rounded">light_mode</span></button>
+<button aria-label="Set theme to dark" class="btn btn--icon mts-btn" data-val="dark" title="Set theme to dark"><span class="material-symbols-rounded">dark_mode</span></button>
+<button aria-label="Set theme to follow system" class="btn btn--icon mts-btn" data-val="auto" title="Set theme to follow system"><div class="win11-icon"><i></i><i></i><i></i><i></i></div></button>
+</div>
+<button aria-label="Invert document colors" class="btn btn--icon invert-doc-btn" data-exec="toggleDocumentInvert" id="documentInvertToggle" title="Invert document colors" type="button"><span class="material-symbols-rounded">invert_colors</span></button>
+</div>
+</div>
+</div>
+<!-- Context Menu (Right Click) -->
+<div class="native-context-menu" id="nativeContextMenu"></div>
 <script>
-const toolbarText={}; const pageInput=document.getElementById('pageInput'); const pageMeta=document.getElementById('pageMeta'); const toolbarSubtitle=document.getElementById('toolbarSubtitle');
-const openButton=document.getElementById('openButton'); const openButtonText=document.getElementById('openButtonText'); const pagePrevButton=document.getElementById('pagePrevButton'); const pageNextButton=document.getElementById('pageNextButton');
-const zoomOutButton=document.getElementById('zoomOutButton'); const zoomInButton=document.getElementById('zoomInButton'); const searchInput=document.getElementById('searchInput');
-const zoomSelect=document.getElementById('zoomSelect'); const viewModeSelect=document.getElementById('viewModeSelect'); const continuousToggle=document.getElementById('continuousToggle');
-const bookmarksToggle=document.getElementById('bookmarksToggle'); const favoritesToggle=document.getElementById('favoritesToggle'); const fullscreenToggle=document.getElementById('fullscreenToggle');
-const commandPaletteButton=document.getElementById('commandPaletteButton'); const rotateLeftButton=document.getElementById('rotateLeftButton'); const rotateRightButton=document.getElementById('rotateRightButton');
-const printButton=document.getElementById('printButton');
-const documentInvertToggle=document.getElementById('documentInvertToggle');
+/* =================== SUMATRAPDF CORE =================== */
+const toolbarText={}; 
+const pageInput=document.getElementById('pageInput'); 
+const pageMeta=document.getElementById('pageMeta'); 
+const toolbarSubtitle=document.getElementById('toolbarSubtitle');
+const openButton=document.getElementById('openButton'); 
+const openButtonText=document.getElementById('openButtonText'); 
+const searchInput=document.getElementById('searchInput');
+const pagePrevButton=document.getElementById('pagePrevButton'); 
+const pageNextButton=document.getElementById('pageNextButton');
+const zoomOutButton=document.getElementById('zoomOutButton'); 
+const zoomInButton=document.getElementById('zoomInButton'); 
+const zoomDropdown=document.getElementById('zoomDropdown'); 
+const viewModeDropdown=document.getElementById('viewModeDropdown'); 
+const continuousToggle=document.getElementById('continuousToggle');
+const documentInvertToggle=document.getElementById('documentInvertToggle'); 
 const themeSwitch=document.getElementById('themeSwitch');
 let currentPage=1; let totalPages=1; let lastAppDark=false; let lastWindowsDark=false; let lastFollowWindows=false; let lastDocInverted=false;
 
-function formatText(template, values) { return String(template || '').replace(/\{([a-zA-Z0-9_]+)\}/g, (m, k) => Object.prototype.hasOwnProperty.call(values, k) ? String(values[k]) : m); }
+// ensure toggles expose aria-pressed consistent with class
+document.querySelectorAll('.toggle').forEach(t => { try { t.setAttribute('aria-pressed', String(t.classList.contains('active'))); } catch(e) {} });
+
 function applyToolbarText(payload={}) {
-  Object.assign(toolbarText, payload); document.documentElement.lang=toolbarText.lang||document.documentElement.lang||'en';
-  if(toolbarSubtitle) toolbarSubtitle.textContent=toolbarText.subtitle||toolbarSubtitle.textContent;
+  Object.assign(toolbarText, payload); 
   if(openButtonText) openButtonText.textContent=toolbarText.openButton||openButtonText.textContent;
-  if(pagePrevButton) pagePrevButton.title=toolbarText.pagePrevTitle||pagePrevButton.title;
-  if(pageNextButton) pageNextButton.title=toolbarText.pageNextTitle||pageNextButton.title;
-  if(zoomOutButton) zoomOutButton.title=toolbarText.zoomOutTitle||zoomOutButton.title;
-  if(zoomInButton) zoomInButton.title=toolbarText.zoomInTitle||zoomInButton.title;
-  if(continuousToggle) continuousToggle.title=toolbarText.continuousTitle||continuousToggle.title;
   if(searchInput) searchInput.placeholder=toolbarText.searchPlaceholder||searchInput.placeholder;
-  if(favoritesToggle) favoritesToggle.title=toolbarText.favoritesTitle||favoritesToggle.title;
-  if(viewModeSelect && viewModeSelect.options[0]) viewModeSelect.options[0].textContent=toolbarText.viewSinglePage||viewModeSelect.options[0].textContent;
-  setPageState(currentPage, totalPages); setThemeButtonState(lastAppDark, lastWindowsDark, lastFollowWindows); setDocumentInvertState(lastDocInverted);
 }
-window.hybridToolbarApplyText=applyToolbarText;
-if(window.__hybridToolbarTextPayload) applyToolbarText(window.__hybridToolbarTextPayload);
-function post(n, p={}) { if(window.external && typeof window.external.invoke==='function') window.external.invoke(JSON.stringify({type:'command', name:n, payload:p, ts:Date.now()})); }
-function setPage(p) { const n=Math.max(1, parseInt(p||'1', 10)); currentPage=n; if(pageInput) pageInput.value=String(n); if(pageMeta) pageMeta.textContent=formatText(toolbarText.pageTemplate||'{current}', {current:n}); return n; }
-function setPageState(c, pCount) { const cP=Math.max(1, parseInt(c||'1', 10)); const t=Math.max(1, parseInt(pCount||'1', 10)); currentPage=cP; totalPages=t; if(pageInput){pageInput.max=String(t); pageInput.value=String(Math.min(cP,t));} if(pageMeta) pageMeta.textContent=formatText(toolbarText.pageTemplate||'{current}', {current:pageInput.value}); }
+window.hybridToolbarApplyText=applyToolbarText; if(window.__hybridToolbarTextPayload) applyToolbarText(window.__hybridToolbarTextPayload);
+function updatePageMeta(t) {
+  if (!pageMeta) return;
+  pageMeta.textContent = String(t);
+}
+
+function updatePageInputWidth(rawValue) {
+  if (!pageInput) return;
+  const value = String(rawValue ?? pageInput.value ?? '').trim();
+  const digitCount = Math.max(1, (value.match(/\d/g) || []).length);
+  const viewport = window.innerWidth || 1200;
+  let maxDigits = 6;
+  if (viewport <= 650) maxDigits = 4;
+  else if (viewport <= 1000) maxDigits = 5;
+  const widthDigits = Math.max(1, Math.min(maxDigits, digitCount));
+  pageInput.style.width = `calc(${widthDigits}ch + 0.9rem)`;
+}
+
+function setPage(p) {
+  const t = Math.max(1, parseInt(totalPages||'1', 10));
+  let n = parseInt(p||'1', 10);
+  if (Number.isNaN(n)) n = 1;
+  n = Math.min(Math.max(1, n), t);
+  currentPage = n;
+  if (pageInput) {
+    pageInput.max = String(t);
+    pageInput.value = String(n);
+    updatePageInputWidth(pageInput.value);
+  }
+  updatePageMeta(t);
+  if (pagePrevButton) { const prevDisabled = n <= 1; pagePrevButton.disabled = prevDisabled; pagePrevButton.setAttribute('aria-disabled', String(prevDisabled)); }
+  if (pageNextButton) { const nextDisabled = n >= t; pageNextButton.disabled = nextDisabled; pageNextButton.setAttribute('aria-disabled', String(nextDisabled)); }
+  return n;
+}
+
+function setPageState(c, pCount) {
+  const cP = Math.max(1, parseInt(c||'1', 10));
+  const t = Math.max(1, parseInt(pCount||'1', 10));
+  totalPages = t;
+  updatePageMeta(t);
+  // delegate to setPage so clamping and nav updates happen in one place
+  setPage(cP);
+}
 window.hybridToolbarSetPageState=setPageState;
 function normalizeZoomValue(z) { const n=Math.max(1, Number(z)||100); return (n/100).toFixed(4).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1'); }
-function setZoomState(z) { if(!zoomSelect) return; const n=Math.max(1, Number(z)||100); const norm=normalizeZoomValue(n); const opts=Array.from(zoomSelect.options||[]); const match=opts.find(o=>Math.abs(parseFloat(o.value)-parseFloat(norm))<0.0009); if(match){zoomSelect.value=match.value;return;} const dyn=document.createElement('option'); dyn.value=norm; dyn.textContent=String(Math.round(n))+'%'; dyn.setAttribute('data-dynamic-zoom','1'); zoomSelect.appendChild(dyn); zoomSelect.value=norm; }
-window.hybridToolbarSetZoomState=setZoomState;
-function setSearchText(text) { if(!searchInput) return; searchInput.value = text || ''; }
-window.hybridToolbarSetSearchText=setSearchText;
-function focusSearch(selectText=true) { if(!searchInput) return; searchInput.focus(); if(selectText && typeof searchInput.select==='function') searchInput.select(); }
-window.hybridToolbarFocusSearch=focusSearch;
-
-function setThemeButtonState(aD, wD, fW) {
-  lastAppDark=!!aD; lastWindowsDark=!!wD; lastFollowWindows=!!fW;
-  if(!themeSwitch) return;
-  if (fW) { themeSwitch.setAttribute('data-state', 'auto'); } 
-  else if (aD) { themeSwitch.setAttribute('data-state', 'dark'); } 
-  else { themeSwitch.setAttribute('data-state', 'light'); }
+function setZoomState(z) {
+  if (!zoomDropdown) return;
+  const n = Math.max(1, Number(z) || 100);
+  const norm = normalizeZoomValue(n);
+  const menu = zoomDropdown.querySelector('.dropdown-menu');
+  if (!menu) return;
+  let options = Array.from(menu.querySelectorAll('li'));
+  let match = options.find(li => String(li.dataset.value) === String(norm));
+  if (!match) {
+    const li = document.createElement('li'); li.dataset.value = String(norm); li.textContent = Math.round(n) + '%';
+    menu.appendChild(li);
+    // attach click handler for the new option
+    li.addEventListener('click', () => selectZoomOption(zoomDropdown, li));
+    options = Array.from(menu.querySelectorAll('li'));
+    match = li;
+  }
+  options.forEach(li => li.classList.toggle('selected', li === match));
+  const display = zoomDropdown.querySelector('.dropdown-value');
+  if (display) {
+    const label = match.cloneNode(true);
+    label.querySelectorAll('.material-symbols-rounded').forEach(node => node.remove());
+    display.textContent = label.textContent.trim();
+  }
 }
-function setDocumentInvertState(dI) { lastDocInverted=!!dI; if(documentInvertToggle) documentInvertToggle.classList.toggle('active', lastDocInverted); }
+window.hybridToolbarSetZoomState = setZoomState;
+
+function setToggleStateByExec(execName, state) {
+  try {
+    const el = document.querySelector('[data-exec="'+String(execName)+'"]');
+    if (!el) return;
+    if (state) el.classList.add('active'); else el.classList.remove('active');
+    el.setAttribute('aria-pressed', String(!!state));
+    // clear busy marker if present
+    try { clearBusy(el); } catch(e) {}
+    // debug post removed: setToggleStateByExec
+    try { console.log('toolbar: setToggleStateByExec', execName, !!state); } catch(e) {}
+  } catch(e) {}
+}
+window.hybridToolbarSetToggleState = setToggleStateByExec;
+
+function setToggleStateById(id, state) {
+  try {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (state) el.classList.add('active'); else el.classList.remove('active');
+    el.setAttribute('aria-pressed', String(!!state));
+    try { clearBusy(el); } catch(e) {}
+    // debug post removed: setToggleStateById
+    try { console.log('toolbar: setToggleStateById', id, !!state); } catch(e) {}
+  } catch(e) {}
+}
+
+function setButtonEnabled(id, enabled) {
+  try {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (enabled) { el.removeAttribute('disabled'); el.setAttribute('aria-disabled', 'false'); }
+    else { el.setAttribute('disabled', ''); el.setAttribute('aria-disabled', 'true'); }
+  } catch(e) {}
+}
+
+function hybridToolbarSetBookmarksState(on) { setToggleStateById('bookmarksToggle', !!on); }
+function hybridToolbarSetFavoritesState(on) { setToggleStateById('favoritesToggle', !!on); }
+function hybridToolbarSetAnnotationAvailability(opts={}) {
+  // opts: { highlight: bool, annotate: bool, draw: bool }
+  setButtonEnabled('highlightButton', !!opts.highlight);
+  setButtonEnabled('underlineButton', !!opts.highlight);
+  setButtonEnabled('strikeoutButton', !!opts.highlight);
+  setButtonEnabled('annotateButton', !!opts.annotate);
+  setButtonEnabled('drawButton', !!opts.draw);
+}
+window.hybridToolbarSetBookmarksState = hybridToolbarSetBookmarksState;
+window.hybridToolbarSetFavoritesState = hybridToolbarSetFavoritesState;
+window.hybridToolbarSetAnnotationAvailability = hybridToolbarSetAnnotationAvailability;
+
+// Backwards-compatible aliases (some native callers may use unprefixed names)
+window.setBookmarksState = hybridToolbarSetBookmarksState;
+window.setFavoritesState = hybridToolbarSetFavoritesState;
+window.setAnnotationAvailability = hybridToolbarSetAnnotationAvailability;
+window.setToggleStateByExec = setToggleStateByExec;
+window.setToggleStateById = setToggleStateById;
+
+function notifyPanelState(name, active) {
+  try {
+    const n = String(name||'').toLowerCase();
+    if (n === 'favorites' || n === 'favorite' || n === 'fav') {
+      setToggleStateById('favoritesToggle', !!active);
+    } else if (n === 'bookmarks' || n === 'bookmark' || n === 'marks') {
+      setToggleStateById('bookmarksToggle', !!active);
+    }
+    // clear any busy markers on relevant toggles
+    try { clearBusy(document.getElementById('favoritesToggle')); } catch(e) {}
+    try { clearBusy(document.getElementById('bookmarksToggle')); } catch(e) {}
+    // debug post removed: notifyPanelState
+    try { console.log('toolbar: notifyPanelState', name, !!active); } catch(e) {}
+  } catch(e) {}
+}
+window.notifyPanelState = notifyPanelState;
+window.panelStateChanged = notifyPanelState;
+
 function hybridToolbarApplyTheme(p={}) {
   const root=document.documentElement; const keys=['canvas','panel','panel2','stroke','text','muted','btn','accent','brand1','brand2'];
-  for(const k of keys) { if(typeof p[k]==='string' && p[k]) root.style.setProperty('--'+k, p[k]); }
+  for(const k of keys) { if(p[k]) root.style.setProperty('--'+k, p[k]); }
   const aD=!!p.appDark; root.dataset.theme=aD?'dark':'light';
-  setThemeButtonState(aD, !!p.windowsDark, !!p.followWindows); setDocumentInvertState(!!p.docInverted);
+  lastFollowWindows = !!p.followWindows; lastAppDark = aD; lastWindowsDark = !!p.windowsDark;
+  if(themeSwitch) themeSwitch.setAttribute('data-state', lastFollowWindows ? 'auto' : (aD ? 'dark' : 'light'));
+  // keep document invert toggle in sync (use centralized setter)
+  if (typeof setToggleStateByExec === 'function') setToggleStateByExec('toggleDocumentInvert', !!p.docInverted);
+  // ensure theme buttons reflect state visually and via aria
+  try {
+    const stateVal = lastFollowWindows ? 'auto' : (lastAppDark ? 'dark' : 'light');
+    themeSwitch.querySelectorAll('.mts-btn').forEach(btn => { const active = btn.dataset.val === stateVal; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', String(active)); });
+  } catch(e) {}
 }
-window.hybridToolbarApplyTheme=hybridToolbarApplyTheme;
-if(window.__hybridToolbarThemePayload) hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);
-document.querySelectorAll('[data-cmd]').forEach((b) => { b.addEventListener('click', () => { const cmd=b.dataset.cmd; if(cmd==='goToPage' && pageInput) { const n=setPage(parseInt(pageInput.value||'1',10)+parseInt(b.dataset.delta||'0',10)); post('goToPage', {page:n}); return; } if(cmd==='openFile') post('openFile', {}); }); });
-function execCommand(n) { if(!n) return; post('execCommand', {command:n}); }
-document.querySelectorAll('[data-exec]').forEach((b) => { b.addEventListener('click', () => { if(b.classList.contains('toggle')) b.classList.toggle('active'); execCommand(b.dataset.exec||''); }); });
-if(pageInput) { pageInput.addEventListener('change', () => post('goToPage', {page:setPage(pageInput.value)})); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
-if(zoomSelect) zoomSelect.addEventListener('change', () => post('zoom', {value:parseFloat(zoomSelect.value)}));
-if(viewModeSelect) viewModeSelect.addEventListener('change', () => execCommand(viewModeSelect.value));
-if(continuousToggle) { continuousToggle.addEventListener('click', () => { continuousToggle.classList.toggle('active'); execCommand('showPagesContinuously'); }); }
-post('setFitMode', {mode:'page'});
-function runSearch(dir) { if(!searchInput) return; const q=searchInput.value.trim(); if(!q) return; post('search', {query:q, direction:dir}); }
-const sPrev=document.getElementById('searchPrev'); const sNext=document.getElementById('searchNext');
-if(sPrev) sPrev.addEventListener('click', () => runSearch('backward')); if(sNext) sNext.addEventListener('click', () => runSearch('forward'));
-if(searchInput) searchInput.addEventListener('keydown', (e) => { if(e.key==='Enter') runSearch('forward'); });
-let searchDebounceTimer = 0;
-if(searchInput) searchInput.addEventListener('input', () => {
-  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => runSearch('forward'), 220);
+window.hybridToolbarApplyTheme=hybridToolbarApplyTheme; if(window.__hybridToolbarThemePayload) hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);
+
+// Toggles that are controlled by native app state — mark busy but still give optimistic feedback.
+const serverSourcedToggles = new Set(['toggleFavorites','toggleBookmarks','toggleDocumentInvert','showPagesContinuously']);
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-exec]'); if (!b || isToolbarUnlocked) return;
+  if (b.classList.contains('toggle')) {
+    // optimistic visual toggle for responsiveness
+    const willActive = !b.classList.contains('active');
+    if (willActive) b.classList.add('active'); else b.classList.remove('active');
+    try { b.setAttribute('aria-pressed', String(willActive)); } catch(e) {}
+    // if state is server-owned, mark busy until native confirms (with timeout fallback)
+    try { if (serverSourcedToggles.has(String(b.dataset.exec||''))) markBusy(b); } catch(e) {}
+  }
+  try {
+    if (window.external && typeof window.external.invoke === 'function') {
+      const cmdName = String(b.dataset.exec||'');
+      const payload = { command: cmdName };
+      // If this is a text-annotation command that uses a color, include currently selected color
+      const colorCommands = new Set(['highlightSelection','createAnnotUnderline','createAnnotStrikeOut']);
+      if (colorCommands.has(cmdName)) {
+        const toolKey = String(b.dataset.tool || activeAnnotTool || '').toLowerCase();
+        const selectedHex = normalizeAnnotColorHex(
+          (annotColorState && annotColorState[toolKey]) ||
+          (defaultAnnotColors && defaultAnnotColors[toolKey])
+        );
+        if (selectedHex) {
+          payload.value = selectedHex;
+          const chip = typeof getAnnotChipByHex === 'function' ? getAnnotChipByHex(selectedHex) : null;
+          if (chip) {
+            payload.color = chip.dataset.name || chip.getAttribute('data-name') || '';
+          }
+        }
+      }
+      window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: payload, ts: Date.now() }));
+    }
+  } catch (e) { console.error('invoke execCommand error', e); }
 });
 
-window.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key && e.key.toLowerCase() === 'f') {
-    e.preventDefault();
-    e.stopPropagation();
-    focusSearch(true);
+// Busy helper with timeout fallback
+const BUSY_TIMEOUT_MS = 1500;
+function markBusy(el) {
+  try {
+    if (!el) return;
+    el.setAttribute('aria-busy', 'true');
+    if (el.__busyTimer) clearTimeout(el.__busyTimer);
+    el.__busyTimer = setTimeout(() => { try { el.removeAttribute('aria-busy'); el.__busyTimer = null; } catch (e) {} }, BUSY_TIMEOUT_MS);
+  } catch(e) {}
+}
+function clearBusy(el) { try { if (!el) return; if (el.__busyTimer) { clearTimeout(el.__busyTimer); el.__busyTimer = null; } el.removeAttribute('aria-busy'); } catch(e) {} }
+
+document.querySelectorAll('[data-cmd]').forEach(b => b.addEventListener('click', () => {
+  if (isToolbarUnlocked) return;
+  const cmd = b.dataset.cmd;
+  if (cmd === 'goToPage') {
+    const delta = parseInt(b.dataset.delta||'0', 10) || 0;
+    const before = currentPage;
+    const base = parseInt(pageInput?.value||String(currentPage), 10) || currentPage;
+    const desired = base + delta;
+    const newPage = setPage(desired);
+    if (newPage !== before) if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: newPage }, ts: Date.now() }));
     return;
   }
-  if (e.key === 'F3') {
-    e.preventDefault();
-    runSearch(e.shiftKey ? 'backward' : 'forward');
-  }
-}, true);
+}));
 
-// Mapeo de botones del Switch minimalista (con auto-inversión inteligente del PDF)
+if(pageInput) { pageInput.addEventListener('input', () => { updatePageInputWidth(pageInput.value); }); pageInput.addEventListener('change', () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: setPage(pageInput.value) }, ts: Date.now() })); }); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
+window.addEventListener('resize', () => { updatePageInputWidth(pageInput?.value); });
+updatePageInputWidth(pageInput?.value);
+// wire up custom dropdowns
+function selectZoomOption(dropdown, li) {
+  const menu = dropdown.querySelector('.dropdown-menu');
+  Array.from(menu.querySelectorAll('li')).forEach(i => i.classList.toggle('selected', i === li));
+  const display = dropdown.querySelector('.dropdown-value');
+  if (display) {
+    const label = li.cloneNode(true);
+    label.querySelectorAll('.material-symbols-rounded').forEach(node => node.remove());
+    display.textContent = label.textContent.trim();
+  }
+  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+  const val = parseFloat(li.dataset.value);
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'zoom', payload: { value: val }, ts: Date.now() }));
+}
+
+function selectViewModeOption(dropdown, li) {
+  const menu = dropdown.querySelector('.dropdown-menu');
+  Array.from(menu.querySelectorAll('li')).forEach(i => i.classList.toggle('selected', i === li));
+  const display = dropdown.querySelector('.dropdown-value');
+  if (display) {
+    const icon = li.querySelector('.material-symbols-rounded');
+    if (icon) display.innerHTML = icon.outerHTML;
+    else display.textContent = li.textContent.trim();
+  }
+  dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+  const cmd = String(li.dataset.value || '');
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: cmd }, ts: Date.now() }));
+}
+
+if (zoomDropdown) {
+  const trigger = zoomDropdown.querySelector('.dropdown-trigger');
+  const menu = zoomDropdown.querySelector('.dropdown-menu');
+  trigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // close other dropdowns and reset their inline state
+    document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+      if (d !== zoomDropdown) d.classList.remove('open');
+      d.classList.remove('dropup','inline');
+      d.querySelector('.dropdown-menu')?.classList.remove('clamped-left','clamped-right');
+    });
+    // toggle open
+    const willOpen = !zoomDropdown.classList.contains('open');
+    zoomDropdown.classList.toggle('open', willOpen);
+    // open inline inside toolbar to avoid WebView clipping
+    setDropdownInline(zoomDropdown, willOpen);
+    const expanded = willOpen;
+    trigger.setAttribute('aria-expanded', String(expanded));
+  });
+  Array.from(menu.querySelectorAll('li')).forEach(li => li.addEventListener('click', () => selectZoomOption(zoomDropdown, li)));
+}
+
+if (viewModeDropdown) {
+  const trigger = viewModeDropdown.querySelector('.dropdown-trigger');
+  const menu = viewModeDropdown.querySelector('.dropdown-menu');
+  trigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.custom-dropdown.open').forEach(d => { if (d !== viewModeDropdown) d.classList.remove('open'); d.classList.remove('dropup','inline'); d.querySelector('.dropdown-menu')?.classList.remove('clamped-left','clamped-right'); });
+    const willOpen = !viewModeDropdown.classList.contains('open');
+    viewModeDropdown.classList.toggle('open', willOpen);
+    setDropdownInline(viewModeDropdown, willOpen);
+    const expanded = willOpen;
+    trigger.setAttribute('aria-expanded', String(expanded));
+  });
+  Array.from(menu.querySelectorAll('li')).forEach(li => li.addEventListener('click', () => selectViewModeOption(viewModeDropdown, li)));
+}
+
+// close dropdowns when clicking outside
+document.addEventListener('click', () => { document.querySelectorAll('.custom-dropdown.open').forEach(d => { d.classList.remove('open'); setDropdownInline(d, false); }); });
+
+// Positioning helper: keep dropdowns inside the WebView viewport by flipping or clamping
+function positionDropdown(dropdown) {
+  try {
+    const menu = dropdown.querySelector('.dropdown-menu');
+    if (!menu) return;
+    // reset any previous inline adjustments
+    dropdown.classList.remove('dropup');
+    menu.classList.remove('clamped-left','clamped-right');
+    menu.style.left = '';
+    menu.style.right = '';
+    // measure
+    const rect = dropdown.getBoundingClientRect();
+    // ensure menu is temporarily visible to measure height
+    menu.style.visibility = 'hidden';
+    menu.style.display = 'block';
+    const menuRect = menu.getBoundingClientRect();
+    menu.style.display = '';
+    menu.style.visibility = '';
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    // if not enough space below but enough above, open upwards
+    if (spaceBelow < menuRect.height && spaceAbove > menuRect.height) {
+      dropdown.classList.add('dropup');
+    }
+    // horizontal clamping: compute desired left in px
+    const desiredLeft = rect.left + rect.width / 2 - menuRect.width / 2;
+    if (desiredLeft < 8) {
+      // clamp to left edge
+      menu.classList.add('clamped-left');
+      menu.style.left = '8px';
+      menu.style.right = '';
+    } else if ((desiredLeft + menuRect.width) > (window.innerWidth - 8)) {
+      // clamp to right edge
+      menu.classList.add('clamped-right');
+      menu.style.right = '8px';
+      menu.style.left = '';
+    } else {
+      // center as default (keep existing CSS behavior)
+      menu.style.left = '50%';
+      menu.style.right = '';
+      menu.style.transform = dropdown.classList.contains('dropup') ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(0)';
+    }
+  } catch (e) { console.error('positionDropdown error', e); }
+}
+
+function setDropdownInline(dropdown, on) {
+  try {
+    const main = document.getElementById('mainToolbar');
+    if (on) {
+      dropdown.classList.add('inline');
+      if (main) main.classList.add('inline-open');
+    } else {
+      dropdown.classList.remove('inline');
+      // if no other inline dropdowns, remove toolbar inline state
+      if (main && document.querySelectorAll('.custom-dropdown.inline').length === 0) main.classList.remove('inline-open');
+    }
+  } catch (e) { console.error('setDropdownInline', e); }
+}
+
+function runSearch(dir) { const q=searchInput.value.trim(); if(q) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'search', payload: { query: q, direction: dir }, ts: Date.now() })); } }
+document.getElementById('searchPrev')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('backward')});
+document.getElementById('searchNext')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('forward')});
+searchInput?.addEventListener('keydown', (e) => { if(e.key==='Enter' && !isToolbarUnlocked) runSearch('forward'); });
+
 if(themeSwitch) {
   themeSwitch.querySelectorAll('.mts-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      if(isToolbarUnlocked) return;
       const val = btn.dataset.val;
-      if (val === 'auto') {
-        if (!lastFollowWindows) execCommand('toggleThemeFollowWindows');
-        // Si Windows es oscuro y el doc no está invertido, invertirlo. Y viceversa.
-        if (lastWindowsDark && !lastDocInverted) execCommand('toggleDocumentInvert');
-        if (!lastWindowsDark && lastDocInverted) execCommand('toggleDocumentInvert');
-      } else if (val === 'light') {
-        if (lastFollowWindows) execCommand('toggleThemeFollowWindows');
-        if (lastAppDark) execCommand('toggleTheme');
-        // En modo claro, asegurar que el documento NO esté invertido
-        if (lastDocInverted) execCommand('toggleDocumentInvert');
-      } else if (val === 'dark') {
-        if (lastFollowWindows) execCommand('toggleThemeFollowWindows');
-        if (!lastAppDark) execCommand('toggleTheme');
-        // En modo oscuro, asegurar que el documento SÍ esté invertido
-        if (!lastDocInverted) execCommand('toggleDocumentInvert');
-      }
+      if (val === 'auto') { 
+        if (!lastFollowWindows) { 
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); 
+        }
+        // Ensure document invert matches Windows theme deterministically
+        if (lastWindowsDark) {
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' }, ts: Date.now() }));
+        } else {
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' }, ts: Date.now() }));
+        }
+      } 
+      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' }, ts: Date.now() })); } 
+      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' }, ts: Date.now() })); }
     });
   });
 }
 
-const diToggle=document.getElementById('documentInvertToggle');
-if(diToggle) diToggle.addEventListener('click', () => execCommand('toggleDocumentInvert'));
-post('toolbarReady', {});
+/* =================== CUSTOMIZATION =================== */
+const toolbarItemsContainer = document.getElementById('toolbarItems');
+const contextMenu = document.getElementById('nativeContextMenu');
+const mainToolbar = document.getElementById('mainToolbar');
 
+let isToolbarUnlocked = false; 
+const LS_KEY = 'sumatra-toolbar-layout-v4';
+const autoCompactPriority = ['grp-theme', 'grp-actions', 'grp-tools'];
+let autoCompactScheduled = false;
+let toolbarResizeObserver = null; 
+let autoCompactTimerId = null;
+let lastCompactState = false;
+let lastAutoHidden = new Set();
+let isHostResizing = false;
+
+window.__setHostResizing = function(isResizing) {
+  isHostResizing = !!isResizing;
+  document.documentElement.classList.toggle('host-resizing', isHostResizing);
+  if (!isHostResizing) {
+    scheduleAutoCompact();
+  }
+};
+
+function scheduleAutoCompact() {
+  if (isHostResizing) return;
+  // Debounce rapid resize/RO events to avoid flicker.
+  if (autoCompactTimerId) clearTimeout(autoCompactTimerId);
+  autoCompactTimerId = setTimeout(() => {
+    autoCompactTimerId = null;
+    applySmartToolbarCompaction();
+  }, 140);
+}
+
+function applySmartToolbarCompaction() {
+  if (!toolbarItemsContainer) return;
+  if (isHostResizing) return;
+  // If editing layout, ensure compact/auto-hidden are cleared but avoid DOM churn
+  if (isToolbarUnlocked) {
+    if (lastCompactState) {
+      toolbarItemsContainer.classList.remove('toolbar-items--compact');
+      lastCompactState = false;
+    }
+    if (lastAutoHidden.size) {
+      lastAutoHidden.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('auto-hidden');
+      });
+      lastAutoHidden.clear();
+    }
+    toolbarItemsContainer.querySelectorAll('.compact').forEach(el => el.classList.remove('compact'));
+    return;
+  }
+
+  // Compute desired compact state with hysteresis to avoid oscillation near threshold
+  const overflowNow = toolbarItemsContainer.scrollWidth > toolbarItemsContainer.clientWidth + 2;
+  const hasSpareRoom = toolbarItemsContainer.scrollWidth < toolbarItemsContainer.clientWidth - 40;
+  const needsCompact = lastCompactState ? !hasSpareRoom : overflowNow;
+
+  // Apply or remove compact mode only if it changed
+  if (needsCompact && !lastCompactState) {
+    toolbarItemsContainer.classList.add('toolbar-items--compact');
+    toolbarItemsContainer.querySelectorAll('.control-group, .modern-pagination-group, .theme-control-group, .search-wrapper').forEach(el => el.classList.add('compact'));
+    lastCompactState = true;
+  } else if (!needsCompact && lastCompactState) {
+    toolbarItemsContainer.classList.remove('toolbar-items--compact');
+    toolbarItemsContainer.querySelectorAll('.compact').forEach(el => el.classList.remove('compact'));
+    lastCompactState = false;
+  }
+
+  // After compacting, if still overflowing, pick auto-hide candidates
+  const currentlyOverflowing = toolbarItemsContainer.scrollWidth > toolbarItemsContainer.clientWidth + 2;
+  const newAutoHidden = new Set();
+  if (currentlyOverflowing && lastCompactState) {
+    const candidates = autoCompactPriority.map(id => document.getElementById(id)).filter(el => el && !el.classList.contains('is-hidden'));
+    let j = 0;
+    while (toolbarItemsContainer.scrollWidth > toolbarItemsContainer.clientWidth + 2 && j < candidates.length) {
+      newAutoHidden.add(candidates[j].id);
+      j += 1;
+    }
+  }
+
+  // Apply diffs: remove old auto-hidden not in new set
+  lastAutoHidden.forEach(id => { if (!newAutoHidden.has(id)) { const el = document.getElementById(id); if (el) el.classList.remove('auto-hidden'); }});
+  // Add newly hidden
+  newAutoHidden.forEach(id => { if (!lastAutoHidden.has(id)) { const el = document.getElementById(id); if (el) el.classList.add('auto-hidden'); }});
+  lastAutoHidden = newAutoHidden;
+}
+
+function initSmartToolbarCompaction() {
+  if (!toolbarItemsContainer || !mainToolbar) return;
+  if (toolbarResizeObserver) {
+    try { toolbarResizeObserver.disconnect(); } catch (e) {}
+  }
+  toolbarResizeObserver = new ResizeObserver(() => scheduleAutoCompact());
+  toolbarResizeObserver.observe(mainToolbar);
+  toolbarResizeObserver.observe(toolbarItemsContainer);
+  scheduleAutoCompact();
+}
+
+Array.from(toolbarItemsContainer.children).forEach(el => {
+  const badge = document.createElement('div');
+  badge.className = 'edit-badge';
+  badge.innerHTML = `<span class="icon-remove material-symbols-rounded">close</span><span class="icon-add material-symbols-rounded">add</span>`;
+  badge.onclick = (e) => { e.stopPropagation(); el.classList.toggle('is-hidden'); };
+  el.appendChild(badge);
+});
+
+try {
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved) {
+    const layout = JSON.parse(saved);
+    layout.forEach(item => {
+      const el = document.getElementById(item.id);
+      if (el) { toolbarItemsContainer.appendChild(el); if (!item.visible) el.classList.add('is-hidden'); }
+    });
+  }
+} catch(e) {}
+
+function saveLayout() {
+  const newLayout = Array.from(toolbarItemsContainer.children).map(el => ({ id: el.id, visible: !el.classList.contains('is-hidden') }));
+  localStorage.setItem(LS_KEY, JSON.stringify(newLayout));
+}
+
+function updateEditMode() {
+  Array.from(toolbarItemsContainer.children).forEach(el => el.setAttribute('draggable', isToolbarUnlocked ? 'true' : 'false'));
+  if(isToolbarUnlocked) { mainToolbar.classList.add('edit-mode'); } 
+  else { mainToolbar.classList.remove('edit-mode'); saveLayout(); }
+  scheduleAutoCompact();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!isToolbarUnlocked) return;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    e.stopPropagation();
+    isToolbarUnlocked = false;
+    updateEditMode();
+    contextMenu.classList.remove('show');
+  }
+});
+
+let draggingElement = null;
+toolbarItemsContainer.addEventListener('dragstart', e => {
+  if (!isToolbarUnlocked) { e.preventDefault(); return; }
+  draggingElement = e.target.closest('[data-name]');
+  if (!draggingElement) return;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => draggingElement.classList.add('dragging'), 0);
+});
+
+toolbarItemsContainer.addEventListener('dragover', e => {
+  e.preventDefault();
+  if (!draggingElement || !isToolbarUnlocked) return;
+  const afterElement = getDragAfterElement(toolbarItemsContainer, e.clientX);
+  if (afterElement == null) toolbarItemsContainer.appendChild(draggingElement);
+  else toolbarItemsContainer.insertBefore(draggingElement, afterElement);
+});
+
+toolbarItemsContainer.addEventListener('dragend', () => { if (draggingElement) draggingElement.classList.remove('dragging'); draggingElement = null; });
+
+function getDragAfterElement(container, x) {
+  const draggableElements = [...container.querySelectorAll('[data-name]:not(.dragging)')];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = x - box.left - box.width / 2;
+    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+    else { return closest; }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+mainToolbar.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (isToolbarUnlocked) return; 
+  contextMenu.innerHTML = '';
+  const editItem = document.createElement('div'); editItem.className = 'cm-item';
+  editItem.innerHTML = `<span class="material-symbols-rounded" style="color:var(--brand-primary)">edit</span> <span>Customize toolbar...</span>`;
+  editItem.onclick = (ev) => { ev.stopPropagation(); isToolbarUnlocked = true; updateEditMode(); contextMenu.classList.remove('show'); };
+  contextMenu.appendChild(editItem);
+  contextMenu.style.left = Math.min(e.clientX, window.innerWidth - 250) + 'px';
+  contextMenu.style.top = Math.max(e.clientY, 10) + 'px';
+  contextMenu.classList.add('show');
+});
+
+document.addEventListener('click', e => { if (!contextMenu.contains(e.target)) contextMenu.classList.remove('show'); });
+
+// Exit edit mode when clicking anywhere outside the toolbar.
+document.addEventListener('click', (e) => {
+  if (!isToolbarUnlocked) return;
+  if (mainToolbar.contains(e.target)) return;
+  isToolbarUnlocked = false;
+  updateEditMode();
+  contextMenu.classList.remove('show');
+});
+
+// Expose functions for the host to request exiting edit mode or closing dropdowns
+window.__exitEditMode = function() {
+  if (!isToolbarUnlocked) return;
+  isToolbarUnlocked = false;
+  updateEditMode();
+  if (contextMenu) contextMenu.classList.remove('show');
+};
+
+window.__closeAllDropdowns = function() {
+  document.querySelectorAll('.custom-dropdown.open').forEach(d => d.classList.remove('open'));
+  // also hide any native context menu we might have shown
+  if (typeof hideNativeContextMenu === 'function') {
+    try { hideNativeContextMenu(); } catch(e) {}
+  }
+};
+
+/* =================== INITIALIZATION =================== */
+if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'toolbarReady', payload: {}, ts: Date.now() }));
 let isRevealed = false;
 function revealToolbar() {
-  if (isRevealed) return;
-  isRevealed = true;
-  const skel = document.getElementById('skeletonToolbar');
-  const tool = document.getElementById('mainToolbar');
-  if (skel) skel.style.setProperty('display', 'none', 'important');
-  if (tool) tool.style.setProperty('display', 'flex', 'important');
+  if (isRevealed) return; isRevealed = true;
+  document.getElementById('skeletonToolbar')?.style.setProperty('display', 'none', 'important');
+  document.getElementById('mainToolbar')?.style.setProperty('display', 'flex', 'important');
 }
 setTimeout(revealToolbar, 800);
-if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  revealToolbar();
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) revealToolbar();
+initSmartToolbarCompaction(); 
+
+
+// =========================================================
+//   COLOR PICKERS LOGIC (Highlight, Underline, Strikeout)
+// =========================================================
+const colorSelectorBtn = document.getElementById('colorSelectorBtn');
+const commonColorPalette = document.getElementById('commonColorPalette');
+const colorChips = Array.from(document.querySelectorAll('#commonColorPalette .color-chip'));
+const annotColorStorageKey = 'sumatra-toolbar-annot-colors-v1';
+const defaultAnnotColors = {
+  highlight: '#facc15',
+  underline: '#22c55e',
+  strikeout: '#ef4444',
+};
+const annotToolLabels = {
+  highlight: 'Highlight',
+  underline: 'Underline',
+  strikeout: 'Strikeout',
+};
+
+let activeAnnotTool = 'highlight';
+let annotColorState = loadAnnotColorState();
+
+const annotButtons = [
+  { id: 'highlightButton', tool: 'highlight' },
+  { id: 'underlineButton', tool: 'underline' },
+  { id: 'strikeoutButton', tool: 'strikeout' },
+];
+
+function normalizeAnnotColorHex(colorHex) {
+  const value = String(colorHex || '').trim().toLowerCase();
+  if (!value) return '';
+  return value.startsWith('#') ? value : `#${value}`;
 }
+
+function loadAnnotColorState() {
+  const nextState = { ...defaultAnnotColors };
+  /*try {
+    const raw = localStorage.getItem(annotColorStorageKey);
+    if (!raw) return nextState;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return nextState;
+    Object.keys(defaultAnnotColors).forEach(tool => {
+      const saved = normalizeAnnotColorHex(parsed[tool]);
+      if (saved) nextState[tool] = saved;
+    });
+  } catch (e) {} */
+  return nextState;
+}
+
+function saveAnnotColorState() {
+  try {
+    localStorage.setItem(annotColorStorageKey, JSON.stringify(annotColorState));
+  } catch (e) {}
+}
+
+function getAnnotChipByHex(colorHex) {
+  const target = normalizeAnnotColorHex(colorHex);
+  if (!target) return null;
+  return colorChips.find(chip => normalizeAnnotColorHex(chip.dataset.color) === target) || null;
+}
+
+function setPaletteActiveChip(colorHex) {
+  const targetChip = getAnnotChipByHex(colorHex);
+  colorChips.forEach(chip => chip.classList.toggle('active', chip === targetChip));
+}
+
+function syncAnnotToolSwatches() {
+  Object.keys(defaultAnnotColors).forEach(tool => {
+    const swatch = document.querySelector(`[data-tool-swatch="${tool}"]`);
+    if (!swatch) return;
+    const colorHex = normalizeAnnotColorHex(annotColorState[tool] || defaultAnnotColors[tool]);
+    swatch.style.setProperty('--tool-color', colorHex);
+    const chip = getAnnotChipByHex(colorHex);
+    const colorName = chip?.getAttribute('title') || chip?.getAttribute('data-name') || colorHex;
+    swatch.title = `Saved color for ${annotToolLabels[tool] || tool}: ${colorName}`;
+    // Also set the icon ink color on the corresponding button so the SVG reflects the selected color
+    const btn = document.querySelector(`[data-tool="${tool}"]`) || document.getElementById(`${tool}Button`);
+    if (btn) btn.style.setProperty('--icon-ink-color', colorHex);
+  });
+}
+
+function syncActiveAnnotToolUI(tool) {
+  annotButtons.forEach(btnInfo => {
+    const btnEl = document.getElementById(btnInfo.id);
+    const wrapper = btnEl?.closest('.annot-tool');
+    const isActive = btnInfo.tool === tool;
+    if (btnEl) {
+      btnEl.classList.toggle('active-tool', isActive);
+      btnEl.setAttribute('aria-pressed', String(isActive));
+    }
+    if (wrapper) wrapper.classList.toggle('is-active', isActive);
+  });
+}
+
+function setActiveAnnotTool(tool) {
+  if (!tool || !defaultAnnotColors[tool]) tool = 'highlight';
+  activeAnnotTool = tool;
+  syncActiveAnnotToolUI(tool);
+  setPaletteActiveChip(annotColorState[tool] || defaultAnnotColors[tool]);
+}
+
+function setAnnotToolColor(tool, colorHex) {
+  const normalized = normalizeAnnotColorHex(colorHex) || defaultAnnotColors[tool] || defaultAnnotColors.highlight;
+  annotColorState = { ...annotColorState, [tool]: normalized };
+  saveAnnotColorState();
+  syncAnnotToolSwatches();
+  if (tool === activeAnnotTool) setPaletteActiveChip(normalized);
+}
+
+annotButtons.forEach(btnInfo => {
+  const btnEl = document.getElementById(btnInfo.id);
+  if (!btnEl) return;
+  btnEl.addEventListener('click', () => {
+    setActiveAnnotTool(btnInfo.tool);
+  });
+});
+
+syncAnnotToolSwatches();
+setActiveAnnotTool(activeAnnotTool);
+
+colorSelectorBtn?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  setPaletteActiveChip(annotColorState[activeAnnotTool] || defaultAnnotColors[activeAnnotTool]);
+  commonColorPalette.classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (!commonColorPalette.contains(e.target) && !e.target.closest('#colorSelectorBtn')) {
+    commonColorPalette.classList.remove('open');
+  }
+});
+
+colorChips.forEach(chip => {
+  const colorHex = normalizeAnnotColorHex(chip.getAttribute('data-color'));
+  chip.style.backgroundColor = colorHex;
+
+  chip.addEventListener('click', () => {
+    const colorName = chip.getAttribute('data-name');
+    setAnnotToolColor(activeAnnotTool, colorHex);
+    setPaletteActiveChip(colorHex);
+
+    const commandName = `set${activeAnnotTool.charAt(0).toUpperCase() + activeAnnotTool.slice(1)}Color`;
+    if (window.external && typeof window.external.invoke === 'function') {
+      window.external.invoke(JSON.stringify({
+        type: 'command',
+        name: commandName,
+        payload: { color: colorName, value: colorHex },
+        ts: Date.now()
+      }));
+    }
+
+    commonColorPalette.classList.remove('open');
+  });
+});
+
+
+/* =========================================
+   SAFE JS OVERRIDES
+   ========================================= */
+(function() {
+  // Wrap pagination input and meta in a container for the unified pill look
+  const pageInput = document.getElementById('pageInput');
+  const pageMeta = document.getElementById('pageMeta');
+
+  const annotBtns = document.querySelectorAll('.annot-tool-button');
+
+  // Update active states
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll('.annot-tool').forEach(tool => {
+      const btn = tool.querySelector('.annot-tool-button');
+      if (btn) {
+        tool.classList.toggle('is-active', btn.classList.contains('active-tool'));
+      }
+    });
+  });
+
+  annotBtns.forEach(btn => {
+    observer.observe(btn, { attributes: true, attributeFilter: ['class'] });
+    // Trigger initial state
+    const tool = btn.closest('.annot-tool');
+    if (tool) tool.classList.toggle('is-active', btn.classList.contains('active-tool'));
+  });
+})();
+
+/* =========================================
+   TOOLBAR ADAPTIVE COMPACTNESS
+   ========================================= */
+(function() {
+  const toolbarContainer = document.getElementById('mainToolbar');
+  const toolbarItems = document.getElementById('toolbarItems');
+
+  if (!toolbarContainer || !toolbarItems) return;
+
+  function updateToolbarScale() {
+    const availableWidth = toolbarContainer.clientWidth;
+    const contentWidth = toolbarItems.scrollWidth;
+    if (!availableWidth || !contentWidth) return;
+
+    const hasOverflow = contentWidth > availableWidth - 20;
+
+    // Toggle compact class instead of scaling
+    toolbarItems.classList.toggle('toolbar-items--compact', hasOverflow);
+
+    // Also make some control groups more compact when space is tight
+    const compactGroups = toolbarItems.querySelectorAll('.grp-zoom, .grp-view, .modern-pagination-group, .grp-tools');
+    compactGroups.forEach(g => g.classList.toggle('compact', hasOverflow));
+  }
+
+  const resizeObserver = new ResizeObserver(updateToolbarScale);
+  resizeObserver.observe(toolbarContainer);
+  resizeObserver.observe(toolbarItems);
+
+  window.addEventListener('resize', updateToolbarScale);
+  // Also update when fonts or layout potentially change
+  window.addEventListener('load', updateToolbarScale);
+  setTimeout(updateToolbarScale, 100);
+})();
+
+</script>
+<script>
+// Shortcut guard: block webview global shortcuts and route Ctrl+F to the toolbar search.
+(function() {
+  function isEditableElement(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+  }
+
+  window.addEventListener('keydown', (e) => {
+    try {
+      const active = document.activeElement;
+      const editable = isEditableElement(active);
+
+      // Block webview JS handlers but don't prevent defaults so the native app shortcuts still work.
+      if ((e.ctrlKey || e.metaKey) && !editable) {
+        const k = (e.key || '').toLowerCase();
+        const blocked = ['f','o','p','s','b','k','t','a','c','v','x','z','y','r','n'];
+        if (blocked.indexOf(k) >= 0) {
+          e.stopPropagation();
+          e.stopImmediatePropagation && e.stopImmediatePropagation();
+          // Special-case: Ctrl+F / Cmd+F should focus the toolbar search input
+          if (k === 'f') {
+            const s = document.getElementById('searchInput');
+            if (s) {
+              s.focus();
+              if (typeof s.select === 'function') s.select();
+            }
+          }
+        }
+      }
+
+      // Handle F3 / Shift+F3 to navigate search results when toolbar search exists
+      if (!editable && e.key === 'F3') {
+        e.stopPropagation();
+        e.stopImmediatePropagation && e.stopImmediatePropagation();
+        if (e.shiftKey) document.getElementById('searchPrev')?.click();
+        else document.getElementById('searchNext')?.click();
+      }
+    } catch (err) {
+      try { console.error('shortcut-guard error', err); } catch(e){}
+    }
+  }, { capture: true });
+})();
 </script>
 </body>
 </html>

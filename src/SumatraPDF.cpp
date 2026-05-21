@@ -120,7 +120,7 @@ struct ToolbarHeightBreakpoint {
 };
 
 static const ToolbarHeightBreakpoint kToolbarHeightBreakpoints[] = {
-    {1700, 120}, {1300, 110}, {1000, 90}, {700, 70}, {0, 50}, // default fallback
+    {1700, 56}, {1300, 56}, {1000, 52}, {650, 44}, {0, 44}, // default fallback
 };
 
 static int GetHybridToolbarHeight(HWND hwndFrame) {
@@ -247,7 +247,6 @@ bool SettingsRememberOpenedFiles() {
 static Kind kNotifPersistentWarning = "persistentWarning";
 static Kind kNotifZoom = "zoom";
 
-HBITMAP gBitmapReloadingCue;
 RenderCache* gRenderCache;
 HCURSOR gCursorDrag;
 
@@ -1487,14 +1486,17 @@ static bool showTocByDefault(const char* path) {
 // placeWindow : if true then the Window will be moved/sized according
 //   to the 'state' information even if the window was already placed
 //   before (isNewWindow=false)
-static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, FileState* fs) {
+static bool ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, FileState* fs) {
     MainWindow* win = args->win;
     if (win && win->homePageWebView) {
         HomePageHide(win);
     }
     ReportIf(!win);
     if (!win) {
-        return;
+        return false;
+    }
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        return false;
     }
     WindowTab* tab = win->CurrentTab();
     ReportIf(!tab);
@@ -1699,6 +1701,9 @@ static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
     // cf. https://code.google.com/p/sumatrapdf/issues/detail?id=2541
     // ReportIf(win->IsDocLoaded() && args->showWin && win->canvasRc.IsEmpty() && !win->AsChm());
 
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        return true;
+    }
     SetSidebarVisibility(win, showToc, gGlobalPrefs->showFavorites);
     // restore scroll state after the canvas size has been restored
     if ((args->showWin || ss.page != 1) && win->AsFixed()) {
@@ -1709,7 +1714,7 @@ static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
 
     if (!win->IsDocLoaded()) {
         win->RedrawAll(true);
-        return;
+        return true;
     }
 
     TempStr unsupported = win->ctrl->GetPropertyTemp(kPropUnsupportedFeatures);
@@ -1734,6 +1739,8 @@ static void ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
     if (!args->isNewWindow && win->presentation && win->ctrl) {
         win->ctrl->SetInPresentation(true);
     }
+
+    return true;
 }
 
 void ReloadDocument(MainWindow* win, bool autoRefresh) {
@@ -1822,7 +1829,10 @@ void ReloadDocument(MainWindow* win, bool autoRefresh) {
     LoadArgs args(tab->filePath, win);
     args.showWin = true;
     args.placeWindow = false;
-    ReplaceDocumentInCurrentTab(&args, ctrl, fs);
+    if (!ReplaceDocumentInCurrentTab(&args, ctrl, fs)) {
+        DeleteFileState(fs);
+        return;
+    }
 
     if (!ctrl) {
         DeleteFileState(fs);
@@ -2302,6 +2312,12 @@ void ShowErrorLoadingNotification(MainWindow* win, const char* path, bool noSave
 
 extern void SetTabState(WindowTab* tab, TabState* state);
 
+// Call SaveSettings asynchronously to avoid running it in the middle of
+// document/tab transitions during document load completion.
+static void SaveSettingsVoid() {
+    SaveSettings();
+}
+
 MainWindow* LoadDocumentFinish(LoadArgs* args) {
     MainWindow* win = args->win;
     const char* fullPath = args->FilePath();
@@ -2325,6 +2341,13 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
         }
         CloseDocumentInCurrentTab(win, true, args->forceReuse);
     }
+
+    if (!IsMainWindowValid(win) || win->isBeingClosed) {
+        delete args->ctrl;
+        args->ctrl = nullptr;
+        return nullptr;
+    }
+
     if (!args->forceReuse) {
         // insert a new tab for the loaded document
         WindowTab* tab = new WindowTab(win);
@@ -2344,11 +2367,21 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
     args->placeWindow = !SettingsUseTabs();
     bool lazyLoad = args->lazyLoad;
     if (!lazyLoad) {
+        if (!IsMainWindowValid(win) || win->isBeingClosed) {
+            delete args->ctrl;
+            args->ctrl = nullptr;
+            return nullptr;
+        }
         if (win->homePageWebView) {
             HomePageHide(win);
         }
 
-        ReplaceDocumentInCurrentTab(args, args->ctrl, nullptr);
+        if (!ReplaceDocumentInCurrentTab(args, args->ctrl, nullptr)) {
+            delete args->ctrl;
+            args->ctrl = nullptr;
+            return nullptr;
+        }
+        args->ctrl = nullptr;
 
         if (win->hwndCanvas) {
             InvalidateRect(win->hwndCanvas, nullptr, TRUE);
@@ -2405,7 +2438,8 @@ MainWindow* LoadDocumentFinish(LoadArgs* args) {
         // TODO: this seems to save the state of file that we just opened
         // add a way to skip saving currTab?
         if (!args->noSavePrefs) {
-            SaveSettings();
+            auto fn = MkFunc0Void(SaveSettingsVoid);
+            uitask::Post(fn, "SaveSettingsAfterDocLoad");
         }
     }
 
@@ -2981,6 +3015,18 @@ static void ShowSavedAnnotationsFailedNotification(HWND hwndParent, const char* 
     StrBuilder msg;
     msg.AppendFmt(_TRA("Saving of '%s' failed with: '%s'"), path, mupdfErr);
     ShowWarningNotification(hwndParent, msg.Get(), 0);
+}
+
+static void ShowHighlightSelectionRequiredNotification(HWND hwndParent) {
+    ShowWarningNotification(hwndParent, _TRA("Select text first to highlight it"), kNotif5SecsTimeOut);
+}
+
+static void ShowUnderlineSelectionRequiredNotification(HWND hwndParent) {
+    ShowWarningNotification(hwndParent, _TRA("Select text first to underline it"), kNotif5SecsTimeOut);
+}
+
+static void ShowStrikeOutSelectionRequiredNotification(HWND hwndParent) {
+    ShowWarningNotification(hwndParent, _TRA("Select text first to strike out it"), kNotif5SecsTimeOut);
 }
 
 struct ShowErrorData {
@@ -5204,19 +5250,6 @@ static bool ChmForwardKey(WPARAM key) {
     return false;
 }
 
-static Annotation* GetAnnotionUnderCursor(WindowTab* tab, Annotation* annot) {
-    DisplayModel* dm = tab->AsFixed();
-    if (!dm) return nullptr;
-    Point pt = HwndGetCursorPos(tab->win->hwndCanvas);
-    if (pt.IsEmpty()) return nullptr;
-    int pageNoUnderCursor = dm->GetPageNoByPoint(pt);
-    if (pageNoUnderCursor <= 0) {
-        return nullptr;
-    }
-    annot = dm->GetAnnotationAtPos(pt, annot);
-    return annot;
-}
-
 static bool FrameOnKeydown(MainWindow* win, WPARAM key, LPARAM lp) {
     // TODO: how does this interact with new accelerators?
     if (PM_BLACK_SCREEN == win->presentation || PM_WHITE_SCREEN == win->presentation) {
@@ -5226,6 +5259,18 @@ static bool FrameOnKeydown(MainWindow* win, WPARAM key, LPARAM lp) {
 
     if (VK_ESCAPE == key) {
         CancelDrag(win);
+        // If the mouse is outside the hybrid toolbar, notify the webview to exit edit mode / close dropdowns
+        if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+            POINT pt;
+            GetCursorPos(&pt);
+            RECT r = {};
+            GetWindowRect(win->hybridToolbar->hwnd, &r);
+            if (!(pt.x >= r.left && pt.x < r.right && pt.y >= r.top && pt.y < r.bottom)) {
+                win->hybridToolbar->Eval(
+                    "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                    "window.__closeAllDropdowns();");
+            }
+        }
         return true;
     }
 
@@ -5674,6 +5719,19 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
         if (tocVisible && showFavorites) {
             InvalidateRect(win->favSplitter->hwnd, nullptr, TRUE);
         }
+    }
+
+    // Notify hybrid toolbar WebView (if present) about panel state changes
+    if (win->hybridToolbar) {
+        TempStr jsFav =
+            str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('favorites',%s);}catch(e){};",
+                            showFavorites ? "true" : "false");
+        win->hybridToolbar->Eval(jsFav);
+
+        TempStr jsToc =
+            str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('bookmarks',%s);}catch(e){};",
+                            tocVisible ? "true" : "false");
+        win->hybridToolbar->Eval(jsToc);
     }
 }
 
@@ -7014,6 +7072,8 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
         case CmdFindFirst:
             if (win->IsCurrentTabAbout()) {
                 HomePageFocusSearch(win);
+            } else if (prettysumatra::bridge::UseHybridToolbar() && win->hybridToolbar) {
+                prettysumatra::bridge::FocusHybridToolbarSearch(win->hwndFrame);
             } else {
                 FindFirst(win);
             }
@@ -7486,7 +7546,19 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
         case CmdDeleteAnnotation: {
             if (!tab) return 0;
             Annotation* annot = tab->selectedAnnotation;
-            if (!annot) annot = GetAnnotionUnderCursor(tab, nullptr);
+            // If command was invoked from context menu, lp encodes the point where menu was opened
+            if (!annot) {
+                Point pt = HwndGetCursorPos(win->hwndCanvas);
+                if (lp != 0) {
+                    pt.x = GET_X_LPARAM(lp);
+                    pt.y = GET_Y_LPARAM(lp);
+                    // Coordinates supplied by menu code are already in canvas client coords
+                }
+                int pageNoUnderCursor = dm->GetPageNoByPoint(pt);
+                if (pageNoUnderCursor > 0) {
+                    annot = dm->GetAnnotationAtPos(pt, nullptr);
+                }
+            }
             if (!annot) return 0;
             DeleteAnnotationAndUpdateUI(tab, annot);
             return 0;
@@ -7502,9 +7574,53 @@ static LRESULT FrameOnCommand(MainWindow* win, HWND hwnd, UINT msg, WPARAM wp, L
             if (!win || !tab) {
                 return 0;
             }
+            if (cmdId == CmdCreateAnnotHighlight && !tab->selectionOnPage) {
+                ShowHighlightSelectionRequiredNotification(win->hwndCanvas);
+                return 0;
+            }
+            if (cmdId == CmdCreateAnnotUnderline && !tab->selectionOnPage) {
+                ShowUnderlineSelectionRequiredNotification(win->hwndCanvas);
+                return 0;
+            }
+            if (cmdId == CmdCreateAnnotStrikeOut && !tab->selectionOnPage) {
+                ShowStrikeOutSelectionRequiredNotification(win->hwndCanvas);
+                return 0;
+            }
             AnnotCreateArgs args{annotType};
+
+            // Check if there's a pending color from the bridge (for highlight/underline/strikeout from webui toolbar)
+            const char* bridgeColor = nullptr;
+            if (cmdId == CmdCreateAnnotHighlight) {
+                bridgeColor = prettysumatra::bridge::GetPendingHighlightColor();
+            } else if (cmdId == CmdCreateAnnotUnderline) {
+                bridgeColor = prettysumatra::bridge::GetPendingUnderlineColor();
+            } else if (cmdId == CmdCreateAnnotStrikeOut) {
+                bridgeColor = prettysumatra::bridge::GetPendingStrikeoutColor();
+            }
+            if (bridgeColor && str::StartsWith(bridgeColor, "#")) {
+                char cmdStr[128];
+                if (cmdId == CmdCreateAnnotHighlight) {
+                    snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotHighlight %s", bridgeColor);
+                } else if (cmdId == CmdCreateAnnotUnderline) {
+                    snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotUnderline %s", bridgeColor);
+                } else if (cmdId == CmdCreateAnnotStrikeOut) {
+                    snprintf(cmdStr, sizeof(cmdStr), "CmdCreateAnnotStrikeOut %s", bridgeColor);
+                } else {
+                    cmdStr[0] = '\0';
+                }
+                if (cmdStr[0]) cmd = CreateCommandFromDefinition(cmdStr);
+            }
+            if (prettysumatra::bridge::LogBridgeMessages()) {
+                logf("[PrettySumatraBridge] Creating annotation cmdId=%d bridgeColor=%s cmdDef=%s selectionOnPage=%d\n",
+                     cmdId, bridgeColor ? bridgeColor : "(null)", cmd ? cmd->definition : "(none)",
+                     tab->selectionOnPage ? 1 : 0);
+            }
+
             SetAnnotCreateArgs(args, cmd);
             lastCreatedAnnot = MakeAnnotationsFromSelection(tab, &args);
+            if (prettysumatra::bridge::LogBridgeMessages()) {
+                logf("[PrettySumatraBridge] MakeAnnotationsFromSelection returned annot=%p\n", lastCreatedAnnot);
+            }
             if (cmd) {
                 // for custom commands must explicitly provide "openedit" argument
                 openAnnotationEdit = GetCommandBoolArg(cmd, kCmdArgOpenEdit, false);
@@ -8290,6 +8406,38 @@ static LRESULT CustomCaptionFrameProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp,
                 *callDef = false;
                 return 0;
             }
+            // If click is outside the hybrid toolbar WebView, tell it to exit edit mode / close dropdowns
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
+                POINT ptScreen = pt;
+                ClientToScreen(hwnd, &ptScreen);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(ptScreen.x >= r.left && ptScreen.x < r.right && ptScreen.y >= r.top && ptScreen.y < r.bottom)) {
+                    // click outside webview
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
+            }
+        } break;
+
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        case WM_XBUTTONDOWN: {
+            // For other mouse buttons, also notify webview if click is outside it
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                POINT pt = {GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
+                POINT ptScreen = pt;
+                ClientToScreen(hwnd, &ptScreen);
+                RECT r = {};
+                GetWindowRect(win->hybridToolbar->hwnd, &r);
+                if (!(ptScreen.x >= r.left && ptScreen.x < r.right && ptScreen.y >= r.top && ptScreen.y < r.bottom)) {
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
+            }
         } break;
 
         case WM_LBUTTONUP: {
@@ -8435,8 +8583,62 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
                 RememberDefaultWindowPosition(win);
                 int dx = LOWORD(lp);
                 int dy = HIWORD(lp);
-                // dbglog::LogF("dx: %d, dy: %d", dx, dy);
-                FrameOnSize(win, dx, dy);
+                // During interactive resize, throttle relayout calls to reduce WebView flicker.
+                if (win->frameInSizeMove) {
+                    win->pendingFrameDx = dx;
+                    win->pendingFrameDy = dy;
+                    win->hasPendingFrameSize = true;
+
+                    ULONGLONG now = GetTickCount64();
+                    constexpr ULONGLONG kFrameResizeThrottleMs = 33;
+                    if ((now - win->lastFrameOnSizeTick) >= kFrameResizeThrottleMs) {
+                        FrameOnSize(win, dx, dy);
+                        win->lastFrameOnSizeTick = now;
+                        win->hasPendingFrameSize = false;
+                    }
+                } else {
+                    // dbglog::LogF("dx: %d, dy: %d", dx, dy);
+                    FrameOnSize(win, dx, dy);
+                    win->lastFrameOnSizeTick = GetTickCount64();
+                    win->hasPendingFrameSize = false;
+                }
+            }
+            break;
+
+        case WM_ENTERSIZEMOVE:
+            if (win) {
+                win->frameInSizeMove = true;
+                win->hasPendingFrameSize = false;
+                win->lastFrameOnSizeTick = 0;
+                // Temporarily stop redrawing the toolbar/rebar to avoid flicker while resizing
+                if (win->hwndReBar) SendMessageW(win->hwndReBar, WM_SETREDRAW, FALSE, 0);
+                if (win->hwndToolbar) SendMessageW(win->hwndToolbar, WM_SETREDRAW, FALSE, 0);
+            }
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                SendMessageW(win->hybridToolbar->hwnd, WM_ENTERSIZEMOVE, wp, lp);
+            }
+            break;
+
+        case WM_EXITSIZEMOVE:
+            if (win) {
+                win->frameInSizeMove = false;
+                if (win->hasPendingFrameSize) {
+                    FrameOnSize(win, win->pendingFrameDx, win->pendingFrameDy);
+                    win->hasPendingFrameSize = false;
+                    win->lastFrameOnSizeTick = GetTickCount64();
+                }
+                // Re-enable toolbar/rebar drawing and force a redraw to make UI stable
+                if (win->hwndReBar) {
+                    SendMessageW(win->hwndReBar, WM_SETREDRAW, TRUE, 0);
+                    RedrawWindow(win->hwndReBar, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+                }
+                if (win->hwndToolbar) {
+                    SendMessageW(win->hwndToolbar, WM_SETREDRAW, TRUE, 0);
+                    RedrawWindow(win->hwndToolbar, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+                }
+            }
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                SendMessageW(win->hybridToolbar->hwnd, WM_EXITSIZEMOVE, wp, lp);
             }
             break;
 
@@ -8505,8 +8707,29 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
         case WM_ACTIVATE:
             if (wp != WA_INACTIVE) {
                 gLastActiveFrameHwnd = hwnd;
+            } else {
+                // Window lost activation: tell hybrid toolbar to exit edit mode and close dropdowns
+                if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
             }
             break;
+
+        case WM_KILLFOCUS: {
+            // If focus moved outside the hybrid toolbar, tell it to exit edit mode/close dropdowns
+            HWND newFocus = (HWND)wp;
+            if (win && win->hybridToolbar && win->hybridToolbar->hwnd) {
+                HWND hw = win->hybridToolbar->hwnd;
+                bool focusIsInWebview = (newFocus == hw) || (newFocus && IsChild(hw, newFocus));
+                if (!focusIsInWebview) {
+                    win->hybridToolbar->Eval(
+                        "window.__exitEditMode && window.__exitEditMode(); window.__closeAllDropdowns && "
+                        "window.__closeAllDropdowns();");
+                }
+            }
+        } break;
 
         case WM_APPCOMMAND:
             // both keyboard and mouse drivers should produce WM_APPCOMMAND

@@ -3267,7 +3267,12 @@ RenderedBitmap* EngineMupdf::RenderPage(RenderPageArgs& args) {
             fz_drop_display_list(ctx, keptList);
         }
         fz_catch(ctx) {
-            fz_report_error(ctx);
+            const char* mupdfErr = fz_caught_message(ctx);
+            if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+                logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+            } else {
+                fz_report_error(ctx);
+            }
             delete bitmap;
             return nullptr;
         }
@@ -3310,7 +3315,12 @@ RenderedBitmap* EngineMupdf::RenderPage(RenderPageArgs& args) {
             fz_drop_pixmap(ctx, pix);
         }
         fz_catch(ctx) {
-            fz_report_error(ctx);
+            const char* mupdfErr = fz_caught_message(ctx);
+            if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+                logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+            } else {
+                fz_report_error(ctx);
+            }
             delete bitmap;
             return nullptr;
         }
@@ -3328,7 +3338,12 @@ RenderedBitmap* EngineMupdf::RenderPage(RenderPageArgs& args) {
             fz_drop_pixmap(ctx, pix);
         }
         fz_catch(ctx) {
-            fz_report_error(ctx);
+            const char* mupdfErr = fz_caught_message(ctx);
+            if (mupdfErr && strstr(mupdfErr, "items left on stack in draw device") != nullptr) {
+                logf("Suppressed mupdf draw-device stack warning: '%s'\n", mupdfErr);
+            } else {
+                fz_report_error(ctx);
+            }
             delete bitmap;
             return nullptr;
         }

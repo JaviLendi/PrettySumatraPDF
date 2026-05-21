@@ -24,6 +24,7 @@
 #include "utils/Log.h"
 
 using Gdiplus::Graphics;
+using Gdiplus::GraphicsPath;
 using Gdiplus::Pen;
 using Gdiplus::SolidBrush;
 
@@ -45,6 +46,33 @@ Kind kNotifAdHoc = "notifAdHoc";
 
 constexpr int kPadding = 6;
 constexpr int kTopLeftMargin = 8;
+constexpr int kNotifRadius = 10;
+constexpr int kNotifBorder = 1;
+constexpr int kNotifAccentHeight = 4;
+constexpr int kNotifCloseInset = 4;
+constexpr int kNotifCloseSize = 18;
+constexpr int kNotifProgressHeight = 4;
+constexpr int kNotifTextPadX = 14;
+constexpr int kNotifTextPadY = 11;
+constexpr int kNotifGapY = 8;
+
+static void AddRoundedRect(GraphicsPath& path, const Rect& rc, int radius) {
+    int d = radius * 2;
+    if (radius <= 0 || rc.dx <= d || rc.dy <= d) {
+        path.AddRectangle(Gdiplus::Rect(rc.x, rc.y, rc.dx, rc.dy));
+        return;
+    }
+    path.StartFigure();
+    path.AddArc(rc.x, rc.y, d, d, 180, 90);
+    path.AddLine(rc.x + radius, rc.y, rc.x + rc.dx - radius, rc.y);
+    path.AddArc(rc.x + rc.dx - d, rc.y, d, d, 270, 90);
+    path.AddLine(rc.x + rc.dx, rc.y + radius, rc.x + rc.dx, rc.y + rc.dy - radius);
+    path.AddArc(rc.x + rc.dx - d, rc.y + rc.dy - d, d, d, 0, 90);
+    path.AddLine(rc.x + rc.dx - radius, rc.y + rc.dy, rc.x + radius, rc.y + rc.dy);
+    path.AddArc(rc.x, rc.y + rc.dy - d, d, d, 90, 90);
+    path.AddLine(rc.x, rc.y + rc.dy - radius, rc.x, rc.y + radius);
+    path.CloseFigure();
+}
 
 constexpr UINT_PTR kNotifTimerTimeoutId = 1;
 constexpr UINT_PTR kNotifTimerDelayId = 2;
@@ -240,7 +268,6 @@ int CalcPerc(int current, int total) {
 }
 
 constexpr int kCloseLeftMargin = 16;
-constexpr int kProgressDy = 5;
 
 void NotificationWnd::Layout(const char* message) {
     Size szText;
@@ -251,25 +278,26 @@ void NotificationWnd::Layout(const char* message) {
         ReleaseDC(hwnd, hdc);
     }
 
-    int padX = DpiScale(hwnd, 12);
-    int padY = DpiScale(hwnd, 8);
-    int dx = padX + szText.dx + padX;
+    int padX = DpiScale(hwnd, kNotifTextPadX);
+    int padY = DpiScale(hwnd, kNotifTextPadY);
+    int accentWidth = DpiScale(hwnd, 5);
+    int closeDx = DpiScale(hwnd, kNotifCloseSize);
+    int closeInset = DpiScale(hwnd, kNotifCloseInset);
+    int dx = padX + accentWidth + padX + szText.dx + padX;
     int dy = padY + szText.dy + padY;
-    rTxt = {padX, padY, szText.dx, szText.dy};
+    rTxt = {padX + accentWidth + padX, padY, szText.dx, szText.dy};
     if (!noClose) {
-        int closeDx = DpiScale(hwnd, 16);
-        int leftMargin = DpiScale(hwnd, kCloseLeftMargin - padX);
-        rClose = {dx + leftMargin, padY, closeDx, closeDx + 2};
-        // close button
-        dx += leftMargin + closeDx + padX;
+        int closeSpace = DpiScale(hwnd, kCloseLeftMargin);
+        rClose = {dx + closeSpace - closeDx, padY + closeInset, closeDx, closeDx};
+        dx += closeSpace + closeDx + padX;
     } else {
         rClose = {};
         dx += padX;
     }
-    int progressDy = DpiScale(hwnd, kProgressDy);
-    rProgress = {padX, dy, szText.dx, progressDy};
+    int progressDy = DpiScale(hwnd, kNotifProgressHeight);
+    rProgress = {rTxt.x, dy, szText.dx, progressDy};
     if (HasProgress()) {
-        dy += padY + progressDy + padY;
+        dy += DpiScale(hwnd, kNotifGapY) + progressDy + padY;
     }
 
     Rect rCurr = WindowRect(hwnd);
@@ -295,8 +323,7 @@ void NotificationWnd::Layout(const char* message) {
 
     // y-center close
     if (!noClose) {
-        int closeDx = rClose.dx;
-        rClose.y = ((dy - closeDx) / 2) + 1;
+        rClose.y = ((dy - rClose.dy) / 2);
     }
 
     if (dx == rCurr.dx && dy == rCurr.dy) {
@@ -328,26 +355,40 @@ void NotificationWnd::OnPaint(HDC hdcIn, PAINTSTRUCT* ps) {
     ScopedSelectObject fontPrev(hdc, font);
 
     COLORREF colBg = ThemeNotificationsBackgroundColor();
-    COLORREF colBorder = MkGray(0xdd);
+    COLORREF colBorder = AccentColor(colBg, 4);
+    COLORREF colAccent = ThemeNotificationsProgressColor();
     COLORREF colTxt = ThemeNotificationsTextColor();
-    if (highlight) {
-        colBg = ThemeNotificationsHighlightColor();
-        colBorder = colBg;
-        colTxt = ThemeNotificationsHighlightTextColor();
-    }
-    // COLORREF colBg = MkRgb(0xff, 0xff, 0x5c);
-    // COLORREF colBg = MkGray(0xff);
 
     Graphics graphics(hdc);
-    SolidBrush br(GdiRgbFromCOLORREF(colBg));
-    auto grc = Gdiplus::Rect(0, 0, rc.dx, rc.dy);
-    graphics.FillRectangle(&br, grc);
+    graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
+    graphics.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHalf);
 
-    if (false) {
-        Pen pen(GdiRgbFromCOLORREF(colBorder));
-        pen.SetWidth(4);
-        grc = {rc.x, rc.y, rc.dx, rc.dy};
-        graphics.DrawRectangle(&pen, grc);
+    {
+        SolidBrush clearBr(GdiRgbFromCOLORREF(colBg));
+        graphics.FillRectangle(&clearBr, 0, 0, rc.dx, rc.dy);
+    }
+
+    GraphicsPath cardPath;
+    int radius = DpiScale(hwnd, kNotifRadius);
+    AddRoundedRect(cardPath, rc, radius);
+
+    SolidBrush br(GdiRgbFromCOLORREF(colBg));
+    Pen borderPen(GdiRgbFromCOLORREF(colBorder));
+    borderPen.SetWidth(kNotifBorder);
+    borderPen.SetAlignment(Gdiplus::PenAlignmentInset);
+    graphics.FillPath(&br, &cardPath);
+    graphics.DrawPath(&borderPen, &cardPath);
+
+    int accentHeight = DpiScale(hwnd, kNotifAccentHeight);
+    int accentInset = radius;
+    int accentWidth = rc.dx - 2 * accentInset;
+    if (accentWidth < 0) {
+        accentWidth = 0;
+    }
+    if (accentHeight > 0 && accentWidth > 0) {
+        Rect accent = {accentInset, 0, accentWidth, accentHeight};
+        SolidBrush accentBr(GdiRgbFromCOLORREF(colAccent));
+        graphics.FillRectangle(&accentBr, accent.x, accent.y, accent.dx, accent.dy);
     }
 
     SetBkMode(hdc, TRANSPARENT);
@@ -363,6 +404,9 @@ void NotificationWnd::OnPaint(HDC hdcIn, PAINTSTRUCT* ps) {
         args.hdc = hdc;
         args.r = rClose;
         args.isHover = rClose.Contains(curPos);
+        args.colX = kColCloseX;
+        args.colXHover = kColCloseXHover;
+        args.colHoverBg = kColCloseXHoverBg;
         DrawCloseButton(args);
     }
 #if 0
@@ -377,20 +421,28 @@ void NotificationWnd::OnPaint(HDC hdcIn, PAINTSTRUCT* ps) {
     if (HasProgress()) {
         rc = rProgress;
         int progressWidth = rc.dx;
-
         COLORREF col = ThemeNotificationsProgressColor();
-        Pen pen(GdiRgbFromCOLORREF(col));
-        grc = {rc.x, rc.y, rc.dx, rc.dy};
-        graphics.DrawRectangle(&pen, grc);
+        Rect track = {rc.x, rc.y, rc.dx, rc.dy};
+        SolidBrush trackBr(GdiRgbFromCOLORREF(AccentColor(colBg, 18)));
+        GraphicsPath trackPath;
+        AddRoundedRect(trackPath, track, track.dy / 2);
+        graphics.FillPath(&trackBr, &trackPath);
 
-        rc.x += 2;
-        rc.dx = (progressWidth - 3) * progressPerc / 100;
-        rc.y += 2;
-        rc.dy -= 3;
+        rc.x += 1;
+        rc.y += 1;
+        rc.dx = (progressWidth - 2) * progressPerc / 100;
+        if (rc.dx < 0) {
+            rc.dx = 0;
+        }
+        rc.dy -= 2;
+        if (rc.dy < 1) {
+            rc.dy = 1;
+        }
 
         br.SetColor(GdiRgbFromCOLORREF(col));
-        grc = {rc.x, rc.y, rc.dx, rc.dy};
-        graphics.FillRectangle(&br, grc);
+        GraphicsPath fillPath;
+        AddRoundedRect(fillPath, rc, rc.dy / 2);
+        graphics.FillPath(&br, &fillPath);
     }
 
     buffer.Flush(hdcIn);
@@ -478,7 +530,7 @@ LRESULT NotificationWnd::WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
     }
 
-    if (WM_LBUTTONUP) {
+    if (WM_LBUTTONUP == msg) {
         Point pt = Point(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
         if (!noClose && rClose.Contains(pt)) {
             // TODO a better way to delete myself
