@@ -120,7 +120,7 @@ struct ToolbarHeightBreakpoint {
 };
 
 static const ToolbarHeightBreakpoint kToolbarHeightBreakpoints[] = {
-    {1700, 56}, {1300, 56}, {1000, 52}, {650, 44}, {0, 44}, // default fallback
+    {1700, 57}, {1300, 57}, {1000, 52}, {650, 44}, {0, 44}, // default fallback
 };
 
 static int GetHybridToolbarHeight(HWND hwndFrame) {

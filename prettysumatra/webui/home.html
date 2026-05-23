@@ -113,14 +113,14 @@
 body { font-family: 'Inter', sans-serif; background-color: var(--bg-app); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 body::before, body::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; filter: blur(48px); animation: float 28s ease-in-out 1 alternate both; }
 body::before { top: -10%; left: 10%; width: 40vw; height: 40vw; background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); }
-body::after { bottom: -10%; right: 10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(234, 179, 8, 0.1) 0%, transparent 70%); animation-delay: -10s; }
+body::after { bottom: -10%; right: 10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); animation-delay: -10s; }
 @keyframes float { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(50px, 30px) scale(1.1); } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes shimmer { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
 body::after { animation: float 20s infinite alternate ease-in-out; animation-delay: -10s; }
-[data-theme="dark"] body::before { background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%); }
-[data-theme="dark"] body::after { background: radial-gradient(circle, rgba(234, 179, 8, 0.08) 0%, transparent 70%); }
+[data-theme="dark"] body::before { background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); }
+[data-theme="dark"] body::after { background: radial-gradient(circle, var(--brand-glow) 0%, transparent 70%); }
 
 .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px 40px; text-align: center; flex-shrink: 0; animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .hero-logo { width: 112px; height: 112px; margin-bottom: 16px; filter: drop-shadow(0 4px 12px var(--brand-glow)); object-fit: contain; display: block; }
@@ -137,9 +137,9 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
 .btn-action:hover { background: var(--bg-button-hover); transform: translateY(-2px); }
 .btn-action i { color: var(--brand-primary); font-size: 1.2rem; transition: transform 0.3s ease; }
 .btn-action:hover i { transform: scale(1.1); }
-.btn-primary-action { background: var(--brand-gradient); color: white; border: none; box-shadow: 0 2px 6px rgba(234, 179, 8, 0.2); }
+.btn-primary-action { background: var(--brand-gradient); color: white; border: none; box-shadow: 0 2px 6px var(--brand-glow); }
 .btn-primary-action i { color: white; }
-.btn-primary-action:hover { background: var(--brand-gradient); box-shadow: 0 6px 16px rgba(234, 179, 8, 0.3); transform: translateY(-2px); border: none; }
+.btn-primary-action:hover { background: var(--brand-gradient); box-shadow: 0 6px 16px var(--brand-glow); transform: translateY(-2px); border: none; }
 
 .recent-section { flex-grow: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 32px 40px; overflow-y: auto; scrollbar-width: none; animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both; }
 .recent-section::-webkit-scrollbar { display: none; } .recent-section::-webkit-scrollbar-thumb { background: var(--border-input); border-radius: 4px; }
@@ -152,7 +152,7 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
 .file-card:hover { background: var(--bg-card-hover); transform: translateY(-6px); box-shadow: var(--shadow-hover); border-color: var(--border-hover); }
 .file-card:hover::before { opacity: 1; }
 .file-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.file-icon { width: 54px; height: 54px; background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.05) 100%); border: 1px solid rgba(234, 179, 8, 0.2); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--brand-primary); font-size: 1.6rem; transition: transform 0.3s ease; }
+.file-icon { width: 54px; height: 54px; background: linear-gradient(135deg, var(--brand-gradient) 0%, var(--brand-gradient) 100%); border: 1px solid var(--border-color); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: var(--brand-primary); font-size: 1.6rem; transition: transform 0.3s ease; }
 .file-card:hover .file-icon { transform: scale(1.08) rotate(-3deg); }
 .file-action-icon { color: var(--text-muted); opacity: 0; transform: translateX(-10px); transition: var(--transition); font-size: 1.1rem; }
 .file-card:hover .file-action-icon { opacity: 1; transform: translateX(0); color: var(--brand-primary); }
@@ -174,10 +174,19 @@ body::after { animation: float 20s infinite alternate ease-in-out; animation-del
   }
 }
 @media (max-width: 768px) { .hero-title { font-size: 2.2rem; } .hero { padding: 40px 20px 20px; } .search-input { height: 56px; font-size: 1rem; } .file-grid { grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); } }
+
+/* Hide all toolbar buttons on homepage by using is-hidden class */
+:root {
+  --is-homepage: 1;
+}
+
+body [data-name].is-hidden {
+  display: none;
+}
 </style>
 </head>
 
-<body>
+<body data-page="home">
 <div class="hero">
   <img class="hero-logo" src="assets/SumatraPDF-256x256x32.png" alt="SumatraPDF">
   <div class="hero-title">Pretty<span>Sumatra</span>PDF</div>
@@ -247,9 +256,32 @@ window.setRecentFiles = function(files) {
   renderRecentFiles(window._recentFiles);
 };
 
+function hexToRgb(hex) {
+  if (!hex) return null;
+  const clean = String(hex).trim().replace(/^#/, '');
+  if (clean.length !== 6) return null;
+  const value = parseInt(clean, 16);
+  if (Number.isNaN(value)) return null;
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+}
+
+function rgbaFromHex(hex, alpha) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '';
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
 window.applyHomePageTheme = function(themePayload) {
   if (!themePayload) return;
   const root = document.documentElement;
+  const accent = themePayload.accent || themePayload.brandPrimary || '#eab308';
+  const brandPrimary = themePayload.brandPrimary || accent;
+  const brandGlow = themePayload.brandGlow || brandPrimary;
+  const shadow = themePayload.shadow || '#000000';
   // Apply dynamic colors from theme payload (all except brand, which stays stable)
   if (themePayload.canvas) root.style.setProperty('--canvas', themePayload.canvas);
   if (themePayload.panel) root.style.setProperty('--panel', themePayload.panel);
@@ -258,7 +290,13 @@ window.applyHomePageTheme = function(themePayload) {
   if (themePayload.text) root.style.setProperty('--text', themePayload.text);
   if (themePayload.muted) root.style.setProperty('--muted', themePayload.muted);
   if (themePayload.btn) root.style.setProperty('--btn', themePayload.btn);
-  if (themePayload.accent) root.style.setProperty('--accent', themePayload.accent);
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--brand-primary', brandPrimary);
+  root.style.setProperty('--brand-glow', rgbaFromHex(brandGlow, themePayload.appDark ? 0.28 : 0.18) || brandGlow);
+  root.style.setProperty('--brand-gradient', `linear-gradient(135deg, ${brandPrimary} 0%, ${accent} 100%)`);
+  root.style.setProperty('--shadow-sm', `0 2px 8px ${rgbaFromHex(shadow, themePayload.appDark ? 0.3 : 0.08) || 'rgba(0,0,0,0.12)'}`);
+  root.style.setProperty('--shadow-md', `0 8px 32px ${rgbaFromHex(shadow, themePayload.appDark ? 0.4 : 0.12) || 'rgba(0,0,0,0.18)'}`);
+  root.style.setProperty('--shadow-hover', `0 12px 40px ${rgbaFromHex(brandPrimary, themePayload.appDark ? 0.24 : 0.15) || 'rgba(0,0,0,0.18)'}`);
   // Set data-theme attribute for media queries and dark mode detection
   root.dataset.theme = themePayload.appDark ? 'dark' : 'light';
 };
@@ -271,6 +309,50 @@ window.applyTheme = function(isDark) {
 if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'homePageReady', payload: {}, ts: Date.now() }));
 // If theme payload was already injected via C++, apply it immediately
 if (window.__homePageThemePayload) { window.applyHomePageTheme(window.__homePageThemePayload); }
+
+// Hide toolbar buttons
+(function() {
+  try {
+    // Signal via localStorage that toolbar buttons should be hidden
+    try {
+      localStorage.setItem('prettysumatra_hide_toolbar', 'true');
+    } catch (e) {
+      // Silently fail if localStorage not available
+    }
+    
+    // Send command to C++ to hide toolbar buttons on homepage
+    if (window.external && typeof window.external.invoke === 'function') {
+      window.external.invoke(JSON.stringify({ type: 'command', name: 'hideToolbarButtons', payload: {}, ts: Date.now() }));
+    }
+    
+    // Try to find and call hideToolbarButtons from accessible frames/windows
+    setTimeout(() => {
+      if (window.parent && window.parent !== window) {
+        if (typeof window.parent.hideToolbarButtons === 'function') {
+          window.parent.hideToolbarButtons();
+        }
+      }
+      // Also try window.top
+      if (window.top && window.top !== window && typeof window.top.hideToolbarButtons === 'function') {
+        window.top.hideToolbarButtons();
+      }
+      
+      // Try to access all iframes in the document
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach(iframe => {
+        try {
+          if (iframe.contentWindow && typeof iframe.contentWindow.hideToolbarButtons === 'function') {
+            iframe.contentWindow.hideToolbarButtons();
+          }
+        } catch (e) {
+          // Silently ignore cross-origin iframes
+        }
+      });
+    }, 100);
+  } catch (err) {
+    // Silently fail if cross-origin
+  }
+})();
 </script>
 <script>
 // Shortcut guard for home page search: block global shortcuts and focus search on Ctrl+F

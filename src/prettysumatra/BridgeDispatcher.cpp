@@ -118,30 +118,33 @@ static TempStr HybridToolbarThemeJs(HWND hwndFrame) {
     }
 
     COLORREF canvas = ThemeMainWindowBackgroundColor();
-    COLORREF panel = ThemeMainWindowBackgroundColor();
+    COLORREF panelOrig = ThemeWindowControlBackgroundColor();
+    // Make toolbar background slightly lighter than the main window background
+    COLORREF panel = AdjustLightness2(panelOrig, 2);
     COLORREF panel2 = PrettyStyleEnabled() ? PrettySurfaceColor() : ThemeWindowControlBackgroundColor();
     COLORREF stroke = PrettyBorderColor();
     COLORREF text = ThemeWindowTextColor();
     COLORREF muted = ThemeWindowTextDisabledColor();
-    COLORREF btn = ThemeControlBackgroundColor();
+    COLORREF btn = AdjustLightness2(panelOrig, 10);
     COLORREF accent = PrettyAccentColor();
-    // Keep toolbar brand colors stable (gold) instead of following system accent (often blue).
-    COLORREF brand1 = RGB(248, 204, 24);
-    COLORREF brand2 = RGB(215, 167, 0);
-    bool appDark = DarkMode::isColorDark(panel);
+    COLORREF brandPrimary = ThemeBrandPrimaryColor();
+    COLORREF brandGlow = ThemeBrandGlowColor();
+    COLORREF shadow = ThemeShadowColor();
+    // Determine appDark based on the original main window background
+    bool appDark = DarkMode::isColorDark(panelOrig);
     bool docInverted = gGlobalPrefs->fixedPageUI.invertColors;
     bool windowsDark = WindowsPrefersDarkModeForHybridToolbar();
     bool followWindows = HybridThemeFollowsWindows();
 
     return str::FormatTemp(
         "window.__hybridToolbarThemePayload={canvas:'%s',panel:'%s',panel2:'%s',stroke:'%s',"
-        "text:'%s',muted:'%s',btn:'%s',accent:'%s',brand1:'%s',brand2:'%s',appDark:%s,docInverted:%s,windowsDark:%s,"
-        "followWindows:%s};"
+        "text:'%s',muted:'%s',btn:'%s',accent:'%s',brandPrimary:'%s',brandGlow:'%s',shadow:'%s',appDark:%s,"
+        "docInverted:%s,windowsDark:%s,followWindows:%s};"
         "if(window.hybridToolbarApplyTheme){window.hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);}",
         ColorToCssHex(canvas), ColorToCssHex(panel), ColorToCssHex(panel2), ColorToCssHex(stroke), ColorToCssHex(text),
-        ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), ColorToCssHex(brand1), ColorToCssHex(brand2),
-        appDark ? "true" : "false", docInverted ? "true" : "false", windowsDark ? "true" : "false",
-        followWindows ? "true" : "false");
+        ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), ColorToCssHex(brandPrimary),
+        ColorToCssHex(brandGlow), ColorToCssHex(shadow), appDark ? "true" : "false", docInverted ? "true" : "false",
+        windowsDark ? "true" : "false", followWindows ? "true" : "false");
 }
 
 // Generate JavaScript to inject theme colors into home page
@@ -155,75 +158,53 @@ static TempStr HomePageThemeJs() {
     COLORREF muted = ThemeWindowTextDisabledColor();
     COLORREF btn = ThemeControlBackgroundColor();
     COLORREF accent = PrettyAccentColor();
+    COLORREF brandPrimary = ThemeBrandPrimaryColor();
+    COLORREF brandGlow = ThemeBrandGlowColor();
+    COLORREF shadow = ThemeShadowColor();
     bool appDark = DarkMode::isColorDark(panel);
 
     // Build JavaScript payload with all theme colors
     return str::FormatTemp(
         "window.__homePageThemePayload={canvas:'%s',panel:'%s',panel2:'%s',stroke:'%s',"
-        "text:'%s',muted:'%s',btn:'%s',accent:'%s',appDark:%s};"
+        "text:'%s',muted:'%s',btn:'%s',accent:'%s',brandPrimary:'%s',brandGlow:'%s',shadow:'%s',appDark:%s};"
         "if(window.applyHomePageTheme){window.applyHomePageTheme(window.__homePageThemePayload);}",
         ColorToCssHex(canvas), ColorToCssHex(panel), ColorToCssHex(panel2), ColorToCssHex(stroke), ColorToCssHex(text),
-        ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), appDark ? "true" : "false");
+        ColorToCssHex(muted), ColorToCssHex(btn), ColorToCssHex(accent), ColorToCssHex(brandPrimary),
+        ColorToCssHex(brandGlow), ColorToCssHex(shadow), appDark ? "true" : "false");
 }
 
-static const char* JsQuoted(const char* s) {
+static TempStr JsQuoted(const char* s) {
     if (!s) {
-        static const char empty[] = {'\'', '\'', '\0'};
-        return empty;
+        return str::FormatTemp("''");
     }
 
-    // Calculate needed size
-    size_t len = 0;
+    StrBuilder sb;
+    sb.AppendChar('\'');
     for (const char* p = s; *p; ++p) {
         switch (*p) {
             case '\\':
-            case '\'':
-            case '\n':
-            case '\t':
-                len += 2;
-                break;
-            default:
-                len += 1;
-                break;
-        }
-    }
-    len += 2; // for surrounding quotes
-    len += 1; // for null terminator
-
-    char* out = (char*)malloc(len);
-    if (!out) return nullptr;
-
-    char* dst = out;
-    *dst++ = '\'';
-    for (const char* p = s; *p; ++p) {
-        switch (*p) {
-            case '\\':
-                *dst++ = '\\';
-                *dst++ = '\\';
+                sb.Append("\\\\");
                 break;
             case '\'':
-                *dst++ = '\\';
-                *dst++ = '\'';
+                sb.Append("\\'");
                 break;
             case '\r':
-                break; // skip carriage returns
+                // skip
+                break;
             case '\n':
-                *dst++ = '\\';
-                *dst++ = 'n';
+                sb.Append("\\n");
                 break;
             case '\t':
-                *dst++ = '\\';
-                *dst++ = 't';
+                sb.Append("\\t");
                 break;
             default:
-                *dst++ = *p;
+                sb.AppendChar(*p);
                 break;
         }
     }
-    *dst++ = '\'';
-    *dst = '\0';
+    sb.AppendChar('\'');
 
-    return out;
+    return (TempStr)sb.StealData();
 }
 
 static TempStr HybridToolbarTextJs(HWND hwndFrame) {
@@ -304,6 +285,29 @@ void FocusHybridToolbarSearch(HWND hwndFrame) {
 
     // Then focus the search input element inside the webview
     win->hybridToolbar->Eval("window.hybridToolbarFocusSearch && window.hybridToolbarFocusSearch();");
+}
+
+void SyncHybridToolbarButtonVisibility(HWND hwndFrame, bool showButtons) {
+    MainWindow* win = FindWindowForFrame(hwndFrame);
+    if (!win || !win->hybridToolbar) {
+        return;
+    }
+
+    const char* js = showButtons ? "window.showToolbarButtons && window.showToolbarButtons();"
+                                 : "window.hideToolbarButtons && window.hideToolbarButtons();";
+    win->hybridToolbar->Eval(js);
+}
+
+void SyncHybridToolbarEditableAllowed(HWND hwndFrame, bool allowed) {
+    MainWindow* win = FindWindowForFrame(hwndFrame);
+    if (!win || !win->hybridToolbar) {
+        return;
+    }
+
+    const char* js = allowed
+                         ? "window.hybridToolbarSetEditableAllowed && window.hybridToolbarSetEditableAllowed(true);"
+                         : "window.hybridToolbarSetEditableAllowed && window.hybridToolbarSetEditableAllowed(false);";
+    win->hybridToolbar->Eval(js);
 }
 
 void InitHybridToolbarTheme(HWND hwndFrame) {
@@ -678,7 +682,9 @@ static bool WindowsPrefersDarkModeForHybrid() {
 }
 
 static void ApplyThemeState(bool targetDark) {
-    SetTheme(targetDark ? "Dark" : "Light");
+    if (!SetThemeVariant(targetDark)) {
+        SetTheme(targetDark ? "Dark" : "Light");
+    }
     SaveSettings();
 }
 
@@ -904,6 +910,8 @@ static bool DispatchToolbarReady() {
     if (!win) {
         return false;
     }
+    SyncHybridToolbarButtonVisibility(win->hwndFrame, !win->IsCurrentTabAbout());
+    SyncHybridToolbarEditableAllowed(win->hwndFrame, !win->IsCurrentTabAbout());
     SyncHybridToolbarTheme(win->hwndFrame);
     if (win->ctrl) {
         SyncHybridToolbarPageState(win->hwndFrame, win->ctrl->CurrentPageNo(), win->ctrl->PageCount());

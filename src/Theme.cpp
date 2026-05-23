@@ -41,99 +41,147 @@ constexpr COLORREF kRedColor = RgbToCOLORREF(0xff0000);
 
 static const char* themesTxt = R"(Themes [
     [
-        Name = Light
-        TextColor = #000000
-        BackgroundColor = #f2f2f2
+        Name = Sumatra Light
+        TextColor = #1f2937
+        BackgroundColor = #f4f6f8
         ControlBackgroundColor = #ffffff
         LinkColor = #eab308
-        ColorizeControls = false
-    ]
-    [
-        Name = Dark from 3.5
-        TextColor = #bac9d0
-        BackgroundColor = #263238
-        ControlBackgroundColor = #263238
-        LinkColor = #facc15
+        AccentColor = #eab308
+        BrandPrimaryColor = #facc15
+        BrandGlowColor = #fde68a
+        ShadowColor = #5b4210
         ColorizeControls = true
     ]
     [
-        Name = Darker
-        TextColor = #c3c3c6
-        BackgroundColor = #2d2d30
-        ControlBackgroundColor = #2d2d30
-        LinkColor = #9999a0
+        Name = Sumatra Dark
+        TextColor = #f8fafc
+        BackgroundColor = #17130a
+        ControlBackgroundColor = #3a2901
+        LinkColor = #eab308
+        AccentColor = #eab308
+        BrandPrimaryColor = #facc15
+        BrandGlowColor = #fde68a
+        ShadowColor = #120b02
         ColorizeControls = true
     ]
     [
-        Name = Dark
-        TextColor = #F9FAFB
-        BackgroundColor = #000000
-        ControlBackgroundColor = #000000
-        LinkColor = #6B7280
+        Name = Modern Slate Light
+        TextColor = #243041
+        BackgroundColor = #f4f6f8
+        ControlBackgroundColor = #e0f0ee
+        LinkColor = #0f766e
+        AccentColor = #0f766e
+        BrandPrimaryColor = #14b8a6
+        BrandGlowColor = #99f6e4
+        ShadowColor = #1e293b
         ColorizeControls = true
     ]
     [
-        Name = Dark background Bright text
-        TextColor = #ffffff
-        BackgroundColor = #2d2d30
-        ControlBackgroundColor = #2d2d30
-        LinkColor = #9999a0
+        Name = Modern Slate Dark
+        TextColor = #dbe4ee
+        BackgroundColor = #0f172a
+        ControlBackgroundColor = #05557a
+        LinkColor = #38bdf8
+        AccentColor = #38bdf8
+        BrandPrimaryColor = #0ea5e9
+        BrandGlowColor = #7dd3fc
+        ShadowColor = #020617
         ColorizeControls = true
     ]
     [
-        Name = Solarized Light
-        TextColor = #212323
-        BackgroundColor = #fdf6e3
-        ControlBackgroundColor = #eee8d5
-        LinkColor = #9999a0
+        Name = Modern Blue Light
+        TextColor = #1e293b
+        BackgroundColor = #f8fafc
+        ControlBackgroundColor = #daebff
+        LinkColor = #0f62fe
+        AccentColor = #0f62fe
+        BrandPrimaryColor = #2563eb
+        BrandGlowColor = #93c5fd
+        ShadowColor = #1e293b
         ColorizeControls = true
     ]
     [
-        Name = Solarized Dark
-        TextColor = #839496
-        BackgroundColor = #002b36
-        ControlBackgroundColor = #073642
-        LinkColor = #268bd2
+        Name = Modern Blue Dark
+        TextColor = #e2e8f0
+        BackgroundColor = #0b1120
+        ControlBackgroundColor = #1c3d74
+        LinkColor = #60a5fa
+        AccentColor = #60a5fa
+        BrandPrimaryColor = #3b82f6
+        BrandGlowColor = #93c5fd
+        ShadowColor = #020617
         ColorizeControls = true
     ]
     [
-        Name = Dracula
-        TextColor = #f8f8f2
-        BackgroundColor = #282a36
-        ControlBackgroundColor = #44475a
-        LinkColor = #8be9fd
+        Name = Modern Green Light
+        TextColor = #1f2937
+        BackgroundColor = #f4f6f8
+        ControlBackgroundColor = #d1fae5
+        LinkColor = #16a34a
+        AccentColor = #16a34a
+        BrandPrimaryColor = #22c55e
+        BrandGlowColor = #86efac
+        ShadowColor = #1f2937
         ColorizeControls = true
     ]
     [
-        Name = Nebula
-        TextColor = #CBE3E7
-        BackgroundColor = #100E23
-        ControlBackgroundColor = #1E1C31
-        LinkColor = #91DDFF
+        Name = Modern Green Dark
+        TextColor = #e5f3ea
+        BackgroundColor = #10251b
+        ControlBackgroundColor = #0f5529
+        LinkColor = #4ade80
+        AccentColor = #4ade80
+        BrandPrimaryColor = #22c55e
+        BrandGlowColor = #86efac
+        ShadowColor = #052e16
         ColorizeControls = true
     ]
     [
-        Name = Greeny
-        TextColor = #FDD085
-        BackgroundColor = #4F6232
-        ControlBackgroundColor = #1E3304
-        LinkColor = #A2E53B
+        Name = Modern Purple Light
+        TextColor = #29223a
+        BackgroundColor = #f4f6f8
+        ControlBackgroundColor = #f3e8ff
+        LinkColor = #7c3aed
+        AccentColor = #7c3aed
+        BrandPrimaryColor = #8b5cf6
+        BrandGlowColor = #c4b5fd
+        ShadowColor = #29223a
         ColorizeControls = true
     ]
     [
-        Name = Choco
-        TextColor = #D7AD62
-        BackgroundColor = #2A1104
-        ControlBackgroundColor = #172736
-        LinkColor = #E8CD12
+        Name = Modern Purple Dark
+        TextColor = #ede9fe
+        BackgroundColor = #1c122b
+        ControlBackgroundColor = rgb(78, 69, 88)
+        LinkColor = #c084fc
+        AccentColor = #c084fc
+        BrandPrimaryColor = #a855f7
+        BrandGlowColor = #ddd6fe
+        ShadowColor = #15051f
         ColorizeControls = true
     ]
     [
-        Name = Purpy
-        TextColor = #E2C3C3
-        BackgroundColor = #20222A
-        ControlBackgroundColor = #1E0126
-        LinkColor = #EFF0B8
+        Name = Modern Amber Light
+        TextColor = #31251a
+        BackgroundColor = #f4f6f8
+        ControlBackgroundColor = #fff7ed
+        LinkColor = #d97706
+        AccentColor = #d97706
+        BrandPrimaryColor = #f59e0b
+        BrandGlowColor = #fde68a
+        ShadowColor = #31251a
+        ColorizeControls = true
+    ]
+    [
+        Name = Modern Amber Dark
+        TextColor = #f9ede1
+        BackgroundColor = #23160d
+        ControlBackgroundColor = #634106
+        LinkColor = #fbbf24
+        AccentColor = #fbbf24
+        BrandPrimaryColor = #f59e0b
+        BrandGlowColor = #fde68a
+        ShadowColor = #120b02
         ColorizeControls = true
     ]
 ]
@@ -152,6 +200,59 @@ static Theme* gCurrentTheme = nullptr;
 static Theme* gThemeLight = nullptr;
 static Themes* gParsedThemes = nullptr;
 
+static bool IsLightThemeVariantName(const char* name) {
+    if (str::IsEmpty(name)) {
+        return false;
+    }
+    return str::EqI(name, "Light") || str::EndsWithI(name, " Light");
+}
+
+static int GetThemeIndexByName(const char* name) {
+    for (int i = 0; i < gThemeCount; i++) {
+        Theme* theme = gThemes->At(i);
+        if (str::EqI(theme->name, name)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int GetThemeVariantIndex(const char* currentName, bool targetDark) {
+    if (str::IsEmpty(currentName)) {
+        return -1;
+    }
+
+    if (str::EqI(currentName, "Light")) {
+        return targetDark ? GetThemeIndexByName("Dark") : GetThemeIndexByName("Light");
+    }
+    if (str::EqI(currentName, "Dark")) {
+        return targetDark ? GetThemeIndexByName("Dark") : GetThemeIndexByName("Light");
+    }
+
+    const char* lightSuffix = " Light";
+    const char* darkSuffix = " Dark";
+    if (!str::EndsWithI(currentName, lightSuffix) && !str::EndsWithI(currentName, darkSuffix)) {
+        return GetThemeIndexByName(targetDark ? "Dark" : "Light");
+    }
+
+    const int suffixLen = (int)str::Len(str::EndsWithI(currentName, lightSuffix) ? lightSuffix : darkSuffix);
+    const int nameLen = (int)str::Len(currentName);
+    const int baseLen = nameLen - suffixLen;
+    if (baseLen <= 0 || baseLen >= 256) {
+        return GetThemeIndexByName(targetDark ? "Dark" : "Light");
+    }
+
+    char base[256];
+    memcpy(base, currentName, baseLen);
+    base[baseLen] = '\0';
+
+    char targetName[256];
+    if (!str::BufFmt(targetName, dimof(targetName), "%s %s", base, targetDark ? "Dark" : "Light")) {
+        return GetThemeIndexByName(targetDark ? "Dark" : "Light");
+    }
+    return GetThemeIndexByName(targetName);
+}
+
 bool IsCurrentThemeDefault() {
     return gCurrThemeIndex == 0;
 }
@@ -161,19 +262,21 @@ bool PrettyStyleEnabled() {
 }
 
 COLORREF PrettySurfaceColor() {
-    return ThemeWindowControlBackgroundColor();
-}
-
-COLORREF PrettySurfaceAltColor() {
     return ThemeWindowBackgroundColor();
 }
 
+COLORREF PrettySurfaceAltColor() {
+    return ThemeWindowControlBackgroundColor();
+}
+
 COLORREF PrettyBorderColor() {
-    return AccentColor(ThemeWindowControlBackgroundColor(), 40);
+    // Make the border slightly darker than the window background so it stays subtle
+    // but still separates the toolbar from the canvas in both light and dark themes.
+    return AdjustLightness2(ThemeWindowControlBackgroundColor(), -10);
 }
 
 COLORREF PrettyAccentColor() {
-    return ThemeWindowLinkColor();
+    return ThemeAccentColor();
 }
 
 void FreeThemes() {
@@ -221,6 +324,9 @@ void CreateThemeCommands() {
 
 void SetThemeByIndex(int themeIdx) {
     ReportIf((themeIdx < 0) || (themeIdx >= gThemeCount));
+    if (themeIdx < 0) {
+        themeIdx = 0;
+    }
     if (themeIdx >= gThemeCount) {
         themeIdx = 0;
     }
@@ -274,15 +380,21 @@ void SelectNextTheme() {
     SetThemeByIndex(newIdx);
 }
 
+bool SetThemeVariant(bool targetDark) {
+    if (gThemeCount <= 0 || gCurrentTheme == nullptr) {
+        return false;
+    }
+    int idx = GetThemeVariantIndex(gCurrentTheme->name, targetDark);
+    if (idx < 0) {
+        return false;
+    }
+    SetThemeByIndex(idx);
+    return true;
+}
+
 // not case sensitive
 static int GetThemeByName(const char* name) {
-    for (int i = 0; i < gThemeCount; i++) {
-        Theme* theme = gThemes->At(i);
-        if (str::EqI(theme->name, name)) {
-            return i;
-        }
-    }
-    return -1;
+    return GetThemeIndexByName(name);
 }
 
 // this is the default aggressive yellow that we suppress
@@ -340,7 +452,7 @@ COLORREF ThemeDocumentColors(COLORREF& bg) {
     COLORREF text = ThemeWindowTextColor();
     bg = ThemeMainWindowBackgroundColor();
 
-    if (gCurrThemeIndex < 3) {
+    if (IsLightThemeVariantName(gCurrentTheme->name)) {
         bg = AccentColor(bg, 8);
     }
     return text;
@@ -375,7 +487,7 @@ COLORREF ThemePageRenderColors(COLORREF& bg) {
     }
 
     // default colors
-    if (gCurrentTheme == gThemeLight) {
+    if (IsLightThemeVariantName(gCurrentTheme->name)) {
         std::swap(text, bg);
         return text;
     }
@@ -385,7 +497,7 @@ COLORREF ThemePageRenderColors(COLORREF& bg) {
     text = ThemeWindowTextColor();
     bg = ThemeMainWindowBackgroundColor();
 
-    if (gCurrThemeIndex < 3) {
+    if (IsLightThemeVariantName(gCurrentTheme->name)) {
         bg = AccentColor(bg, 8);
     }
     return text;
@@ -440,6 +552,26 @@ COLORREF ThemeWindowLinkColor() {
     return col;
 }
 
+COLORREF ThemeAccentColor() {
+    auto col = GetThemeCol(gCurrentTheme->accentColor, ThemeWindowLinkColor());
+    return col;
+}
+
+COLORREF ThemeBrandPrimaryColor() {
+    auto col = GetThemeCol(gCurrentTheme->brandPrimaryColor, ThemeAccentColor());
+    return col;
+}
+
+COLORREF ThemeBrandGlowColor() {
+    auto col = GetThemeCol(gCurrentTheme->brandGlowColor, ThemeBrandPrimaryColor());
+    return col;
+}
+
+COLORREF ThemeShadowColor() {
+    auto col = GetThemeCol(gCurrentTheme->shadowColor, kColBlack);
+    return col;
+}
+
 COLORREF ThemeNotificationsBackgroundColor() {
     auto col = ThemeWindowBackgroundColor();
     return AdjustLightness2(col, 10);
@@ -450,7 +582,20 @@ COLORREF ThemeNotificationsTextColor() {
 }
 
 COLORREF ThemeNotificationsProgressColor() {
-    return ThemeWindowLinkColor();
+    return ThemeAccentColor();
+}
+
+// Highlight color used for notifications (background)
+COLORREF ThemeNotificationsHighlightColor() {
+    // Use accent color brightened a bit for highlight background
+    COLORREF base = ThemeAccentColor();
+    return AdjustLightness2(base, 24);
+}
+
+// Text color to use on top of notification highlight background
+COLORREF ThemeNotificationsHighlightTextColor() {
+    COLORREF bg = ThemeNotificationsHighlightColor();
+    return IsLightColor(bg) ? kColBlack : kColWhite;
 }
 
 bool ThemeColorizeControls() {

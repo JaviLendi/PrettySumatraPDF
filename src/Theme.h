@@ -3,6 +3,7 @@ License: GPLv3 */
 
 void SetTheme(const char* name);
 void SetCurrentThemeFromSettings();
+bool SetThemeVariant(bool targetDark);
 void SelectNextTheme();
 void CreateThemeCommands();
 
@@ -15,6 +16,10 @@ COLORREF ThemeWindowTextColor();
 COLORREF ThemeWindowTextDisabledColor();
 COLORREF ThemeWindowControlBackgroundColor();
 COLORREF ThemeWindowLinkColor();
+COLORREF ThemeAccentColor();
+COLORREF ThemeBrandPrimaryColor();
+COLORREF ThemeBrandGlowColor();
+COLORREF ThemeShadowColor();
 COLORREF ThemeNotificationsBackgroundColor();
 COLORREF ThemeNotificationsTextColor();
 COLORREF ThemeNotificationsHighlightColor();
