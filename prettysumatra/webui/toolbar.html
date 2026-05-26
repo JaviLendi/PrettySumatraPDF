@@ -105,7 +105,7 @@
 [data-theme="dark"] {
   --bg-app: #121214; --bg-toolbar: rgba(28, 28, 30, 0.85); --bg-button: rgba(44, 44, 46, 0.5);
   --bg-button-hover: rgba(68, 68, 70, 0.8); --bg-input: rgba(0, 0, 0, 0.3);
-  --text-main: #f5f5f7; --text-muted: #98989f; --border-color: rgba(255, 255, 255, 0.1); --border-input: rgba(255, 255, 255, 0.12); 
+  --text-main: #f5f5f7; --text-muted: #f5f5f7; --border-color: rgba(255, 255, 255, 0.1); --border-input: rgba(255, 255, 255, 0.12); 
   --brand-primary: #facc15; --shadow-sm: 0 1px 2px rgba(0,0,0,0.08); --shadow-md: 0 3px 8px rgba(0,0,0,0.12);
   --inset-white-55: rgba(255,255,255,0.55); --inset-white-7: rgba(255,255,255,0.7); --inset-white-45: rgba(255,255,255,0.45);
   --inset-dark-08: rgba(0,0,0,0.08); --inset-dark-2: rgba(0,0,0,0.2); --inset-dark-3: rgba(0,0,0,0.3); --inset-dark-4: rgba(0,0,0,0.4);
@@ -130,7 +130,7 @@ input, textarea {
 
 .toolbar-container {
   position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: flex-start; 
-  width: 100%; height: 56px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); 
+  width: 100%; height: 55px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); 
   padding: 8px 16px; gap: 8px; -webkit-app-region: drag; overflow: hidden; position: relative;
 }
 
@@ -213,7 +213,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 /* Compact group styles when toolbar is tight */
 .grp-zoom.compact, .grp-view.compact, .modern-pagination-group.compact {
-  gap: 4px;
+  gap: 2px;
 }
 
 .grp-zoom.compact .btn--icon, .grp-view.compact .btn--icon {
@@ -377,20 +377,11 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   position: relative;
   display: flex;
   align-items: center;
-  /* Fondo interno tipo 'pozo' */
-  background: var(--bg-input);
-  border: 1px solid var(--border-input);
-  border-radius: 999px;
   padding: 3px;
   width: 108px; /* Ancho optimizado para 3 iconos */
   height: 36px;
-  box-shadow: inset 0 2px 5px var(--inset-dark-04);
   transition: var(--transition);
   cursor: pointer;
-}
-
-[data-theme="dark"] .modern-theme-switch {
-  box-shadow: inset 0 2px 5px var(--inset-dark-2);
 }
 
 /* El elemento deslizante (la caja que resalta el botón activo) */
@@ -400,27 +391,23 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   height: 28px;
   background: var(--bg-app); /* Contrasta con el fondo */
   border-radius: 999px;
-  /* Sombra para dar efecto de relieve sobre el pozo */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
   transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease;
   z-index: 1;
 }
 
 [data-theme="dark"] .modern-theme-switch .mts-slider {
   background: var(--bg-toolbar);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 0 var(--inset-white-05);
 }
 
 /* Botones individuales (Sol, Luna, Auto) */
 .modern-theme-switch .mts-btn {
   position: relative;
-  flex: 1; /* Distribute space evenly */
+  flex: 0.327; /* Distribute space evenly */
   height: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: var(--text-muted);
   border: none;
   padding: 0;
   margin: 0;
@@ -439,14 +426,37 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   transform: scale(1.05); /* Pequeño efecto pop al pasar el ratón */
 }
 
-/* Resaltado del botón activo (el que coincide con el estado general) */
-.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"],
-.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"],
-.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] {
-  color: var(--brand-primary);
-  /* Se elimina el transform scale aquí para que quede en reposo sobre el slider */
-  transform: none;
+/* --- ANIMACIÓN ESTADO: CLARO (SOL) --- */
+.modern-theme-switch[data-state="light"] .mts-btn[data-val="light"] i {
+  animation: sunSpin 12s linear infinite;
 }
+@keyframes sunSpin { 100% { transform: rotate(360deg); } }
+
+/* --- ANIMACIÓN ESTADO: OSCURO (LUNA) --- */
+.modern-theme-switch[data-state="dark"] .mts-btn[data-val="dark"] i {
+  transform: rotate(-15deg); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.mts-tiny-star { position: absolute; background: currentColor; border-radius: 50%; opacity: 0; pointer-events: none; }
+.ts-1 { width: 2px; height: 2px; top: 6px; right: 6px; }
+.ts-2 { width: 1.5px; height: 1.5px; bottom: 8px; left: 4px; }
+.modern-theme-switch[data-state="dark"] .ts-1 { animation: mtsTwinkle 3s infinite alternate 0.5s; }
+.modern-theme-switch[data-state="dark"] .ts-2 { animation: mtsTwinkle 4s infinite alternate 1.5s; }
+@keyframes mtsTwinkle { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 0.8; transform: scale(1); } }
+
+/* --- ANIMACIÓN ESTADO: AUTO (WIN11) --- */
+.win11-icon { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 12px; height: 12px; }
+.win11-icon i { background: currentColor; border-radius: 0.5px; transition: all 0.3s ease; }
+
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i { background: var(--brand-primary); }
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon { animation: winBreathe 3s ease-in-out infinite alternate 1s; }
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(1) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.0s; }
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(2) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.1s; }
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(3) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.2s; }
+.modern-theme-switch[data-state="auto"] .mts-btn[data-val="auto"] .win11-icon i:nth-child(4) { animation: winPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 0.3s; }
+
+@keyframes winPop { 0% { transform: scale(0.2); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes winBreathe { 0% { filter: drop-shadow(0 0 0px rgba(0, 120, 212, 0)); } 100% { filter: drop-shadow(0 0 3px hsl(from var(--brand-primary) h s l / 0.1)); } }
+
 
 /* Foco de accesibilidad */
 .modern-theme-switch .mts-btn:focus-visible {
@@ -493,7 +503,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .win11-icon {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 12px; height: 12px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; width: 13.5px; height: 13.5px;
 }
 
 .win11-icon i {
@@ -898,7 +908,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .skeleton-container {
-  position: sticky; top: 0; z-index: 999; display: flex !important; align-items: center; justify-content: center; gap: 16px; width: 100%; height: 56px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); padding: 8px 16px; overflow: hidden; -webkit-app-region: drag;
+  position: sticky; top: 0; z-index: 999; display: flex !important; align-items: center; justify-content: center; gap: 16px; width: 100%; height: 55px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); padding: 8px 16px; overflow: hidden; -webkit-app-region: drag;
 }
 
 .skel-shape {
@@ -1098,16 +1108,6 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   --chip-color: #f5f5f7;
 }
 
-.toolbar-container .control-group, 
-.toolbar-container .modern-pagination-group, 
-.toolbar-container .theme-control-group {
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.05);
-  background: var(--bg-button);
-  transition: all 0.2s ease;
-}
-
 .toolbar-container .annot-tools-container {
   gap: 4px;
 }
@@ -1281,7 +1281,6 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   line-height: 1;
   color: var(--text-main);
   background: transparent;
-  box-shadow: var(--shadow-sm);
   cursor: pointer;
   user-select: none;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1361,7 +1360,6 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   background: var(--brand-gradient);
   color: var(--white);
   border: none;
-  box-shadow: inset 0 1px var(--inset-white-1), 0 2px 4px var(--brand-shadow-2);
 }
 
 .btn--primary:hover:not(:disabled) {
@@ -1378,6 +1376,11 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 .btn--ghost:hover:not(:disabled) {
   background: var(--bg-hover);
   border-color: var(--border-color);
+}
+
+/* Hide toolbar buttons on homepage */
+body[data-page="home"] [data-name] {
+  display: none !important;
 }
 
 </style>
@@ -1685,9 +1688,60 @@ function notifyPanelState(name, active) {
 window.notifyPanelState = notifyPanelState;
 window.panelStateChanged = notifyPanelState;
 
+function hexToRgb(hex) {
+  if (!hex) return null;
+  const clean = String(hex).trim().replace(/^#/, '');
+  if (clean.length !== 6) return null;
+  const value = parseInt(clean, 16);
+  if (Number.isNaN(value)) return null;
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+}
+
+function rgbaFromHex(hex, alpha) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '';
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
 function hybridToolbarApplyTheme(p={}) {
-  const root=document.documentElement; const keys=['canvas','panel','panel2','stroke','text','muted','btn','accent','brand1','brand2'];
-  for(const k of keys) { if(p[k]) root.style.setProperty('--'+k, p[k]); }
+  const root=document.documentElement;
+  const accent = p.accent || p.brandPrimary || '#eab308';
+  const brandPrimary = p.brandPrimary || accent;
+  const brandGlow = p.brandGlow || brandPrimary;
+  const shadow = p.shadow || '#000000';
+  const shadowAlpha = p.appDark ? 0.35 : 0.14;
+  const bgButton = p.btn || p.panel2 || null;
+  const bgButtonHover = bgButton ? `color-mix(in srgb, ${bgButton} ${p.appDark ? 80 : 88}%, #ffffff ${p.appDark ? 20 : 12}%)` : null;
+  // Map payload colors to toolbar.html CSS variables for proper theme updating
+  if(p.canvas) root.style.setProperty('--bg-app', p.canvas);
+  if(p.panel) root.style.setProperty('--bg-toolbar', p.panel);
+  if(bgButton) root.style.setProperty('--bg-button', bgButton);
+  if(bgButtonHover) root.style.setProperty('--bg-button-hover', bgButtonHover);
+  if(p.text) root.style.setProperty('--text-main', p.text);
+  if(p.muted) root.style.setProperty('--text-muted', p.muted);
+  if(p.stroke) {
+    root.style.setProperty('--border-color', p.stroke);
+    root.style.setProperty('--border-input', p.stroke);
+    root.style.setProperty('--border-hover', p.stroke);
+  }
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--brand-primary', brandPrimary);
+  root.style.setProperty('--brand-glow', rgbaFromHex(brandGlow, p.appDark ? 0.28 : 0.18) || brandGlow);
+  root.style.setProperty('--brand-gradient', `linear-gradient(135deg, ${brandPrimary} 0%, ${accent} 100%)`);
+  root.style.setProperty('--brand-dark', accent);
+  root.style.setProperty('--brand-darker', shadow);
+  root.style.setProperty('--brand-light-08', rgbaFromHex(brandPrimary, 0.08) || brandPrimary);
+  root.style.setProperty('--brand-medium-16', rgbaFromHex(brandPrimary, 0.16) || brandPrimary);
+  root.style.setProperty('--brand-shadow-3', rgbaFromHex(brandPrimary, 0.3) || brandPrimary);
+  root.style.setProperty('--brand-shadow-2', rgbaFromHex(brandPrimary, 0.2) || brandPrimary);
+  root.style.setProperty('--brand-focus-12', rgbaFromHex(brandPrimary, 0.15) || brandPrimary);
+  root.style.setProperty('--brand-shimmer', rgbaFromHex(brandPrimary, 0.35) || brandPrimary);
+  root.style.setProperty('--shadow-sm', `0 1px 1px ${rgbaFromHex(shadow, shadowAlpha) || 'rgba(0,0,0,0.12)'}`);
+  root.style.setProperty('--shadow-md', `0 2px 4px ${rgbaFromHex(shadow, shadowAlpha + 0.08) || 'rgba(0,0,0,0.16)'}`);
   const aD=!!p.appDark; root.dataset.theme=aD?'dark':'light';
   lastFollowWindows = !!p.followWindows; lastAppDark = aD; lastWindowsDark = !!p.windowsDark;
   if(themeSwitch) themeSwitch.setAttribute('data-state', lastFollowWindows ? 'auto' : (aD ? 'dark' : 'light'));
@@ -1900,6 +1954,21 @@ document.getElementById('searchPrev')?.addEventListener('click', () => { if(!isT
 document.getElementById('searchNext')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('forward')});
 searchInput?.addEventListener('keydown', (e) => { if(e.key==='Enter' && !isToolbarUnlocked) runSearch('forward'); });
 
+function focusToolbarSearch() {
+  if (!searchInput) return false;
+  try {
+    searchInput.focus();
+    if (typeof searchInput.select === 'function') searchInput.select();
+    return document.activeElement === searchInput;
+  } catch (e) {
+    return false;
+  }
+}
+window.hybridToolbarFocusSearch = function() {
+  if (focusToolbarSearch()) return;
+  setTimeout(() => { focusToolbarSearch(); }, 0);
+};
+
 if(themeSwitch) {
   themeSwitch.querySelectorAll('.mts-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1928,6 +1997,7 @@ const contextMenu = document.getElementById('nativeContextMenu');
 const mainToolbar = document.getElementById('mainToolbar');
 
 let isToolbarUnlocked = false; 
+let isToolbarEditableAllowed = true;
 const LS_KEY = 'sumatra-toolbar-layout-v4';
 const autoCompactPriority = ['grp-theme', 'grp-actions', 'grp-tools'];
 let autoCompactScheduled = false;
@@ -2046,6 +2116,15 @@ function saveLayout() {
 }
 
 function updateEditMode() {
+  if (!isToolbarEditableAllowed) {
+    isToolbarUnlocked = false;
+    mainToolbar.classList.remove('edit-mode');
+    Array.from(toolbarItemsContainer.children).forEach(el => el.setAttribute('draggable', 'false'));
+    if (contextMenu) contextMenu.classList.remove('show');
+    saveLayout();
+    scheduleAutoCompact();
+    return;
+  }
   Array.from(toolbarItemsContainer.children).forEach(el => el.setAttribute('draggable', isToolbarUnlocked ? 'true' : 'false'));
   if(isToolbarUnlocked) { mainToolbar.classList.add('edit-mode'); } 
   else { mainToolbar.classList.remove('edit-mode'); saveLayout(); }
@@ -2094,6 +2173,7 @@ function getDragAfterElement(container, x) {
 
 mainToolbar.addEventListener('contextmenu', e => {
   e.preventDefault();
+  if (!isToolbarEditableAllowed) return;
   if (isToolbarUnlocked) return; 
   contextMenu.innerHTML = '';
   const editItem = document.createElement('div'); editItem.className = 'cm-item';
@@ -2122,6 +2202,15 @@ window.__exitEditMode = function() {
   isToolbarUnlocked = false;
   updateEditMode();
   if (contextMenu) contextMenu.classList.remove('show');
+};
+
+window.hybridToolbarSetEditableAllowed = function(allowed) {
+  isToolbarEditableAllowed = !!allowed;
+  if (!isToolbarEditableAllowed) {
+    isToolbarUnlocked = false;
+    if (contextMenu) contextMenu.classList.remove('show');
+  }
+  updateEditMode();
 };
 
 window.__closeAllDropdowns = function() {
@@ -2406,6 +2495,61 @@ colorChips.forEach(chip => {
       try { console.error('shortcut-guard error', err); } catch(e){}
     }
   }, { capture: true });
+})();
+</script>
+
+<!-- Global function to hide toolbar buttons from homepage -->
+<script>
+window.hideToolbarButtons = function() {
+  try {
+    // Hide all toolbar button groups by adding is-hidden class
+    const toolbarItems = document.getElementById('toolbarItems');
+    if (toolbarItems) {
+      const allGroups = toolbarItems.querySelectorAll('[data-name]');
+      allGroups.forEach(group => {
+        group.classList.add('is-hidden');
+      });
+    }
+  } catch (err) {
+    console.error('Error hiding toolbar buttons:', err);
+  }
+};
+
+window.showToolbarButtons = function() {
+  try {
+    // Show all toolbar button groups by removing is-hidden class
+    const toolbarItems = document.getElementById('toolbarItems');
+    if (toolbarItems) {
+      const allGroups = toolbarItems.querySelectorAll('[data-name]');
+      allGroups.forEach(group => {
+        group.classList.remove('is-hidden');
+      });
+    }
+  } catch (err) {
+    console.error('Error showing toolbar buttons:', err);
+  }
+};
+
+// Check if we're in homepage context based on URL parameter
+(function() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const context = urlParams.get('context');
+    
+    if (context === 'home') {
+      // Wait for DOM to be ready, then hide buttons
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.hideToolbarButtons);
+      } else {
+        setTimeout(window.hideToolbarButtons, 50);
+      }
+    } else if (context === 'viewer') {
+      // Make sure buttons are visible for viewer
+      window.showToolbarButtons();
+    }
+  } catch (err) {
+    console.error('Error checking context:', err);
+  }
 })();
 </script>
 </body>

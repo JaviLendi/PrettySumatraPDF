@@ -23,6 +23,8 @@ void InitHybridToolbarText(HWND hwndFrame);
 void SyncHybridToolbarText(HWND hwndFrame);
 void SyncHybridToolbarSearchText(HWND hwndFrame, const char* text);
 void FocusHybridToolbarSearch(HWND hwndFrame);
+void SyncHybridToolbarButtonVisibility(HWND hwndFrame, bool showButtons);
+void SyncHybridToolbarEditableAllowed(HWND hwndFrame, bool allowed);
 void SyncHybridToolbarPageState(HWND hwndFrame, int currentPage, int totalPages);
 void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent);
 void SyncHybridToolbarAnnotationAvailability(HWND hwndFrame);

@@ -35,13 +35,14 @@
 #include "AppSettings.h"
 #include "OverlayScrollbar.h"
 #include "DarkModeSubclass.h"
-
 #include "wingui/WebView.h"
 #include <string>
 #include <vector>
 #include <windows.h>
 #include <shlwapi.h>
 #include "Toolbar.h"
+
+#include "prettysumatra/BridgeDispatcher.h"
 #pragma comment(lib, "shlwapi.lib")
 
 #define HOMEPAGE_HTML_PATH "..\\prettysumatra\\webui\\home.html"
@@ -159,6 +160,9 @@ void HomePageShow(MainWindow* win) {
     SetWindowPos(hwndWV, nullptr, rc.x, rc.y, rc.dx, rc.dy, SWP_NOZORDER | SWP_SHOWWINDOW);
     win->homePageWebView->SetControllerVisible(true);
     win->homePageWebView->UpdateWebviewSize();
+
+    prettysumatra::bridge::SyncHybridToolbarButtonVisibility(win->hwndFrame, false);
+    prettysumatra::bridge::SyncHybridToolbarEditableAllowed(win->hwndFrame, false);
 }
 
 #ifndef ABOUT_USE_LESS_COLORS
@@ -1172,6 +1176,8 @@ void HomePageHide(MainWindow* win) {
         return;
     }
 
+    prettysumatra::bridge::SyncHybridToolbarButtonVisibility(win->hwndFrame, true);
+    prettysumatra::bridge::SyncHybridToolbarEditableAllowed(win->hwndFrame, true);
     win->homePageWebView->SetControllerVisible(false);
     ShowWindow(win->homePageWebView->hwnd, SW_HIDE);
 }

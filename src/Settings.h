@@ -257,9 +257,24 @@ struct Theme {
     // control background color
     char* controlBackgroundColor;
     ParsedColor controlBackgroundColorParsed;
+    // toolbar background color
+    char* ToolbarBackgroundColor;
+    ParsedColor ToolbarBackgroundColorParsed;
     // link color
     char* linkColor;
     ParsedColor linkColorParsed;
+    // accent color used by the web UI
+    char* accentColor;
+    ParsedColor accentColorParsed;
+    // brand primary color used by the web UI
+    char* brandPrimaryColor;
+    ParsedColor brandPrimaryColorParsed;
+    // glow color used by the web UI
+    char* brandGlowColor;
+    ParsedColor brandGlowColorParsed;
+    // shadow base color used by the web UI
+    char* shadowColor;
+    ParsedColor shadowColorParsed;
     // should we colorize Windows controls and window areas
     bool colorizeControls;
 };
@@ -743,12 +758,18 @@ static const FieldInfo gThemeFields[] = {
     {offsetof(Theme, textColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, backgroundColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, controlBackgroundColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, ToolbarBackgroundColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, linkColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, accentColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, brandPrimaryColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, brandGlowColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, shadowColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, colorizeControls), SettingType::Bool, false},
 };
 static const StructInfo gThemeInfo = {
-    sizeof(Theme), 6, gThemeFields,
-    "Name\0TextColor\0BackgroundColor\0ControlBackgroundColor\0LinkColor\0ColorizeControls"};
+    sizeof(Theme), 11, gThemeFields,
+    "Name\0TextColor\0BackgroundColor\0ControlBackgroundColor\0ToolbarBackgroundColor\0LinkColor\0AccentColor\0"
+    "BrandPrimaryColor\0BrandGlowColor\0ShadowColor\0ColorizeControls"};
 
 static const FieldInfo gTabFileFields[] = {
     {offsetof(TabFile, path), SettingType::String, (intptr_t)""},
@@ -978,11 +999,16 @@ static const FieldInfo gTheme_1_Fields[] = {
     {offsetof(Theme, backgroundColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, controlBackgroundColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, linkColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, accentColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, brandPrimaryColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, brandGlowColor), SettingType::Color, (intptr_t)""},
+    {offsetof(Theme, shadowColor), SettingType::Color, (intptr_t)""},
     {offsetof(Theme, colorizeControls), SettingType::Bool, false},
 };
 static const StructInfo gTheme_1_Info = {
-    sizeof(Theme), 6, gTheme_1_Fields,
-    "Name\0TextColor\0BackgroundColor\0ControlBackgroundColor\0LinkColor\0ColorizeControls"};
+    sizeof(Theme), 10, gTheme_1_Fields,
+    "Name\0TextColor\0BackgroundColor\0ControlBackgroundColor\0LinkColor\0AccentColor\0BrandPrimaryColor\0"
+    "BrandGlowColor\0ShadowColor\0ColorizeControls"};
 
 static const FieldInfo gThemesFields[] = {
     {offsetof(Themes, themes), SettingType::Array, (intptr_t)&gTheme_1_Info},
