@@ -5732,15 +5732,11 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
 
     // Notify hybrid toolbar WebView (if present) about panel state changes
     if (win->hybridToolbar) {
-        TempStr jsFav =
-            str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('favorites',%s);}catch(e){};",
-                            showFavorites ? "true" : "false");
-        win->hybridToolbar->Eval(jsFav);
-
-        TempStr jsToc =
-            str::FormatTemp("try{if(window.notifyPanelState)window.notifyPanelState('bookmarks',%s);}catch(e){};",
-                            tocVisible ? "true" : "false");
-        win->hybridToolbar->Eval(jsToc);
+        TempStr js = str::FormatTemp(
+            "try{if(window.notifyPanelState){window.notifyPanelState('favorites',%s);"
+            "window.notifyPanelState('bookmarks',%s);}}catch(e){};",
+            showFavorites ? "true" : "false", tocVisible ? "true" : "false");
+        win->hybridToolbar->Eval(js);
     }
 }
 

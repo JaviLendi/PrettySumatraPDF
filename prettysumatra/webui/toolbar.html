@@ -92,7 +92,7 @@
   --brand-primary: #eab308; --brand-gradient: linear-gradient(135deg, #facc15 0%, #eab308 100%);
   --brand-light-08: rgba(250, 204, 21, 0.08); --brand-medium-16: rgba(234, 179, 8, 0.16); --brand-shadow-3: rgba(234, 179, 8, 0.3);
   --brand-shadow-2: rgba(234, 179, 8, 0.2); --brand-focus-12: rgba(234, 179, 8, 0.15); --brand-shimmer: rgba(234, 179, 8, 0.35);
-  --accent-win11: #0078D4; 
+  --accent-win11: #0078D4;
   --shadow-sm: 0 1px 1px rgba(0,0,0,0.01); --shadow-md: 0 2px 4px rgba(0,0,0,0.015);
   --inset-white-1: rgba(255,255,255,0.1); --inset-white-55: rgba(255,255,255,0.55); --inset-white-7: rgba(255,255,255,0.7); --inset-white-45: rgba(255,255,255,0.45);
   --inset-dark-04: rgba(0,0,0,0.04); --inset-dark-02: rgba(0,0,0,0.02); --inset-dark-012: rgba(0,0,0,0.012);
@@ -105,7 +105,7 @@
 [data-theme="dark"] {
   --bg-app: #121214; --bg-toolbar: rgba(28, 28, 30, 0.85); --bg-button: rgba(44, 44, 46, 0.5);
   --bg-button-hover: rgba(68, 68, 70, 0.8); --bg-input: rgba(0, 0, 0, 0.3);
-  --text-main: #f5f5f7; --text-muted: #f5f5f7; --border-color: rgba(255, 255, 255, 0.1); --border-input: rgba(255, 255, 255, 0.12); 
+  --text-main: #f5f5f7; --text-muted: #f5f5f7; --border-color: rgba(255, 255, 255, 0.1); --border-input: rgba(255, 255, 255, 0.12);
   --brand-primary: #facc15; --shadow-sm: 0 1px 2px rgba(0,0,0,0.08); --shadow-md: 0 3px 8px rgba(0,0,0,0.12);
   --inset-white-55: rgba(255,255,255,0.55); --inset-white-7: rgba(255,255,255,0.7); --inset-white-45: rgba(255,255,255,0.45);
   --inset-dark-08: rgba(0,0,0,0.08); --inset-dark-2: rgba(0,0,0,0.2); --inset-dark-3: rgba(0,0,0,0.3); --inset-dark-4: rgba(0,0,0,0.4);
@@ -129,8 +129,8 @@ input, textarea {
 }
 
 .toolbar-container {
-  position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: flex-start; 
-  width: 100%; height: 55px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color); 
+  position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: flex-start;
+  width: 100%; height: 55px; background: var(--bg-toolbar); border-bottom: 1px solid var(--border-color);
   padding: 8px 16px; gap: 8px; -webkit-app-region: drag; overflow: hidden; position: relative;
 }
 
@@ -249,8 +249,8 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .control-group, .modern-pagination-group, .theme-control-group {
-  display: flex; align-items: center; justify-content: center; background: var(--bg-button); 
-  border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px 6px; height: 40px; 
+  display: flex; align-items: center; justify-content: center; background: var(--bg-button);
+  border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px 6px; height: 40px;
   transition: var(--transition); flex-shrink: 0; box-shadow: var(--btn-highlight);
 }
 
@@ -977,7 +977,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   z-index: 2;
   background: transparent !important;
   box-shadow: none !important;
-  min-width: 0; 
+  min-width: 0;
   flex-shrink: 0;
 }
 
@@ -997,7 +997,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   border: none !important;
   padding: 0;
   margin: 0;
-  transform: none !important; 
+  transform: none !important;
   transition: max-width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s ease, padding 0.3s ease;
   pointer-events: none;
 }
@@ -1012,7 +1012,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 .custom-dropdown .dropdown-menu li {
   padding: 3px 5px;
-  margin-left: 2px; 
+  margin-left: 2px;
   white-space: nowrap;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -1040,12 +1040,12 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   opacity: 0;
   overflow: hidden;
   padding: 0;
-  pointer-events: none; 
+  pointer-events: none;
   transition: max-width 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease, padding 0.3s ease;
 }
 
 .inline-color-palette.open {
-  max-width: 200px; 
+  max-width: 200px;
   opacity: 1;
   padding-left: 4px;
   pointer-events: auto;
@@ -1517,21 +1517,21 @@ body[data-page="home"] [data-name] {
 <div class="native-context-menu" id="nativeContextMenu"></div>
 <script>
 /* =================== SUMATRAPDF CORE =================== */
-const toolbarText={}; 
-const pageInput=document.getElementById('pageInput'); 
-const pageMeta=document.getElementById('pageMeta'); 
+const toolbarText={};
+const pageInput=document.getElementById('pageInput');
+const pageMeta=document.getElementById('pageMeta');
 const toolbarSubtitle=document.getElementById('toolbarSubtitle');
-const openButton=document.getElementById('openButton'); 
-const openButtonText=document.getElementById('openButtonText'); 
+const openButton=document.getElementById('openButton');
+const openButtonText=document.getElementById('openButtonText');
 const searchInput=document.getElementById('searchInput');
-const pagePrevButton=document.getElementById('pagePrevButton'); 
+const pagePrevButton=document.getElementById('pagePrevButton');
 const pageNextButton=document.getElementById('pageNextButton');
-const zoomOutButton=document.getElementById('zoomOutButton'); 
-const zoomInButton=document.getElementById('zoomInButton'); 
-const zoomDropdown=document.getElementById('zoomDropdown'); 
-const viewModeDropdown=document.getElementById('viewModeDropdown'); 
+const zoomOutButton=document.getElementById('zoomOutButton');
+const zoomInButton=document.getElementById('zoomInButton');
+const zoomDropdown=document.getElementById('zoomDropdown');
+const viewModeDropdown=document.getElementById('viewModeDropdown');
 const continuousToggle=document.getElementById('continuousToggle');
-const documentInvertToggle=document.getElementById('documentInvertToggle'); 
+const documentInvertToggle=document.getElementById('documentInvertToggle');
 const themeSwitch=document.getElementById('themeSwitch');
 let currentPage=1; let totalPages=1; let lastAppDark=false; let lastWindowsDark=false; let lastFollowWindows=false; let lastDocInverted=false;
 
@@ -1539,7 +1539,7 @@ let currentPage=1; let totalPages=1; let lastAppDark=false; let lastWindowsDark=
 document.querySelectorAll('.toggle').forEach(t => { try { t.setAttribute('aria-pressed', String(t.classList.contains('active'))); } catch(e) {} });
 
 function applyToolbarText(payload={}) {
-  Object.assign(toolbarText, payload); 
+  Object.assign(toolbarText, payload);
   if(openButtonText) openButtonText.textContent=toolbarText.openButton||openButtonText.textContent;
   if(searchInput) searchInput.placeholder=toolbarText.searchPlaceholder||searchInput.placeholder;
 }
@@ -1613,6 +1613,21 @@ function setZoomState(z) {
   }
 }
 window.hybridToolbarSetZoomState = setZoomState;
+
+function hybridToolbarBatchUpdate(state = {}) {
+  if (!state || typeof state !== 'object') return;
+  if (state.page !== undefined || state.total !== undefined) {
+    setPageState(state.page, state.total);
+  }
+  if (state.zoom !== undefined) {
+    setZoomState(state.zoom);
+  }
+  if (state.canAnnotate !== undefined) {
+    const allowed = !!state.canAnnotate;
+    hybridToolbarSetAnnotationAvailability({ highlight: allowed, annotate: allowed, draw: allowed });
+  }
+}
+window.hybridToolbarBatchUpdate = hybridToolbarBatchUpdate;
 
 function setToggleStateByExec(execName, state) {
   try {
@@ -1787,7 +1802,7 @@ document.addEventListener('click', (e) => {
           }
         }
       }
-      window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: payload, ts: Date.now() }));
+      window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: payload }));
     }
   } catch (e) { console.error('invoke execCommand error', e); }
 });
@@ -1813,12 +1828,12 @@ document.querySelectorAll('[data-cmd]').forEach(b => b.addEventListener('click',
     const base = parseInt(pageInput?.value||String(currentPage), 10) || currentPage;
     const desired = base + delta;
     const newPage = setPage(desired);
-    if (newPage !== before) if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: newPage }, ts: Date.now() }));
+    if (newPage !== before) if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: newPage } }));
     return;
   }
 }));
 
-if(pageInput) { pageInput.addEventListener('input', () => { updatePageInputWidth(pageInput.value); }); pageInput.addEventListener('change', () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: setPage(pageInput.value) }, ts: Date.now() })); }); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
+if(pageInput) { pageInput.addEventListener('input', () => { updatePageInputWidth(pageInput.value); }); pageInput.addEventListener('change', () => { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'goToPage', payload: { page: setPage(pageInput.value) } })); }); pageInput.addEventListener('keydown', (e) => { if(e.key==='Enter') pageInput.dispatchEvent(new Event('change')); }); }
 window.addEventListener('resize', () => { updatePageInputWidth(pageInput?.value); });
 updatePageInputWidth(pageInput?.value);
 // wire up custom dropdowns
@@ -1833,7 +1848,7 @@ function selectZoomOption(dropdown, li) {
   }
   dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
   const val = parseFloat(li.dataset.value);
-  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'zoom', payload: { value: val }, ts: Date.now() }));
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'zoom', payload: { value: val } }));
 }
 
 function selectViewModeOption(dropdown, li) {
@@ -1847,7 +1862,7 @@ function selectViewModeOption(dropdown, li) {
   }
   dropdown.classList.remove('open'); dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
   const cmd = String(li.dataset.value || '');
-  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: cmd }, ts: Date.now() }));
+  if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: cmd } }));
 }
 
 if (zoomDropdown) {
@@ -1949,7 +1964,7 @@ function setDropdownInline(dropdown, on) {
   } catch (e) { console.error('setDropdownInline', e); }
 }
 
-function runSearch(dir) { const q=searchInput.value.trim(); if(q) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'search', payload: { query: q, direction: dir }, ts: Date.now() })); } }
+function runSearch(dir) { const q=searchInput.value.trim(); if(q) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'search', payload: { query: q, direction: dir } })); } }
 document.getElementById('searchPrev')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('backward')});
 document.getElementById('searchNext')?.addEventListener('click', () => { if(!isToolbarUnlocked) runSearch('forward')});
 searchInput?.addEventListener('keydown', (e) => { if(e.key==='Enter' && !isToolbarUnlocked) runSearch('forward'); });
@@ -1974,19 +1989,19 @@ if(themeSwitch) {
     btn.addEventListener('click', () => {
       if(isToolbarUnlocked) return;
       const val = btn.dataset.val;
-      if (val === 'auto') { 
-        if (!lastFollowWindows) { 
-          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); 
+      if (val === 'auto') {
+        if (!lastFollowWindows) {
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } }));
         }
         // Ensure document invert matches Windows theme deterministically
         if (lastWindowsDark) {
-          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' }, ts: Date.now() }));
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' } }));
         } else {
-          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' }, ts: Date.now() }));
+          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' } }));
         }
-      } 
-      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' }, ts: Date.now() })); } 
-      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' }, ts: Date.now() })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' }, ts: Date.now() })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' }, ts: Date.now() })); }
+      }
+      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' } })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' } })); }
+      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' } })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' } })); }
     });
   });
 }
@@ -1996,12 +2011,12 @@ const toolbarItemsContainer = document.getElementById('toolbarItems');
 const contextMenu = document.getElementById('nativeContextMenu');
 const mainToolbar = document.getElementById('mainToolbar');
 
-let isToolbarUnlocked = false; 
+let isToolbarUnlocked = false;
 let isToolbarEditableAllowed = true;
 const LS_KEY = 'sumatra-toolbar-layout-v4';
 const autoCompactPriority = ['grp-theme', 'grp-actions', 'grp-tools'];
 let autoCompactScheduled = false;
-let toolbarResizeObserver = null; 
+let toolbarResizeObserver = null;
 let autoCompactTimerId = null;
 let lastCompactState = false;
 let lastAutoHidden = new Set();
@@ -2126,7 +2141,7 @@ function updateEditMode() {
     return;
   }
   Array.from(toolbarItemsContainer.children).forEach(el => el.setAttribute('draggable', isToolbarUnlocked ? 'true' : 'false'));
-  if(isToolbarUnlocked) { mainToolbar.classList.add('edit-mode'); } 
+  if(isToolbarUnlocked) { mainToolbar.classList.add('edit-mode'); }
   else { mainToolbar.classList.remove('edit-mode'); saveLayout(); }
   scheduleAutoCompact();
 }
@@ -2166,7 +2181,7 @@ function getDragAfterElement(container, x) {
   return draggableElements.reduce((closest, child) => {
     const box = child.getBoundingClientRect();
     const offset = x - box.left - box.width / 2;
-    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
+    if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; }
     else { return closest; }
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
@@ -2174,7 +2189,7 @@ function getDragAfterElement(container, x) {
 mainToolbar.addEventListener('contextmenu', e => {
   e.preventDefault();
   if (!isToolbarEditableAllowed) return;
-  if (isToolbarUnlocked) return; 
+  if (isToolbarUnlocked) return;
   contextMenu.innerHTML = '';
   const editItem = document.createElement('div'); editItem.className = 'cm-item';
   editItem.innerHTML = `<span class="material-symbols-rounded" style="color:var(--brand-primary)">edit</span> <span>Customize toolbar...</span>`;
@@ -2222,7 +2237,7 @@ window.__closeAllDropdowns = function() {
 };
 
 /* =================== INITIALIZATION =================== */
-if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'toolbarReady', payload: {}, ts: Date.now() }));
+if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'toolbarReady', payload: {} }));
 let isRevealed = false;
 function revealToolbar() {
   if (isRevealed) return; isRevealed = true;
@@ -2231,7 +2246,7 @@ function revealToolbar() {
 }
 setTimeout(revealToolbar, 800);
 if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) revealToolbar();
-initSmartToolbarCompaction(); 
+initSmartToolbarCompaction();
 
 
 // =========================================================
@@ -2379,8 +2394,7 @@ colorChips.forEach(chip => {
       window.external.invoke(JSON.stringify({
         type: 'command',
         name: commandName,
-        payload: { color: colorName, value: colorHex },
-        ts: Date.now()
+        payload: { color: colorName, value: colorHex }
       }));
     }
 
@@ -2388,68 +2402,6 @@ colorChips.forEach(chip => {
   });
 });
 
-
-/* =========================================
-   SAFE JS OVERRIDES
-   ========================================= */
-(function() {
-  // Wrap pagination input and meta in a container for the unified pill look
-  const pageInput = document.getElementById('pageInput');
-  const pageMeta = document.getElementById('pageMeta');
-
-  const annotBtns = document.querySelectorAll('.annot-tool-button');
-
-  // Update active states
-  const observer = new MutationObserver(() => {
-    document.querySelectorAll('.annot-tool').forEach(tool => {
-      const btn = tool.querySelector('.annot-tool-button');
-      if (btn) {
-        tool.classList.toggle('is-active', btn.classList.contains('active-tool'));
-      }
-    });
-  });
-
-  annotBtns.forEach(btn => {
-    observer.observe(btn, { attributes: true, attributeFilter: ['class'] });
-    // Trigger initial state
-    const tool = btn.closest('.annot-tool');
-    if (tool) tool.classList.toggle('is-active', btn.classList.contains('active-tool'));
-  });
-})();
-
-/* =========================================
-   TOOLBAR ADAPTIVE COMPACTNESS
-   ========================================= */
-(function() {
-  const toolbarContainer = document.getElementById('mainToolbar');
-  const toolbarItems = document.getElementById('toolbarItems');
-
-  if (!toolbarContainer || !toolbarItems) return;
-
-  function updateToolbarScale() {
-    const availableWidth = toolbarContainer.clientWidth;
-    const contentWidth = toolbarItems.scrollWidth;
-    if (!availableWidth || !contentWidth) return;
-
-    const hasOverflow = contentWidth > availableWidth - 20;
-
-    // Toggle compact class instead of scaling
-    toolbarItems.classList.toggle('toolbar-items--compact', hasOverflow);
-
-    // Also make some control groups more compact when space is tight
-    const compactGroups = toolbarItems.querySelectorAll('.grp-zoom, .grp-view, .modern-pagination-group, .grp-tools');
-    compactGroups.forEach(g => g.classList.toggle('compact', hasOverflow));
-  }
-
-  const resizeObserver = new ResizeObserver(updateToolbarScale);
-  resizeObserver.observe(toolbarContainer);
-  resizeObserver.observe(toolbarItems);
-
-  window.addEventListener('resize', updateToolbarScale);
-  // Also update when fonts or layout potentially change
-  window.addEventListener('load', updateToolbarScale);
-  setTimeout(updateToolbarScale, 100);
-})();
 
 </script>
 <script>
@@ -2535,7 +2487,7 @@ window.showToolbarButtons = function() {
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const context = urlParams.get('context');
-    
+
     if (context === 'home') {
       // Wait for DOM to be ready, then hide buttons
       if (document.readyState === 'loading') {

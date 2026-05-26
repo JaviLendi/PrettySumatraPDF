@@ -85,7 +85,11 @@ bool UseHybridShell() {
 }
 
 bool LogBridgeMessages() {
+#ifdef NDEBUG
+    return ParseBoolEnvWithDefault("PRETTYSUMATRA_LOG_BRIDGE", false);
+#else
     return ParseBoolEnvWithDefault("PRETTYSUMATRA_LOG_BRIDGE", true);
+#endif
 }
 
 static bool gHybridFollowWindowsTheme = true;
@@ -109,6 +113,63 @@ static MainWindow* FindWindowForFrame(HWND hwndFrame) {
         return nullptr;
     }
     return FindMainWindowByHwnd(hwndFrame);
+}
+
+static bool HybridToolbarCanAnnotate(MainWindow* win) {
+    if (!win) {
+        return false;
+    }
+    bool canAnnotate = false;
+    WindowTab* tab = win->CurrentTab();
+    if (tab && tab->IsDocLoaded()) {
+        EngineBase* eng = tab->GetEngine();
+        if (eng) {
+            canAnnotate = EngineSupportsAnnotations(eng) && !(win->isFullScreen || win->presentation);
+        }
+    }
+    return canAnnotate;
+}
+
+static void SyncHybridToolbarState(HWND hwndFrame, int currentPage, int totalPages, float zoomPercent,
+                                   bool canAnnotate) {
+    MainWindow* win = FindWindowForFrame(hwndFrame);
+    if (!win || !win->hybridToolbar) {
+        return;
+    }
+
+    if (currentPage <= 0) {
+        currentPage = 1;
+    }
+    if (totalPages <= 0) {
+        totalPages = 1;
+    }
+    if (zoomPercent < 1.0f) {
+        zoomPercent = 1.0f;
+    }
+    if (zoomPercent > 6400.0f) {
+        zoomPercent = 6400.0f;
+    }
+
+    if (win->hybridToolbarSyncCtrl != win->ctrl) {
+        win->hybridToolbarSyncCtrl = win->ctrl;
+        win->hybridToolbarSyncHasState = false;
+    }
+    if (win->hybridToolbarSyncHasState && win->hybridToolbarSyncPageNo == currentPage &&
+        win->hybridToolbarSyncPageCount == totalPages && win->hybridToolbarSyncZoom == zoomPercent &&
+        win->hybridToolbarSyncCanAnnotate == canAnnotate) {
+        return;
+    }
+
+    win->hybridToolbarSyncPageNo = currentPage;
+    win->hybridToolbarSyncPageCount = totalPages;
+    win->hybridToolbarSyncZoom = zoomPercent;
+    win->hybridToolbarSyncCanAnnotate = canAnnotate;
+    win->hybridToolbarSyncHasState = true;
+
+    TempStr js = str::FormatTemp(
+        "window.hybridToolbarBatchUpdate && window.hybridToolbarBatchUpdate({page:%d,total:%d,zoom:%.4f,canAnnotate:%s});",
+        currentPage, totalPages, zoomPercent, canAnnotate ? "true" : "false");
+    win->hybridToolbar->Eval(js);
 }
 
 static TempStr HybridToolbarThemeJs(HWND hwndFrame) {
@@ -173,36 +234,11 @@ static TempStr HomePageThemeJs() {
         ColorToCssHex(brandGlow), ColorToCssHex(shadow), appDark ? "true" : "false");
 }
 
-static TempStr JsQuoted(const char* s) {
-    if (!s) {
-        return str::FormatTemp("''");
-    }
+static void AppendJsonString(StrBuilder& json, const char* src);
 
+static TempStr JsQuoted(const char* s) {
     StrBuilder sb;
-    sb.AppendChar('\'');
-    for (const char* p = s; *p; ++p) {
-        switch (*p) {
-            case '\\':
-                sb.Append("\\\\");
-                break;
-            case '\'':
-                sb.Append("\\'");
-                break;
-            case '\r':
-                // skip
-                break;
-            case '\n':
-                sb.Append("\\n");
-                break;
-            case '\t':
-                sb.Append("\\t");
-                break;
-            default:
-                sb.AppendChar(*p);
-                break;
-        }
-    }
-    sb.AppendChar('\'');
+    AppendJsonString(sb, s ? s : "");
 
     return (TempStr)sb.StealData();
 }
@@ -266,12 +302,8 @@ void SyncHybridToolbarSearchText(HWND hwndFrame, const char* text) {
     if (!win || !win->hybridToolbar) {
         return;
     }
-    TempStr escaped = str::ReplaceTemp(text ? text : "", "\\", "\\\\");
-    escaped = str::ReplaceTemp(escaped, "'", "\\'");
-    escaped = str::ReplaceTemp(escaped, "\r", "");
-    escaped = str::ReplaceTemp(escaped, "\n", "\\n");
     TempStr js =
-        str::FormatTemp("window.hybridToolbarSetSearchText && window.hybridToolbarSetSearchText('%s');", escaped);
+        str::FormatTemp("window.hybridToolbarSetSearchText && window.hybridToolbarSetSearchText(%s);", JsQuoted(text));
     win->hybridToolbar->Eval(js);
 }
 
@@ -336,62 +368,32 @@ void InitHybridToolbarText(HWND hwndFrame) {
 
 void SyncHybridToolbarPageState(HWND hwndFrame, int currentPage, int totalPages) {
     MainWindow* win = FindWindowForFrame(hwndFrame);
-    if (!win || !win->hybridToolbar) {
+    if (!win) {
         return;
     }
-    if (currentPage <= 0) {
-        currentPage = 1;
-    }
-    if (totalPages <= 0) {
-        totalPages = 1;
-    }
-    TempStr js = str::FormatTemp("window.hybridToolbarSetPageState && window.hybridToolbarSetPageState(%d,%d);",
-                                 currentPage, totalPages);
-    win->hybridToolbar->Eval(js);
-    // Also update annotation availability whenever page/document state is synced
-    SyncHybridToolbarAnnotationAvailability(hwndFrame);
+    float zoomPercent = win->ctrl ? win->ctrl->GetZoomVirtual(true) : 100.0f;
+    SyncHybridToolbarState(hwndFrame, currentPage, totalPages, zoomPercent, HybridToolbarCanAnnotate(win));
 }
 
 void SyncHybridToolbarAnnotationAvailability(HWND hwndFrame) {
     MainWindow* win = FindWindowForFrame(hwndFrame);
-    if (!win || !win->hybridToolbar) return;
-
-    bool canAnnotate = false;
-    WindowTab* tab = win->CurrentTab();
-    if (tab && tab->IsDocLoaded()) {
-        EngineBase* eng = tab->GetEngine();
-        if (eng) {
-            canAnnotate = EngineSupportsAnnotations(eng) && !(win->isFullScreen || win->presentation);
-        }
+    if (!win) {
+        return;
     }
-
-    const char* h = canAnnotate ? "true" : "false";
-    const char* a = canAnnotate ? "true" : "false";
-    const char* d = canAnnotate ? "true" : "false";
-    TempStr js = str::FormatTemp(
-        "window.hybridToolbarSetAnnotationAvailability && "
-        "window.hybridToolbarSetAnnotationAvailability({highlight:%s,annotate:%s,draw:%s});",
-        h, a, d);
-    if (LogBridgeMessages()) {
-        logf("[PrettySumatraBridge] sending annotation availability: highlight=%s annotate=%s draw=%s\n", h, a, d);
-    }
-    win->hybridToolbar->Eval(js);
+    int currentPage = win->ctrl ? win->ctrl->CurrentPageNo() : 1;
+    int totalPages = win->ctrl ? win->ctrl->PageCount() : 1;
+    float zoomPercent = win->ctrl ? win->ctrl->GetZoomVirtual(true) : 100.0f;
+    SyncHybridToolbarState(hwndFrame, currentPage, totalPages, zoomPercent, HybridToolbarCanAnnotate(win));
 }
 
 void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent) {
     MainWindow* win = FindWindowForFrame(hwndFrame);
-    if (!win || !win->hybridToolbar) {
+    if (!win) {
         return;
     }
-    if (zoomPercent < 1.0f) {
-        zoomPercent = 1.0f;
-    }
-    if (zoomPercent > 6400.0f) {
-        zoomPercent = 6400.0f;
-    }
-    TempStr js =
-        str::FormatTemp("window.hybridToolbarSetZoomState && window.hybridToolbarSetZoomState(%.4f);", zoomPercent);
-    win->hybridToolbar->Eval(js);
+    int currentPage = win->ctrl ? win->ctrl->CurrentPageNo() : 1;
+    int totalPages = win->ctrl ? win->ctrl->PageCount() : 1;
+    SyncHybridToolbarState(hwndFrame, currentPage, totalPages, zoomPercent, HybridToolbarCanAnnotate(win));
 }
 
 struct BridgeMessage {
@@ -772,43 +774,38 @@ static int ResolveBridgeCommandId(const char* commandName) {
     if (str::IsEmptyOrWhiteSpace(commandName)) {
         return 0;
     }
-    if (str::EqI(commandName, "commandPalette")) return CmdCommandPalette;
-    if (str::EqI(commandName, "openFile")) return CmdOpenFile;
-    if (str::EqI(commandName, "properties")) return CmdProperties;
-    if (str::EqI(commandName, "find")) return CmdFindFirst;
-    if (str::EqI(commandName, "newWindow")) return CmdNewWindow;
-    if (str::EqI(commandName, "saveAs")) return CmdSaveAs;
-    if (str::EqI(commandName, "reload")) return CmdReloadDocument;
-    if (str::EqI(commandName, "reopenLastClosed")) return CmdReopenLastClosedFile;
+    struct CommandMapEntry {
+        const char* name;
+        int cmdId;
+    };
 
-    if (str::EqI(commandName, "navigateBack")) return CmdNavigateBack;
-    if (str::EqI(commandName, "navigateForward")) return CmdNavigateForward;
-    if (str::EqI(commandName, "prevPage")) return CmdGoToPrevPage;
-    if (str::EqI(commandName, "nextPage")) return CmdGoToNextPage;
-    if (str::EqI(commandName, "firstPage")) return CmdGoToFirstPage;
-    if (str::EqI(commandName, "lastPage")) return CmdGoToLastPage;
+    static constexpr CommandMapEntry kCommandMap[] = {
+        {"commandPalette", CmdCommandPalette},       {"openFile", CmdOpenFile},
+        {"properties", CmdProperties},               {"find", CmdFindFirst},
+        {"newWindow", CmdNewWindow},                 {"saveAs", CmdSaveAs},
+        {"reload", CmdReloadDocument},               {"reopenLastClosed", CmdReopenLastClosedFile},
+        {"navigateBack", CmdNavigateBack},           {"navigateForward", CmdNavigateForward},
+        {"prevPage", CmdGoToPrevPage},               {"nextPage", CmdGoToNextPage},
+        {"firstPage", CmdGoToFirstPage},             {"lastPage", CmdGoToLastPage},
+        {"zoomIn", CmdZoomIn},                       {"zoomOut", CmdZoomOut},
+        {"fitWidth", CmdZoomFitWidth},               {"fitPage", CmdZoomFitPage},
+        {"actualSize", CmdZoomActualSize},           {"singlePage", CmdSinglePageView},
+        {"facing", CmdFacingView},                   {"bookView", CmdBookView},
+        {"showPagesContinuously", CmdToggleContinuousView},
+        {"toggleBookmarks", CmdToggleBookmarks},     {"toggleFavorites", CmdFavoriteToggle},
+        {"toggleFullscreen", CmdToggleFullscreen},   {"rotateLeft", CmdRotateLeft},
+        {"rotateRight", CmdRotateRight},             {"print", CmdPrint},
+        {"highlightSelection", CmdCreateAnnotHighlight},
+        {"addAnnotation", CmdCreateAnnotText},       {"freeDraw", CmdCreateAnnotInk},
+        {"createAnnotUnderline", CmdCreateAnnotUnderline},
+        {"createAnnotStrikeOut", CmdCreateAnnotStrikeOut},
+    };
 
-    if (str::EqI(commandName, "zoomIn")) return CmdZoomIn;
-    if (str::EqI(commandName, "zoomOut")) return CmdZoomOut;
-    if (str::EqI(commandName, "fitWidth")) return CmdZoomFitWidth;
-    if (str::EqI(commandName, "fitPage")) return CmdZoomFitPage;
-    if (str::EqI(commandName, "actualSize")) return CmdZoomActualSize;
-    if (str::EqI(commandName, "singlePage")) return CmdSinglePageView;
-    if (str::EqI(commandName, "facing")) return CmdFacingView;
-    if (str::EqI(commandName, "bookView")) return CmdBookView;
-    if (str::EqI(commandName, "showPagesContinuously")) return CmdToggleContinuousView;
-
-    if (str::EqI(commandName, "toggleBookmarks")) return CmdToggleBookmarks;
-    if (str::EqI(commandName, "toggleFavorites")) return CmdFavoriteToggle;
-    if (str::EqI(commandName, "toggleFullscreen")) return CmdToggleFullscreen;
-    if (str::EqI(commandName, "rotateLeft")) return CmdRotateLeft;
-    if (str::EqI(commandName, "rotateRight")) return CmdRotateRight;
-    if (str::EqI(commandName, "print")) return CmdPrint;
-    if (str::EqI(commandName, "highlightSelection")) return CmdCreateAnnotHighlight;
-    if (str::EqI(commandName, "addAnnotation")) return CmdCreateAnnotText;
-    if (str::EqI(commandName, "freeDraw")) return CmdCreateAnnotInk;
-    if (str::EqI(commandName, "createAnnotUnderline")) return CmdCreateAnnotUnderline;
-    if (str::EqI(commandName, "createAnnotStrikeOut")) return CmdCreateAnnotStrikeOut;
+    for (size_t i = 0; i < dimof(kCommandMap); ++i) {
+        if (str::EqI(commandName, kCommandMap[i].name)) {
+            return kCommandMap[i].cmdId;
+        }
+    }
     return 0;
 }
 
@@ -910,58 +907,90 @@ static bool DispatchToolbarReady() {
     if (!win) {
         return false;
     }
+    win->hybridToolbarSyncCtrl = nullptr;
+    win->hybridToolbarSyncHasState = false;
     SyncHybridToolbarButtonVisibility(win->hwndFrame, !win->IsCurrentTabAbout());
     SyncHybridToolbarEditableAllowed(win->hwndFrame, !win->IsCurrentTabAbout());
     SyncHybridToolbarTheme(win->hwndFrame);
     if (win->ctrl) {
-        SyncHybridToolbarPageState(win->hwndFrame, win->ctrl->CurrentPageNo(), win->ctrl->PageCount());
-        SyncHybridToolbarZoomState(win->hwndFrame, win->ctrl->GetZoomVirtual(true));
+        SyncHybridToolbarState(win->hwndFrame, win->ctrl->CurrentPageNo(), win->ctrl->PageCount(),
+                               win->ctrl->GetZoomVirtual(true), HybridToolbarCanAnnotate(win));
     } else {
-        SyncHybridToolbarPageState(win->hwndFrame, 1, 1);
-        SyncHybridToolbarZoomState(win->hwndFrame, 100.0f);
+        SyncHybridToolbarState(win->hwndFrame, 1, 1, 100.0f, HybridToolbarCanAnnotate(win));
     }
-    // ensure annotation availability is sent when the toolbar becomes ready
-    SyncHybridToolbarAnnotationAvailability(win->hwndFrame);
     return true;
 }
 
-// Helper to escape string for JSON
-static void AppendJsonString(char*& dst, size_t& remaining, const char* src) {
-    *dst++ = '"';
-    remaining--;
-    while (*src && remaining > 1) {
-        if (*src == '"' || *src == '\\') {
-            if (remaining < 2) break;
-            *dst++ = '\\';
-            *dst++ = *src++;
-            remaining -= 2;
-        } else if (*src == '\n') {
-            if (remaining < 2) break;
-            *dst++ = '\\';
-            *dst++ = 'n';
-            src++;
-            remaining -= 2;
-        } else if (*src == '\r') {
-            if (remaining < 2) break;
-            *dst++ = '\\';
-            *dst++ = 'r';
-            src++;
-            remaining -= 2;
-        } else if (*src == '\t') {
-            if (remaining < 2) break;
-            *dst++ = '\\';
-            *dst++ = 't';
-            src++;
-            remaining -= 2;
-        } else {
-            *dst++ = *src++;
-            remaining--;
+static void AppendJsonEscapedChar(StrBuilder& json, unsigned char c) {
+    switch (c) {
+    case '"':
+        json.Append("\\\"");
+        return;
+    case '\\':
+        json.Append("\\\\");
+        return;
+    case '\b':
+        json.Append("\\b");
+        return;
+    case '\f':
+        json.Append("\\f");
+        return;
+    case '\n':
+        json.Append("\\n");
+        return;
+    case '\r':
+        json.Append("\\r");
+        return;
+    case '\t':
+        json.Append("\\t");
+        return;
+    default:
+        break;
+    }
+    if (c < 0x20) {
+        static const char* kHex = "0123456789abcdef";
+        json.Append("\\u00");
+        json.AppendChar(kHex[(c >> 4) & 0x0f]);
+        json.AppendChar(kHex[c & 0x0f]);
+        return;
+    }
+    json.AppendChar((char)c);
+}
+
+static void AppendJsonString(StrBuilder& json, const char* src) {
+    json.AppendChar('"');
+    if (src) {
+        const unsigned char* p = (const unsigned char*)src;
+        while (*p) {
+            if (*p < 0x80) {
+                AppendJsonEscapedChar(json, *p++);
+                continue;
+            }
+
+            int runeLen = utf8RuneLen(p);
+            if (runeLen <= 0 || !isLegalUTF8Sequence(p, p + runeLen)) {
+                json.Append("\\uFFFD");
+                p++;
+                continue;
+            }
+
+            if (runeLen == 3 && p[0] == 0xE2 && p[1] == 0x80 && p[2] == 0xA8) {
+                json.Append("\\u2028");
+                p += 3;
+                continue;
+            }
+            if (runeLen == 3 && p[0] == 0xE2 && p[1] == 0x80 && p[2] == 0xA9) {
+                json.Append("\\u2029");
+                p += 3;
+                continue;
+            }
+            for (int i = 0; i < runeLen; ++i) {
+                AppendJsonEscapedChar(json, p[i]);
+            }
+            p += runeLen;
         }
     }
-    if (remaining > 0) {
-        *dst++ = '"';
-        remaining--;
-    }
+    json.AppendChar('"');
 }
 
 static constexpr int kHomePageMaxRecentItems = 40;
@@ -983,17 +1012,8 @@ static u32 CalcRecentFilesSignature() {
 
 // Helper function to serialize recent files to JSON for HomePage
 static ::TempStr SerializeRecentFilesToJson() {
-    // Allocate a large enough buffer for the JSON
-    const size_t bufSize = 8192;
-    char* buf = (char*)malloc(bufSize);
-    if (!buf) return nullptr;
-
-    char* dst = buf;
-    size_t remaining = bufSize - 1; // Leave room for null terminator
-
-    *dst++ = '[';
-    remaining--;
-
+    StrBuilder json(4096);
+    json.AppendChar('[');
     bool first = true;
     for (int i = 0; i < kHomePageMaxRecentItems; i++) {
         FileState* fs = gFileHistory.Get(i);
@@ -1004,9 +1024,8 @@ static ::TempStr SerializeRecentFilesToJson() {
             continue;
         }
 
-        if (!first && remaining > 0) {
-            *dst++ = ',';
-            remaining--;
+        if (!first) {
+            json.AppendChar(',');
         }
         first = false;
 
@@ -1019,43 +1038,15 @@ static ::TempStr SerializeRecentFilesToJson() {
             }
         }
 
-        // Build the JSON entry
-        const char* entryStart = "{\"path\":";
-        if (remaining > str::Len(entryStart)) {
-            memcpy(dst, entryStart, str::Len(entryStart));
-            dst += str::Len(entryStart);
-            remaining -= str::Len(entryStart);
-        }
-
-        AppendJsonString(dst, remaining, filePath);
-
-        const char* separator = ",\"name\":";
-        if (remaining > str::Len(separator)) {
-            memcpy(dst, separator, str::Len(separator));
-            dst += str::Len(separator);
-            remaining -= str::Len(separator);
-        }
-
-        AppendJsonString(dst, remaining, fileName);
-
-        if (remaining > 0) {
-            *dst++ = '}';
-            remaining--;
-        }
+        json.Append("{\"path\":");
+        AppendJsonString(json, filePath);
+        json.Append(",\"name\":");
+        AppendJsonString(json, fileName);
+        json.AppendChar('}');
     }
 
-    if (remaining > 0) {
-        *dst++ = ']';
-        remaining--;
-    }
-
-    if (remaining > 0) {
-        *dst++ = '\0';
-    } else {
-        buf[bufSize - 1] = '\0';
-    }
-
-    return buf;
+    json.AppendChar(']');
+    return json.StealData();
 }
 
 // HomePage UI message handlers

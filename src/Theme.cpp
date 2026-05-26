@@ -55,13 +55,13 @@ static const char* themesTxt = R"(Themes [
     [
         Name = Sumatra Dark
         TextColor = #f8fafc
-        BackgroundColor = #17130a
-        ControlBackgroundColor = #3a2901
+        BackgroundColor = #000000
+        ControlBackgroundColor = #222222
         LinkColor = #eab308
         AccentColor = #eab308
         BrandPrimaryColor = #facc15
         BrandGlowColor = #fde68a
-        ShadowColor = #120b02
+        ShadowColor = #5a5a5a
         ColorizeControls = true
     ]
     [
@@ -238,19 +238,15 @@ static int GetThemeVariantIndex(const char* currentName, bool targetDark) {
     const int suffixLen = (int)str::Len(str::EndsWithI(currentName, lightSuffix) ? lightSuffix : darkSuffix);
     const int nameLen = (int)str::Len(currentName);
     const int baseLen = nameLen - suffixLen;
-    if (baseLen <= 0 || baseLen >= 256) {
+    if (baseLen <= 0) {
         return GetThemeIndexByName(targetDark ? "Dark" : "Light");
     }
 
-    char base[256];
-    memcpy(base, currentName, baseLen);
-    base[baseLen] = '\0';
-
-    char targetName[256];
-    if (!str::BufFmt(targetName, dimof(targetName), "%s %s", base, targetDark ? "Dark" : "Light")) {
-        return GetThemeIndexByName(targetDark ? "Dark" : "Light");
-    }
-    return GetThemeIndexByName(targetName);
+    StrBuilder targetName(baseLen + 6);
+    targetName.Append(currentName, (size_t)baseLen);
+    targetName.AppendChar(' ');
+    targetName.Append(targetDark ? "Dark" : "Light");
+    return GetThemeIndexByName(targetName.CStr());
 }
 
 bool IsCurrentThemeDefault() {
