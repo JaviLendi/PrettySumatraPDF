@@ -21,7 +21,7 @@ cmd /c "scripts\\build-vs2022.cmd Release x64 SumatraPDF-dll"
 3. Compile the installer with Inno Setup:
 
 ```powershell
-& 'C:\Users\javil\AppData\Local\Programs\Inno Setup 6\ISCC.exe' scripts\\installer\\PrettySumatraPDF.iss
+& 'C:\Users\user\AppData\Local\Programs\Inno Setup 6\ISCC.exe' scripts\\installer\\PrettySumatraPDF.iss
 ```
 
 4. The installer will be produced under `scripts\installer\dist\` with filename `PrettySumatraPDF-Setup-1.0.0.exe`.
