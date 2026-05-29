@@ -2,7 +2,7 @@
 ; Requires Inno Setup (ISCC.exe) to compile
 
 #define AppName "PrettySumatraPDF"
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 #define AppPublisher "PrettySumatraPDF"
 #define AppURL "https://github.com/JaviLendi/PrettySumatraPDF"
 #define AppExeName "SumatraPDF-dll.exe"

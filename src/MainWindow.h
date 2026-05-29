@@ -262,6 +262,12 @@ struct MainWindow {
     LayoutState lastLayoutState;
 
     int currPageNo = 0; // cached value, needed to determine when to auto-update the ToC selection
+    DocController* hybridToolbarSyncCtrl = nullptr;
+    int hybridToolbarSyncPageNo = 0;
+    int hybridToolbarSyncPageCount = 0;
+    float hybridToolbarSyncZoom = 0.0f;
+    bool hybridToolbarSyncCanAnnotate = false;
+    bool hybridToolbarSyncHasState = false;
 
     // overlay scrollbars (used when scrollbars mode is "smart" or "overlay")
     struct OverlayScrollbar* overlayScrollV = nullptr;

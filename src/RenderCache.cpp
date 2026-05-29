@@ -38,6 +38,17 @@ static DWORD WINAPI RenderCacheThread(LPVOID data);
 bool gShowTileLayout = false;
 int gMaxRenderThreads = 8;
 
+static int GetRequestPriority(DisplayModel* dm, int pageNo) {
+    if (!dm || !dm->ValidPageNo(pageNo)) {
+        return 0;
+    }
+    int currentPageNo = dm->CurrentPageNo();
+    if (!dm->ValidPageNo(currentPageNo)) {
+        return 0;
+    }
+    return pageNo >= currentPageNo ? pageNo - currentPageNo : currentPageNo - pageNo;
+}
+
 struct RenderThreadData {
     RenderCache* cache;
     int threadIdx;
@@ -114,16 +125,39 @@ RenderCache::~RenderCache() {
    <rotation> and <zoom> in the cache - call DropCacheEntry when you
    no longer need a found entry. */
 BitmapCacheEntry* RenderCache::Find(DisplayModel* dm, int pageNo, int rotation, float zoom, TilePosition* tile) {
-    ScopedCritSec scope(&cacheAccess);
     rotation = NormalizeRotation(rotation);
+    float targetZoom = zoom == kInvalidZoom ? dm->GetZoomReal(pageNo) : zoom;
+
+    ScopedCritSec scope(&cacheAccess);
+    BitmapCacheEntry* bestMatch = nullptr;
+    float bestZoomDiff = 0;
     for (int i = 0; i < cacheCount; i++) {
         BitmapCacheEntry* e = cache[i];
-        if ((dm == e->dm) && (pageNo == e->pageNo) && (rotation == e->rotation) &&
-            (kInvalidZoom == zoom || zoom == e->zoom) && (!tile || e->tile == *tile)) {
+        if ((dm != e->dm) || (pageNo != e->pageNo) || (rotation != e->rotation) || (tile && e->tile != *tile)) {
+            continue;
+        }
+        if (kInvalidZoom != zoom && zoom == e->zoom) {
             e->refs++;
             ReportIf(i != e->cacheIdx);
             return e;
         }
+        if (kInvalidZoom == zoom) {
+            if (e->zoom == kInvalidZoom) {
+                continue;
+            }
+            float zoomDiff = e->zoom - targetZoom;
+            if (zoomDiff < 0) {
+                zoomDiff = -zoomDiff;
+            }
+            if (!bestMatch || zoomDiff < bestZoomDiff) {
+                bestMatch = e;
+                bestZoomDiff = zoomDiff;
+            }
+        }
+    }
+    if (bestMatch) {
+        bestMatch->refs++;
+        return bestMatch;
     }
     return nullptr;
 }
@@ -497,6 +531,7 @@ void RenderCache::RequestRendering(DisplayModel* dm, int pageNo, TilePosition ti
 
     int rotation = NormalizeRotation(dm->GetRotation());
     float zoom = dm->GetZoomReal(pageNo);
+    int priority = GetRequestPriority(dm, pageNo);
 
     for (int i = 0; i < nRenderThreads; i++) {
         auto* cr = curReqs[i];
@@ -533,6 +568,7 @@ void RenderCache::RequestRendering(DisplayModel* dm, int pageNo, TilePosition ti
                 req->zoom = zoom;
                 req->rotation = rotation;
             }
+            req->priority = std::min(req->priority, priority);
             return;
         }
     }
@@ -577,18 +613,29 @@ bool RenderCache::Render(DisplayModel* dm, int pageNo, int rotation, float zoom,
 
     ScopedCritSec scope(&requestAccess);
     PageRenderRequest* newRequest;
+    int priority = GetRequestPriority(dm, pageNo);
 
     /* add request to the queue */
     if (requestCount == MAX_PAGE_REQUESTS) {
-        /* queue is full -> remove the oldest items on the queue */
-        if (requests[0].renderFinishedCb.IsValid()) {
-            requests[0].abort = true;
-            requests[0].bmp = nullptr;
-            requests[0].errorCode = 0;
-            requests[0].renderFinishedCb.Call(&requests[0]);
+        /* queue is full -> replace the lowest-priority queued item if the new
+           request is more important. Otherwise drop the new request. */
+        int worstIdx = 0;
+        for (int i = 1; i < MAX_PAGE_REQUESTS; i++) {
+            if (requests[i].priority > requests[worstIdx].priority ||
+                (requests[i].priority == requests[worstIdx].priority && requests[i].timestamp < requests[worstIdx].timestamp)) {
+                worstIdx = i;
+            }
         }
-        memmove(&(requests[0]), &(requests[1]), sizeof(PageRenderRequest) * (MAX_PAGE_REQUESTS - 1));
-        newRequest = &(requests[MAX_PAGE_REQUESTS - 1]);
+        if (priority >= requests[worstIdx].priority) {
+            return true;
+        }
+        if (requests[worstIdx].renderFinishedCb.IsValid()) {
+            requests[worstIdx].abort = true;
+            requests[worstIdx].bmp = nullptr;
+            requests[worstIdx].errorCode = 0;
+            requests[worstIdx].renderFinishedCb.Call(&requests[worstIdx]);
+        }
+        newRequest = &(requests[worstIdx]);
     } else {
         newRequest = &(requests[requestCount]);
         requestCount++;
@@ -599,6 +646,7 @@ bool RenderCache::Render(DisplayModel* dm, int pageNo, int rotation, float zoom,
     newRequest->pageNo = pageNo;
     newRequest->rotation = rotation;
     newRequest->zoom = zoom;
+    newRequest->priority = priority;
     if (tile) {
         newRequest->pageRect = GetTileRectUser(dm->GetEngine(), pageNo, rotation, zoom, *tile);
         newRequest->tile = *tile;
@@ -661,8 +709,18 @@ bool RenderCache::GetNextRequest(PageRenderRequest* req, int threadIdx) {
 
     ReportIf(requestCount < 0);
     ReportIf(requestCount > MAX_PAGE_REQUESTS);
+    int bestIdx = 0;
+    for (int i = 1; i < requestCount; i++) {
+        if (requests[i].priority < requests[bestIdx].priority ||
+            (requests[i].priority == requests[bestIdx].priority && i > bestIdx)) {
+            bestIdx = i;
+        }
+    }
+    *req = requests[bestIdx];
     requestCount--;
-    *req = requests[requestCount];
+    if (bestIdx != requestCount) {
+        requests[bestIdx] = requests[requestCount];
+    }
     curReqs[threadIdx] = req;
     ReportIf(requestCount < 0);
     ReportIf(req->abort);
@@ -677,6 +735,8 @@ bool RenderCache::ClearCurrentRequest(int threadIdx) {
     }
     curReqs[threadIdx] = nullptr;
 
+
+
     bool isQueueEmpty = requestCount == 0;
     return isQueueEmpty;
 }
@@ -686,7 +746,6 @@ bool RenderCache::ClearCurrentRequest(int threadIdx) {
    user know he has to wait until we finish */
 void RenderCache::CancelRendering(DisplayModel* dm) {
     ClearQueueForDisplayModel(dm);
-
     for (;;) {
         EnterCriticalSection(&requestAccess);
         bool found = false;
@@ -704,8 +763,9 @@ void RenderCache::CancelRendering(DisplayModel* dm) {
         }
         LeaveCriticalSection(&requestAccess);
 
-        /* TODO: busy loop is not good, but I don't have a better idea */
-        Sleep(50);
+        // Small sleep to avoid busy-looping while waiting for render threads
+        // to process the abort signals
+        Sleep(10);
     }
 }
 
