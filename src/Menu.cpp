@@ -1278,7 +1278,7 @@ BuildMenuCtx* NewBuildMenuCtx(WindowTab* tab, Point pt) {
     if (engine && engine->IsImageCollection()) {
         ctx->isImageCollection = true;
     }
-    ctx->supportsAnnotations = EngineSupportsAnnotations(engine) && !tab->win->isFullScreen;
+    ctx->supportsAnnotations = EngineSupportsAnnotations(engine);
     ctx->hasUnsavedAnnotations = EngineHasUnsavedAnnotations(engine);
     ctx->canSendEmail = CanSendAsEmailAttachment(tab);
     ctx->isPdf = CouldBePDFDoc(tab);
