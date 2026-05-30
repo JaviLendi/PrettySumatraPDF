@@ -8657,6 +8657,17 @@ LRESULT CALLBACK WndProcSumatraFrame(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) 
                 if (win->hwndToolbar) {
                     ReCreateToolbar(win);
                 }
+                win->lastLayoutState = {};
+                RelayoutFrame(win);
+            }
+            return 0;
+
+        case WM_DISPLAYCHANGE:
+            if (win) {
+                if (win->hwndToolbar) {
+                    ReCreateToolbar(win);
+                }
+                win->lastLayoutState = {};
                 RelayoutFrame(win);
             }
             return 0;

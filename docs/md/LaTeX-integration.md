@@ -1,13 +1,13 @@
 # LaTeX integration
 
-You can use [DDE commands](DDE-Commands.md) from TeX and LaTeX editors to use Sumatra as a previewer.
+You can use [DDE commands](DDE-Commands.md) from TeX and LaTeX editors to use PrettySumatraPDF as a previewer.
 
 ## notepad++
 
 Launch SumatraPDF from notepad++ enabling forward and backward search:
 
 ```
-"C:\Program files\SumatraPDF\SumatraPDF.exe" -forward-search "$(FULL_CURRENT_PATH)" $(CURRENT_LINE) -inverse-search "\"C:/Program Files/Notepad++/notepad++.exe\" \"%f\" -n%l" "$(CURRENT_DIRECTORY)"/"$(NAME_PART)".pdf
+"C:\Program files\PrettySumatraPDF\PrettySumatraPDF.exe" -forward-search "$(FULL_CURRENT_PATH)" $(CURRENT_LINE) -inverse-search "\"C:/Program Files/Notepad++/notepad++.exe\" \"%f\" -n%l" "$(CURRENT_DIRECTORY)"/"$(NAME_PART)".pdf
 ```
 
 ## TexStudio
@@ -15,7 +15,7 @@ Launch SumatraPDF from notepad++ enabling forward and backward search:
 Launch SumatraPDF from TeXStudio enabling forward and backward search:
 
 ```
-"C:/Program Files/SumatraPDF/SumatraPDF.exe" -forward-search "?c:am.tex" @ -inverse-search "\"C:/Program Files (x86)/TeXstudio/texstudio.exe\" \"%%f\" -line %%l" "?am.pdf"
+"C:/Program Files/PrettySumatraPDF/PrettySumatraPDF.exe" -forward-search "?c:am.tex" @ -inverse-search "\"C:/Program Files (x86)/TeXstudio/texstudio.exe\" \"%%f\" -line %%l" "?am.pdf"
 ```
 
 ## TeXnicCenter
@@ -29,7 +29,7 @@ Configure viewer in [output profiles](https://texniccenter.sourceforge.net/confi
 - press `Alt + F7` (`Build` > `Define Output Profiles`)
 - for any one of the PDF Profiles e.g. `LaTeX` > `PDF`
 - for Executable path it should have something like:
-  - `C:\Program Files\SumatraPDF\SumatraPDF.exe -inverse-search "\"C:\Program Files (x86)\TeXnicCenter\TeXnicCenter.exe\" /ddecmd \"[goto('%f','%l')]\""`
+  - `C:\Program Files\PrettySumatraPDF\PrettySumatraPDF.exe -inverse-search "\"C:\Program Files (x86)\TeXnicCenter\TeXnicCenter.exe\" /ddecmd \"[goto('%f','%l')]\""`
   - `SumatraPDF.exe` path might be different on your computer
 - go back to the editor and using any simple .TeX press `Ctrl + Shift + F5` (Build and view)
 - SumatraPDF should have fired up with the compiled PDF
@@ -76,12 +76,12 @@ language):
 ```
 def ForwardSearch()
   var filename_root = expand('%:p:r')
-  system($'SumatraPDF.exe -forward-search {filename_root}.tex {line(".")} {filename_root}.pdf')
+  system($'PrettySumatraPDF.exe -forward-search {filename_root}.tex {line(".")} {filename_root}.pdf')
 enddef
 ```
 
 Replace `SumatraPDF.exe` with the correct executable filename,
-e.g. `SumatraPDFv3-4-5.exe`.
+e.g. `PrettySumatraPDF.exe`.
 
 Next, you should map this function to some key, for example you could use the
 following.
@@ -104,7 +104,7 @@ def g:BackwardSearch(line: number, filename: string)
 enddef
 ```
 
-Next, open `SumatraPDF` and go to _Settings/Options_. Replace the line in the
+Next, open `PrettySumatraPDF` and go to _Settings/Options_. Replace the line in the
 _Set inverse-search command-line_ box, with the following:
 
 ```

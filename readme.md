@@ -11,6 +11,8 @@
 
 **PrettySumatraPDF** is a modern redesign of the classic SumatraPDF reader, bringing a fresh Windows 11-style interface while maintaining 100% of the original functionality and features.
 
+**Fork notice:** PrettySumatraPDF is a fork of [SumatraPDF](https://github.com/sumatrapdfreader/sumatrapdf). This repository is maintained by Javi Lendi and preserves the original project's authors and licensing; see the `AUTHORS` and `LICENSE` files for details.
+
 ---
 
 ## ✨ Key Features
@@ -75,18 +77,18 @@ This project is built on top of the official SumatraPDF codebase. If you want to
    cd PrettySumatraPDF
    ```
 
-2. Run the build:
+3. Run the build:
    ```bash
    bun ./cmd/build.ts
    ```
 
-3. The executable will be located at: `./out/dbg64/SumatraPDF.exe`
+4. The executable will be located at: `./out/dbg64/PrettySumatraPDF.exe`
 
 ### Debugging
 
 To run with the debugger:
 ```bash
-windbgx -Q -o -g ./out/dbg64/SumatraPDF.exe
+windbgx -Q -o -g ./out/dbg64/PrettySumatraPDF.exe
 ```
 
 ### Code Formatting
@@ -102,14 +104,20 @@ bun ./cmd/format.ts
 
 PrettySumatraPDF is an open-source project licensed under the same terms as SumatraPDF (A)GPLv3, with some code under BSD license. Contributions are welcome! For more information on how to contribute, please visit the [Developer Information](https://www.sumatrapdfreader.org/docs/Contribute-to-SumatraPDF) page.
 
+## Fork notice and attribution
+
+- This project is a fork of the original [SumatraPDF](https://github.com/sumatrapdfreader/sumatrapdf) project.
+- All original authors are credited in the `AUTHORS` file. The maintainer of this fork is **Javi Lendi**.
+- Licensing from the upstream project is preserved; do not change `COPYING`/`COPYING.BSD` without legal review.
+
 My goal with PrettySumatraPDF is to create a visually appealing and modernized version of SumatraPDF while ensuring that all existing features and functionalities remain intact. I am committed to maintaining the core principles of SumatraPDF, including its lightweight nature and fast performance, while enhancing the user experience with a fresh design.
 
 I am committed to updating PrettySumatraPDF with the latest features and improvements from the original SumatraPDF project, ensuring that users can enjoy the best of both worlds: a modern interface and the full functionality of the classic reader.
 
 ### More Information
 
-- 🌐 [SumatraPDF Website](https://www.sumatrapdfreader.org/free-pdf-reader)
-- 📚 [Manual](https://www.sumatrapdfreader.org/manual)
-- 👨‍💻 [Developer Information](https://www.sumatrapdfreader.org/docs/Contribute-to-SumatraPDF)
+- 🌐 [PrettySumatraPDF GitHub](https://github.com/JaviLendi/PrettySumatraPDF)
+- 📚 [Manual (docs)](https://github.com/JaviLendi/PrettySumatraPDF/tree/main/docs/md)
+- 👨‍💻 [Developer Information (docs)](https://github.com/JaviLendi/PrettySumatraPDF/tree/main/docs/md)
 - 📄 [License](LICENSE)
 - ✍️ [Authors](AUTHORS)

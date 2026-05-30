@@ -24,7 +24,7 @@ cmd /c "scripts\\build-vs2022.cmd Release x64 SumatraPDF-dll"
 & 'C:\Users\user\AppData\Local\Programs\Inno Setup 6\ISCC.exe' scripts\\installer\\PrettySumatraPDF.iss
 ```
 
-4. The installer will be produced under `scripts\installer\dist\` with filename `PrettySumatraPDF-Setup-1.0.0.exe`.
+4. The installer will be produced under `scripts\installer\dist\` with filename `PrettySumatraPDF-Setup-1.0.1.exe`.
 
 Notes
 - The current script packages runtime artifacts from `out\\rel64` (`*.exe`, `*.dll`, `*.dat`, `*.txt`) to keep installer size reasonable.

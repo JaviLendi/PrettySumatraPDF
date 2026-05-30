@@ -124,7 +124,7 @@ static bool HybridToolbarCanAnnotate(MainWindow* win) {
     if (tab && tab->IsDocLoaded()) {
         EngineBase* eng = tab->GetEngine();
         if (eng) {
-            canAnnotate = EngineSupportsAnnotations(eng) && !(win->isFullScreen || win->presentation);
+            canAnnotate = EngineSupportsAnnotations(eng) && !win->presentation;
         }
     }
     return canAnnotate;

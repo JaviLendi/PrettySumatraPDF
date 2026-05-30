@@ -474,13 +474,13 @@ struct AboutLayoutInfoEl {
 };
 
 static AboutLayoutInfoEl gAboutLayoutInfo[] = {
-    {_TRN("website"), _TRN("SumatraPDF website"), kWebsiteURL},
+    {_TRN("website"), _TRN("PrettySumatraPDF GitHub"), "https://github.com/JaviLendi/PrettySumatraPDF"},
     {_TRN("manual"), _TRN("SumatraPDF manual"), kManualURL},
     {_TRN("forums"), _TRN("SumatraPDF forums"), "https://github.com/sumatrapdfreader/sumatrapdf/discussions"},
-    {_TRN("programming"), _TRN("The Programmers"),
-     "https://github.com/sumatrapdfreader/sumatrapdf/blob/master/AUTHORS"},
-    {_TRN("licenses"), _TRN("Various Open Source"),
-     "https://github.com/sumatrapdfreader/sumatrapdf/blob/master/AUTHORS"},
+    {_TRN("programming"), _TRN("PrettySumatraPDF authors"),
+     "https://github.com/JaviLendi/PrettySumatraPDF/blob/main/AUTHORS"},
+    {_TRN("licenses"), _TRN("PrettySumatraPDF licenses"),
+     "https://github.com/JaviLendi/PrettySumatraPDF/blob/master/COPYING"},
 #if defined(GIT_COMMIT_ID_STR)
     {_TRN("last change"), _TRN("git commit ") GIT_COMMIT_ID_STR,
      "https://github.com/sumatrapdfreader/sumatrapdf/commit/" GIT_COMMIT_ID_STR},
@@ -530,49 +530,22 @@ static void DrawSumatraVersion(HDC hdc, Rect rect) {
     Size prettySz = HdcMeasureText(hdc, "Pretty", fmt, fontSumatraTxt);
     Size sumatraSz = HdcMeasureText(hdc, "Sumatra", fmt, fontSumatraTxt);
     Size pdfSz = HdcMeasureText(hdc, "PDF", fmt, fontSumatraTxt);
-    Size subtitleSz = HdcMeasureText(hdc, _TRA("Focused reading"), fmt, fontSubtitleTxt);
+    Size subtitleSz = HdcMeasureText(hdc, _TRA("Fork of SumatraPDF"), fmt, fontSubtitleTxt);
     TempStr ver = GetAppVersionTemp();
     Size verSz = HdcMeasureText(hdc, ver, fmt, fontVersionTxt);
 
-    int textDy = prettySz.dy + DpiScale(hdc, 16);
-    int iconSize = textDy + DpiScale(hdc, 8);
+    int iconSize = prettySz.dy + DpiScale(hdc, 20);
     int totalDx = iconSize + DpiScale(hdc, 16) + prettySz.dx + sumatraSz.dx + pdfSz.dx;
     int x0 = rect.x + (rect.dx - totalDx) / 2;
     int y0 = rect.y + (rect.dy - iconSize) / 2;
 
     Rect iconRect(x0, y0, iconSize, iconSize);
-    {
-        AutoDeleteBrush brOuter(CreateSolidBrush(RGB(242, 184, 0)));
-        AutoDeletePen penOuter(CreatePen(PS_SOLID, 1, RGB(215, 167, 0)));
-        HGDIOBJ oldBrush = SelectObject(hdc, brOuter);
-        HGDIOBJ oldPen = SelectObject(hdc, penOuter);
-        RoundRect(hdc, iconRect.x, iconRect.y, iconRect.x + iconRect.dx, iconRect.y + iconRect.dy, DpiScale(hdc, 14),
-                  DpiScale(hdc, 14));
-        SelectObject(hdc, oldPen);
-        SelectObject(hdc, oldBrush);
-    }
-    Rect pageRect(iconRect.x + DpiScale(hdc, 11), iconRect.y + DpiScale(hdc, 8), iconRect.dx - DpiScale(hdc, 20),
-                  iconRect.dy - DpiScale(hdc, 16));
-    {
-        AutoDeleteBrush brPage(CreateSolidBrush(RGB(255, 249, 229)));
-        AutoDeletePen penPage(CreatePen(PS_SOLID, 1, RGB(221, 188, 84)));
-        HGDIOBJ oldBrush = SelectObject(hdc, brPage);
-        HGDIOBJ oldPen = SelectObject(hdc, penPage);
-        RoundRect(hdc, pageRect.x, pageRect.y, pageRect.x + pageRect.dx, pageRect.y + pageRect.dy, DpiScale(hdc, 8),
-                  DpiScale(hdc, 8));
-        SelectObject(hdc, oldPen);
-        SelectObject(hdc, oldBrush);
-    }
-    Rect lensRect(iconRect.x + iconRect.dx - DpiScale(hdc, 24), iconRect.y + iconRect.dy - DpiScale(hdc, 24),
-                  DpiScale(hdc, 18), DpiScale(hdc, 18));
-    {
-        AutoDeleteBrush brLens(CreateSolidBrush(RGB(247, 220, 128)));
-        AutoDeletePen penLens(CreatePen(PS_SOLID, DpiScale(hdc, 2), RGB(204, 151, 0)));
-        HGDIOBJ oldBrush = SelectObject(hdc, brLens);
-        HGDIOBJ oldPen = SelectObject(hdc, penLens);
-        Ellipse(hdc, lensRect.x, lensRect.y, lensRect.x + lensRect.dx, lensRect.y + lensRect.dy);
-        SelectObject(hdc, oldPen);
-        SelectObject(hdc, oldBrush);
+    HMODULE hmod = GetModuleHandleW(nullptr);
+    HICON hIcon = (HICON)LoadImageW(hmod, MAKEINTRESOURCEW(GetAppIconID()), IMAGE_ICON, iconRect.dx, iconRect.dy,
+                                    LR_DEFAULTCOLOR);
+    if (hIcon) {
+        DrawIconEx(hdc, iconRect.x, iconRect.y, hIcon, iconRect.dx, iconRect.dy, 0, nullptr, DI_NORMAL);
+        DestroyIcon(hIcon);
     }
 
     int textX = iconRect.x + iconRect.dx + DpiScale(hdc, 16);
@@ -593,7 +566,7 @@ static void DrawSumatraVersion(HDC hdc, Rect rect) {
 
     int subY = textY + prettySz.dy + DpiScale(hdc, 1);
     SetTextColor(hdc, ThemeWindowTextColor());
-    HdcDrawText(hdc, _TRA("Focused reading"), Point(textX, subY), fmt, fontSubtitleTxt);
+    HdcDrawText(hdc, _TRA("Fork of SumatraPDF"), Point(textX, subY), fmt, fontSubtitleTxt);
     HdcDrawText(hdc, ver, Point(textX + subtitleSz.dx + DpiScale(hdc, 8), subY), fmt, fontVersionTxt);
 
     Point p = {textX, subY + DpiScale(hdc, 13)};
@@ -666,7 +639,6 @@ static TempStr TrimGitTemp(const char* s) {
    to understand without seeing the design. */
 static void DrawAbout(HWND hwnd, HDC hdc, Rect rect, Vec<StaticLink*>& staticLinks) {
     auto col = ThemeWindowTextColor();
-    AutoDeletePen penBorder(CreatePen(PS_SOLID, ABOUT_LINE_OUTER_SIZE, col));
     AutoDeletePen penDivideLine(CreatePen(PS_SOLID, ABOUT_LINE_SEP_SIZE, col));
     col = ThemeWindowLinkColor();
     AutoDeletePen penLinkLine(CreatePen(PS_SOLID, ABOUT_LINE_SEP_SIZE, col));
@@ -685,11 +657,7 @@ static void DrawAbout(HWND hwnd, HDC hdc, Rect rect, Vec<StaticLink*>& staticLin
     Rect titleRect(rect.TL(), CalcSumatraVersionSize(hdc));
 
     ScopedSelectObject brush(hdc, CreateSolidBrush(col), true);
-    ScopedSelectObject pen(hdc, penBorder);
-#ifndef ABOUT_USE_LESS_COLORS
-    Rectangle(hdc, rect.x, rect.y + ABOUT_LINE_OUTER_SIZE, rect.x + rect.dx,
-              rect.y + titleRect.dy + ABOUT_LINE_OUTER_SIZE);
-#else
+#ifdef ABOUT_USE_LESS_COLORS
     Rect titleBgBand(0, rect.y, rc.dx, titleRect.dy);
     RECT rcLogoBg = titleBgBand.ToRECT();
     FillRect(hdc, &rcLogoBg, brushAboutBg);
@@ -704,10 +672,6 @@ static void DrawAbout(HWND hwnd, HDC hdc, Rect rect, Vec<StaticLink*>& staticLin
     col = ThemeWindowTextColor();
     SetTextColor(hdc, col);
     SetBkMode(hdc, TRANSPARENT);
-
-#ifndef ABOUT_USE_LESS_COLORS
-    Rectangle(hdc, rect.x, rect.y + titleRect.dy, rect.x + rect.dx, rect.y + rect.dy);
-#endif
 
     /* render text on the left*/
     SelectObject(hdc, fontLeftTxt);
@@ -1002,7 +966,7 @@ void ShowAboutWindow(MainWindow* win) {
         ReportIf(!gAtomAbout);
     }
 
-    TempWStr title = ToWStrTemp(_TRA("About SumatraPDF"));
+    TempWStr title = ToWStrTemp(_TRA("About PrettySumatraPDF"));
     DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
     int x = CW_USEDEFAULT;
     int y = CW_USEDEFAULT;

@@ -1,4 +1,4 @@
-# Uninstalling SumatraPDF
+# Uninstalling PrettySumatraPDF
 
 ## Are you using official Sumatra build?
 
@@ -6,23 +6,23 @@ Did you download Sumatra from [official Sumatra website](https://www.sumatrapdfr
 
 If not, we can't help you because we didn't create the software you're using.
 
-## Uninstalling Sumatra
+## Uninstalling PrettySumatraPDF
 
-There are 2 versions of Sumatra: an installer and a portable version (zipped executable).
+There are 2 versions of the program: an installer and a portable version (zipped executable).
 
 ## Uninstalling portable version
 
-If you're using zipped executable, the only thing you need to do is to delete SumatraPDF.exe.
+If you're using zipped executable, the only thing you need to do is to delete PrettySumatraPDF.exe.
 
 ## Uninstalling the installer version
 
-If you installed SumatraPDF by running official installer, you uninstall it like every other application.
+If you installed PrettySumatraPDF by running an installer, you uninstall it like every other application.
 
 On Windows 10 / 11:
 
 - start Settings app ([https://www.digitalcitizen.life/introducing-windows-10-ways-open-settings](https://www.digitalcitizen.life/introducing-windows-10-ways-open-settings))
 - Select `Apps`
-- find `SumatraPDF` on the list, click it and press `Uninstall` button:
+- find `PrettySumatraPDF` on the list, click it and press `Uninstall` button:
 
 ![Uninstall](img/uninstall.png)
 
