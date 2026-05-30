@@ -154,17 +154,20 @@ TempStr UnknownToUtf8Temp(const char* s, size_t cb) {
     }
 
     if (str::StartsWith(s, UTF16BE_BOM)) {
-        // convert from utf16 big endian to utf16
+        // convert from utf16 big endian to utf16 (swap bytes)
         s += 2;
-        WCHAR* ws = str::CastToWCHAR(s);
+        const WCHAR* ws = str::CastToWCHAR(s);
         int n = str::Leni(ws);
         WCHAR* tmpW = str::DupTemp(ws, n + 1);
-        char* tmp = (char*)tmpW;
+        if (!tmpW) {
+            return nullptr;
+        }
+        unsigned char* bytes = reinterpret_cast<unsigned char*>(tmpW);
         for (int i = 0; i < n; i++) {
             int idx = i * 2;
-            std::swap(tmp[idx], tmp[idx + 1]);
+            std::swap(bytes[idx], bytes[idx + 1]);
         }
-        return ToUtf8Temp((WCHAR*)tmp);
+        return ToUtf8Temp(tmpW);
     }
 
     // if s is valid utf8, leave it alone

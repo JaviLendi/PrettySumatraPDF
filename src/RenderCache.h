@@ -71,6 +71,7 @@ struct PageRenderRequest {
     int pageNo = 0;
     int rotation = 0;
     float zoom = 0.f;
+    int priority = 0;
     TilePosition tile;
 
     RectF pageRect; // calculated from TilePosition

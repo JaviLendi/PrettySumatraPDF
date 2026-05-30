@@ -207,6 +207,8 @@ struct DisplayModel : DocController {
     Point GetContentStart(int pageNo) const;
     void RecalcVisibleParts() const;
     void RenderVisibleParts();
+    void PrecacheLargeDocumentPages();
+    void ScheduleRenderVisibleParts();
     void AddNavPoint();
     RectF GetContentBox(int pageNo) const;
     void CalcZoomReal(float zoomVirtual);
@@ -263,6 +265,7 @@ struct DisplayModel : DocController {
 
     /* allow resizing a window without triggering a new rendering (needed for window destruction) */
     bool pauseRendering = false;
+    bool renderVisiblePartsScheduled = false;
 
     void RenderFinished(PageRenderRequest* req);
     void RenderFinishedAsync(PageRenderRequest* req);

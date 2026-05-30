@@ -72,6 +72,33 @@
 // if true, we pre-render the pages right before and after the visible pages
 bool gPredictiveRender = true;
 
+constexpr int kLargeDocPrecacheThresholdPages = 100;
+constexpr int kLargeDocPrecacheRadiusPages = 30;
+
+static bool IsDisplayModelValid(DisplayModel* dm) {
+    for (MainWindow* win : gWindows) {
+        for (WindowTab* tab : win->Tabs()) {
+            if (tab->AsFixed() == dm) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static void RenderVisiblePartsOnUIThread(DisplayModel* dm) {
+    if (!IsDisplayModelValid(dm)) {
+        return;
+    }
+    dm->renderVisiblePartsScheduled = false;
+    dm->RenderVisibleParts();
+}
+
+static void ScheduleRenderVisiblePartsOnUIThread(DisplayModel* dm) {
+    auto fn = MkFunc0<DisplayModel>(RenderVisiblePartsOnUIThread, dm);
+    uitask::Post(fn, "RenderVisibleParts");
+}
+
 static int ColumnsFromDisplayMode(DisplayMode displayMode) {
     if (!IsSingle(displayMode)) {
         return 2;
@@ -217,17 +244,6 @@ bool DisplayModel::GetDisplayR2L() const {
 
 void DisplayModel::RepaintDisplay() {
     cb->Repaint();
-}
-
-static bool IsDisplayModelValid(DisplayModel* dm) {
-    for (MainWindow* win : gWindows) {
-        for (WindowTab* tab : win->Tabs()) {
-            if (tab->AsFixed() == dm) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 static void RenderFinishedOnUIThread(PageRenderRequest* req) {
@@ -1202,13 +1218,6 @@ void DisplayModel::RenderVisibleParts() {
         return;
     }
 
-    // rendering happens LIFO except if the queue is currently
-    // empty, so request the visible pages first and last to
-    // make sure they're rendered before the predicted pages
-    for (int pageNo = firstVisiblePage; pageNo <= lastVisiblePage; pageNo++) {
-        cb->RequestRendering(pageNo);
-    }
-
     if (gPredictiveRender) {
         // prerender two more pages in facing and book view modes
         // if the rendering queue still has place for them
@@ -1228,13 +1237,41 @@ void DisplayModel::RenderVisibleParts() {
         }
     }
 
-    // re-request the visible pages again so:
-    // * they get picked first by rendering thread
-    // * if queue fills up, the invisible pages from predictive rendering
-    //   wont be rendered
+    // rendering happens LIFO, so request the visible pages last in reverse
+    // order to make sure the most relevant page gets rendered first.
     for (int pageNo = lastVisiblePage; pageNo >= firstVisiblePage; pageNo--) {
         cb->RequestRendering(pageNo);
     }
+}
+
+void DisplayModel::PrecacheLargeDocumentPages() {
+    if (!cb || PageCount() <= kLargeDocPrecacheThresholdPages) {
+        return;
+    }
+
+    int currentPageNo = CurrentPageNo();
+    if (!ValidPageNo(currentPageNo)) {
+        return;
+    }
+
+    for (int delta = kLargeDocPrecacheRadiusPages; delta >= 1; --delta) {
+        int prevPageNo = currentPageNo - delta;
+        if (prevPageNo >= 1) {
+            cb->RequestRendering(prevPageNo);
+        }
+        int nextPageNo = currentPageNo + delta;
+        if (nextPageNo <= PageCount()) {
+            cb->RequestRendering(nextPageNo);
+        }
+    }
+}
+
+void DisplayModel::ScheduleRenderVisibleParts() {
+    if (pauseRendering || renderVisiblePartsScheduled) {
+        return;
+    }
+    renderVisiblePartsScheduled = true;
+    ScheduleRenderVisiblePartsOnUIThread(this);
 }
 
 void DisplayModel::SetViewPortSize(Size newViewPortSize) {
@@ -1257,7 +1294,7 @@ void DisplayModel::SetViewPortSize(Size newViewPortSize) {
         }
     } else {
         RecalcVisibleParts();
-        RenderVisibleParts();
+        ScheduleRenderVisibleParts();
         cb->UpdateScrollbars(canvasSize);
     }
 }
@@ -1370,7 +1407,7 @@ void DisplayModel::GoToPage(int pageNo, int scrollY, bool addNavPt, int scrollX)
     viewPort.y = limitValue(viewPort.y, 0, canvasSize.dy - viewPort.dy);
 
     RecalcVisibleParts();
-    RenderVisibleParts();
+    ScheduleRenderVisibleParts();
     cb->UpdateScrollbars(canvasSize);
     cb->PageNoChanged(this, pageNo);
     RepaintDisplay();
@@ -1559,7 +1596,7 @@ void DisplayModel::ScrollYTo(int yOff) {
     int currPageNo = CurrentPageNo();
     viewPort.y = yOff;
     RecalcVisibleParts();
-    RenderVisibleParts();
+    ScheduleRenderVisibleParts();
 
     int newPageNo = CurrentPageNo();
     if (newPageNo != currPageNo) {
@@ -1617,7 +1654,7 @@ void DisplayModel::ScrollYBy(int dy, bool changePage) {
     currPageNo = CurrentPageNo();
     viewPort.y = newYOff;
     RecalcVisibleParts();
-    RenderVisibleParts();
+    ScheduleRenderVisibleParts();
     cb->UpdateScrollbars(canvasSize);
     newPageNo = CurrentPageNo();
     if (newPageNo != currPageNo) {
