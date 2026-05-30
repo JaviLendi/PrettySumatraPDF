@@ -19,10 +19,8 @@
       try{
         const active = document.activeElement;
         const editable = isEditableElement(active);
-        if ((e.ctrlKey||e.metaKey) && !editable) {
-          const k = (e.key||'').toLowerCase();
-          if (blockedKeys.has(k)) return; // neutralize webview handlers
-        }
+        const k = (e.key||'').toLowerCase();
+        if (blockedKeys.has(k)) return; // neutralize webview handlers
         if (!editable && e.key === 'F3') return;
       } catch (_) {}
       return listener.apply(this, arguments);
@@ -189,7 +187,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 .toolbar-items.toolbar-items--compact .btn {
   height: 26px;
-  padding: 0 10px;
+  padding: 0 5px;
 }
 
 .toolbar-items.toolbar-items--compact .btn--icon {
@@ -260,6 +258,65 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 .theme-control-group {
   border-radius: 20px; gap: 6px;
+}
+
+.theme-control-group .custom-dropdown {
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.theme-control-group .dropdown-trigger,
+.theme-control-group .invert-doc-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.theme-control-group .dropdown-trigger {
+  justify-content: center;
+  transition: width 0.18s ease, padding 0.18s ease, margin 0.18s ease, border-width 0.18s ease, opacity 0.18s ease, transform 0.18s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.theme-control-group .dropdown-trigger .dropdown-value {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform-origin: center;
+}
+
+.theme-control-group .custom-dropdown.open .dropdown-trigger .dropdown-value {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.theme-control-group .custom-dropdown.open .dropdown-trigger {
+  background: transparent;
+  box-shadow: none;
+  width: 0;
+  padding: 0;
+  margin: 0;
+  border-width: 0;
+  opacity: 0;
+  transform: scale(0.7);
+  pointer-events: none;
+}
+
+.theme-control-group .dropdown-menu li {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin-left: 0;
+  justify-content: center;
+}
+
+.theme-control-group .dropdown-menu li .material-symbols-rounded,
+.theme-control-group .dropdown-menu li .win11-icon {
+  margin: 0;
 }
 
 #openButton {
@@ -589,11 +646,11 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .dropdown-trigger {
-  display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; padding: 0 10px; height: 32px; cursor: pointer; border-radius: 6px; transition: var(--transition);
+  display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-main); font-family: inherit; font-size: 0.85rem; font-weight: 600; padding: 0 12px; height: 32px; cursor: pointer; border-radius: 999px; transition: var(--transition);
 }
 
 .dropdown-menu {
-  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.03); padding: 6px; min-width: 140px; list-style: none; margin: 0; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; pointer-events: none;
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-10px); background: var(--bg-input); border-radius: 18px; box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.03); padding: 6px; min-width: 140px; list-style: none; margin: 0; opacity: 0; visibility: hidden; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 100; pointer-events: none;
 }
 
 .custom-dropdown.open .dropdown-menu {
@@ -613,7 +670,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .dropdown-menu li {
-  display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.85rem; color: var(--text-main); border-radius: 6px; cursor: pointer; transition: background 0.1s ease; position: relative;
+  display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 12px; font-size: 0.85rem; color: var(--text-main); border-radius: 999px; cursor: pointer; transition: background 0.1s ease; position: relative;
 }
 
 .dropdown-menu li:hover {
@@ -949,7 +1006,6 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 .custom-dropdown.open .dropdown-menu {
   box-shadow: 0 4px 10px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
-  border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .custom-dropdown.open .dropdown-menu {
@@ -969,7 +1025,6 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 .custom-dropdown.open {
   background: var(--bg-hover);
-  box-shadow: 0 0 0 1px var(--border-color), var(--shadow-sm);
 }
 
 .custom-dropdown .dropdown-trigger {
@@ -1011,10 +1066,10 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .custom-dropdown .dropdown-menu li {
-  padding: 3px 5px;
+  padding: 5px 6px;
   margin-left: 2px;
   white-space: nowrap;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   background: transparent;
   color: var(--text-muted);
   flex-shrink: 0;
@@ -1331,7 +1386,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
    ========================================================================== */
 
 .btn--icon {
-  width: 32px;
+  width: 28px;
   padding: 0;
   font-size: 1rem;
 }
@@ -1503,12 +1558,17 @@ body[data-page="home"] [data-name] {
 <button aria-label="Print document" class="btn btn--icon" data-exec="print" id="printButton" title="Print document" type="button"><span class="material-symbols-rounded">print</span></button>
 </div>
 <div class="theme-control-group" data-name="Theme" id="grp-theme">
-<div class="modern-theme-switch" data-state="auto" id="themeSwitch">
-<div class="mts-slider"></div>
-<button aria-label="Set theme to light" class="btn btn--icon mts-btn" data-val="light" title="Set theme to light"><span class="material-symbols-rounded">light_mode</span></button>
-<button aria-label="Set theme to dark" class="btn btn--icon mts-btn" data-val="dark" title="Set theme to dark"><span class="material-symbols-rounded">dark_mode</span></button>
-<button aria-label="Set theme to follow system" class="btn btn--icon mts-btn" data-val="auto" title="Set theme to follow system"><div class="win11-icon"><i></i><i></i><i></i><i></i></div></button>
+<div class="custom-dropdown theme-dropdown" data-state="auto" id="themeDropdown" title="Change theme">
+<button aria-expanded="false" aria-label="Theme options" class="btn dropdown-trigger" title="Theme options" type="button">
+<span class="dropdown-value"><span class="material-symbols-rounded">light_mode</span></span>
+</button>
+<ul class="dropdown-menu">
+<li class="selected" data-value="light" title="Light" aria-label="Light"><span class="material-symbols-rounded">light_mode</span></li>
+<li data-value="dark" title="Dark" aria-label="Dark"><span class="material-symbols-rounded">dark_mode</span></li>
+<li data-value="auto" title="System" aria-label="System"><div class="win11-icon"><i></i><i></i><i></i><i></i></div></li>
+</ul>
 </div>
+<div class="divider"></div>
 <button aria-label="Invert document colors" class="btn btn--icon invert-doc-btn" data-exec="toggleDocumentInvert" id="documentInvertToggle" title="Invert document colors" type="button"><span class="material-symbols-rounded">invert_colors</span></button>
 </div>
 </div>
@@ -1532,7 +1592,7 @@ const zoomDropdown=document.getElementById('zoomDropdown');
 const viewModeDropdown=document.getElementById('viewModeDropdown');
 const continuousToggle=document.getElementById('continuousToggle');
 const documentInvertToggle=document.getElementById('documentInvertToggle');
-const themeSwitch=document.getElementById('themeSwitch');
+const themeDropdown=document.getElementById('themeDropdown');
 let currentPage=1; let totalPages=1; let lastAppDark=false; let lastWindowsDark=false; let lastFollowWindows=false; let lastDocInverted=false;
 
 // ensure toggles expose aria-pressed consistent with class
@@ -1613,6 +1673,29 @@ function setZoomState(z) {
   }
 }
 window.hybridToolbarSetZoomState = setZoomState;
+
+function setThemeState(themeValue) {
+  if (!themeDropdown) return;
+  const menu = themeDropdown.querySelector('.dropdown-menu');
+  if (!menu) return;
+  const normalized = String(themeValue || 'auto').toLowerCase();
+  const options = Array.from(menu.querySelectorAll('li'));
+  const match = options.find(li => String(li.dataset.value) === normalized) || options[0];
+  options.forEach(li => {
+    const value = String(li.dataset.value || '');
+    const selected = value === normalized || (value === 'invert' && lastDocInverted);
+    li.classList.toggle('selected', selected);
+  });
+  const display = themeDropdown.querySelector('.dropdown-value');
+  if (display && match) {
+    display.innerHTML = '';
+    const icon = match.querySelector('.material-symbols-rounded, .win11-icon');
+    if (icon) display.appendChild(icon.cloneNode(true));
+    else display.textContent = match.textContent.trim();
+  }
+  themeDropdown.dataset.state = match?.dataset.value || 'auto';
+}
+window.hybridToolbarSetThemeState = setThemeState;
 
 function hybridToolbarBatchUpdate(state = {}) {
   if (!state || typeof state !== 'object') return;
@@ -1759,14 +1842,10 @@ function hybridToolbarApplyTheme(p={}) {
   root.style.setProperty('--shadow-md', `0 2px 4px ${rgbaFromHex(shadow, shadowAlpha + 0.08) || 'rgba(0,0,0,0.16)'}`);
   const aD=!!p.appDark; root.dataset.theme=aD?'dark':'light';
   lastFollowWindows = !!p.followWindows; lastAppDark = aD; lastWindowsDark = !!p.windowsDark;
-  if(themeSwitch) themeSwitch.setAttribute('data-state', lastFollowWindows ? 'auto' : (aD ? 'dark' : 'light'));
+  lastDocInverted = !!p.docInverted;
+  setThemeState(lastFollowWindows ? 'auto' : (aD ? 'dark' : 'light'));
   // keep document invert toggle in sync (use centralized setter)
   if (typeof setToggleStateByExec === 'function') setToggleStateByExec('toggleDocumentInvert', !!p.docInverted);
-  // ensure theme buttons reflect state visually and via aria
-  try {
-    const stateVal = lastFollowWindows ? 'auto' : (lastAppDark ? 'dark' : 'light');
-    themeSwitch.querySelectorAll('.mts-btn').forEach(btn => { const active = btn.dataset.val === stateVal; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', String(active)); });
-  } catch(e) {}
 }
 window.hybridToolbarApplyTheme=hybridToolbarApplyTheme; if(window.__hybridToolbarThemePayload) hybridToolbarApplyTheme(window.__hybridToolbarThemePayload);
 
@@ -1984,26 +2063,51 @@ window.hybridToolbarFocusSearch = function() {
   setTimeout(() => { focusToolbarSearch(); }, 0);
 };
 
-if(themeSwitch) {
-  themeSwitch.querySelectorAll('.mts-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(isToolbarUnlocked) return;
-      const val = btn.dataset.val;
-      if (val === 'auto') {
-        if (!lastFollowWindows) {
-          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } }));
-        }
-        // Ensure document invert matches Windows theme deterministically
-        if (lastWindowsDark) {
-          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' } }));
-        } else {
-          if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' } }));
-        }
-      }
-      else if (val === 'light') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } })); } if (lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' } })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' } })); }
-      else if (val === 'dark') { if (lastFollowWindows) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } })); } if (!lastAppDark) { if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' } })); } if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' } })); }
-    });
+if(themeDropdown) {
+  const trigger = themeDropdown.querySelector('.dropdown-trigger');
+  const menu = themeDropdown.querySelector('.dropdown-menu');
+  trigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.custom-dropdown.open').forEach(d => { if (d !== themeDropdown) d.classList.remove('open'); d.classList.remove('dropup','inline'); d.querySelector('.dropdown-menu')?.classList.remove('clamped-left','clamped-right'); });
+    const willOpen = !themeDropdown.classList.contains('open');
+    themeDropdown.classList.toggle('open', willOpen);
+    setDropdownInline(themeDropdown, willOpen);
+    trigger.setAttribute('aria-expanded', String(willOpen));
   });
+  Array.from(menu.querySelectorAll('li')).forEach(li => li.addEventListener('click', () => {
+    if (isToolbarUnlocked) return;
+    const val = String(li.dataset.value || 'auto');
+    if (val === 'auto') {
+      if (!lastFollowWindows) {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } }));
+      }
+      if (lastWindowsDark) {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' } }));
+      } else {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' } }));
+      }
+    } else if (val === 'light') {
+      if (lastFollowWindows) {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } }));
+      }
+      if (lastAppDark) {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' } }));
+      }
+      if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOff' } }));
+    } else if (val === 'dark') {
+      if (lastFollowWindows) {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleThemeFollowWindows' } }));
+      }
+      if (!lastAppDark) {
+        if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'toggleTheme' } }));
+      }
+      if (window.external && typeof window.external.invoke === 'function') window.external.invoke(JSON.stringify({ type: 'command', name: 'execCommand', payload: { command: 'setDocumentInvertOn' } }));
+    }
+    setThemeState(lastFollowWindows ? 'auto' : (lastAppDark ? 'dark' : 'light'));
+    themeDropdown.classList.remove('open');
+    setDropdownInline(themeDropdown, false);
+    trigger.setAttribute('aria-expanded', 'false');
+  }));
 }
 
 /* =================== CUSTOMIZATION =================== */
