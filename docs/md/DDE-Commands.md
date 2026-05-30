@@ -14,7 +14,7 @@ Multiple DDE commands: `[Command1(parameter1, parameter2, ..., )][Command2(...)]
 
 You can either use windows api by sending DDE commands to server `SUMATRA` and topic `control`. See [this code](https://github.com/sumatrapdfreader/sumatrapdf/blob/master/src/utils/WinUtil.cpp#L2437) for example of sending DDE command.
 
-Or you can use `-dde` command-line argument to `SumatraPDF.exe` e.g. `SumatraPDF.exe -dde "[SetView(\"c:\\file.pdf\",\"continuous\",-3)]"`.
+Or you can use `-dde` command-line argument to `PrettySumatraPDF.exe` e.g. `PrettySumatraPDF.exe -dde "[SetView(\"c:\\file.pdf\",\"continuous\",-3)]"`.
 
 Notice escaping of DDE command string: `"` and `\` with `\`.
 
