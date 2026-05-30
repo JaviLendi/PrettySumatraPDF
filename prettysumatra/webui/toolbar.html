@@ -147,7 +147,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .brand {
-  display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-right: 8px; cursor: default;
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-right: 0px; cursor: default;
 }
 
 .brand-icon {
@@ -175,7 +175,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 }
 
 .toolbar-items.toolbar-items--compact {
-  gap: 6px;
+  gap: 2px;
 }
 
 .toolbar-items.toolbar-items--compact .control-group,
@@ -187,7 +187,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 .toolbar-items.toolbar-items--compact .btn {
   height: 26px;
-  padding: 0 5px;
+  padding: 0 4px;
 }
 
 .toolbar-items.toolbar-items--compact .btn--icon {
@@ -555,7 +555,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 @media (max-width: 650px) {
   .modern-theme-switch {
-    display: none !important; /* Si quieres seguir ocultándolo en móvil como en el original */
+    display: none !important; 
   }
 }
 
@@ -902,16 +902,27 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
 @media (max-width: 650px) {
   .toolbar-container {
-    padding: 4px; height: 44px; gap: 4px;
+    padding: 1px; height: 44px; gap: 4px;
   }
 
   .toolbar-items {
     gap: 2px;
-    padding: 0 28px;
+    padding: 0 2px;
+    margin-left: -8px;
   }
 
   .control-group, .modern-pagination-group {
     height: 32px; padding: 1px 2px; border-radius: 6px;
+  }
+
+  .modern-pagination-group {
+    gap: 1px;
+    width: auto;
+  }
+
+  .toolbar-items.toolbar-items--compact button#pagePrevButton,
+  .toolbar-items.toolbar-items--compact button#pageNextButton {
+    width: 8px !important;
   }
 
   .modern-pagination-group .page-input {
@@ -931,7 +942,7 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
   }
 
   .grp-zoom, .grp-view {
-    height: 28px;
+    height: 32px;
   }
 
   .btn {
@@ -960,6 +971,11 @@ input, select, label, .control-group, .modern-pagination-group, .search-wrapper,
 
   .mts-slider {
     width: 22px; height: 18px;
+  }
+
+  .grp-zoom.compact .btn--icon, .grp-view.compact .btn--icon {
+  width: 28px;
+  height: 26px;
   }
 
 }
@@ -2164,20 +2180,34 @@ function applySmartToolbarCompaction() {
     return;
   }
 
+  function clearAutoCompactState() {
+    if (lastCompactState) {
+      toolbarItemsContainer.classList.remove('toolbar-items--compact');
+      toolbarItemsContainer.querySelectorAll('.compact').forEach(el => el.classList.remove('compact'));
+      lastCompactState = false;
+    }
+    if (lastAutoHidden.size) {
+      lastAutoHidden.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('auto-hidden');
+      });
+      lastAutoHidden.clear();
+    }
+  }
+
+  // Measure against the full toolbar so growth can actually release compact mode.
+  clearAutoCompactState();
+
   // Compute desired compact state with hysteresis to avoid oscillation near threshold
   const overflowNow = toolbarItemsContainer.scrollWidth > toolbarItemsContainer.clientWidth + 2;
   const hasSpareRoom = toolbarItemsContainer.scrollWidth < toolbarItemsContainer.clientWidth - 40;
-  const needsCompact = lastCompactState ? !hasSpareRoom : overflowNow;
+  const needsCompact = overflowNow && !hasSpareRoom;
 
   // Apply or remove compact mode only if it changed
-  if (needsCompact && !lastCompactState) {
+  if (needsCompact) {
     toolbarItemsContainer.classList.add('toolbar-items--compact');
     toolbarItemsContainer.querySelectorAll('.control-group, .modern-pagination-group, .theme-control-group, .search-wrapper').forEach(el => el.classList.add('compact'));
     lastCompactState = true;
-  } else if (!needsCompact && lastCompactState) {
-    toolbarItemsContainer.classList.remove('toolbar-items--compact');
-    toolbarItemsContainer.querySelectorAll('.compact').forEach(el => el.classList.remove('compact'));
-    lastCompactState = false;
   }
 
   // After compacting, if still overflowing, pick auto-hide candidates
