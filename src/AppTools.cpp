@@ -516,11 +516,13 @@ void EnsureAreaVisibility(Rect& r) {
         r.dy = work.dy;
     }
 
-    // check whether the lower half of the window's title bar is
-    // inside a visible working area
-    int captionDy = GetSystemMetrics(SM_CYCAPTION);
-    Rect halfCaption(r.x, r.y + captionDy / 2, r.dx, captionDy / 2);
-    if (halfCaption.Intersect(work).IsEmpty()) {
+    // Keep the full title bar and enough width visible so an old monitor
+    // position cannot leave the window almost entirely off-screen.
+    int captionDy = std::max(GetSystemMetrics(SM_CYCAPTION), 1);
+    Rect caption(r.x, r.y, r.dx, captionDy);
+    Rect visibleCaption = caption.Intersect(work);
+    int minVisibleCaptionDx = std::min(r.dx, 120);
+    if (visibleCaption.dx < minVisibleCaptionDx || visibleCaption.dy < captionDy) {
         r = Rect(work.TL(), r.Size());
     }
 }

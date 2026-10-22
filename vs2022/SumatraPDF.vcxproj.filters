@@ -252,6 +252,9 @@
     <ClInclude Include="..\src\SearchAndDDE.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\SearchResults.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\Selection.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -567,6 +570,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\SearchAndDDE.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\SearchResults.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\Selection.cpp">

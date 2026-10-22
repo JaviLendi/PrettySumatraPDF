@@ -2141,8 +2141,11 @@ MainWindow* CreateAndShowMainWindow(SessionData* data, bool showWin) {
 
     if (data) {
         windowState = data->windowState;
-        Rect rect = ShiftRectToWorkArea(data->windowPos);
-        MoveWindow(win->hwndFrame, rect);
+        if (!data->windowPos.IsEmpty()) {
+            Rect rect = data->windowPos;
+            EnsureAreaVisibility(rect);
+            MoveWindow(win->hwndFrame, rect);
+        }
         // TODO: also restore data->sidebarDx
     }
 

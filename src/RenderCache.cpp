@@ -504,6 +504,9 @@ bool RenderCache::ReduceTileSize() {
 }
 
 void RenderCache::RequestRendering(DisplayModel* dm, int pageNo) {
+    if (!dm || !dm->ValidPageNo(pageNo)) {
+        return;
+    }
     TilePosition tile(GetTileRes(dm, pageNo), 0, 0);
     // only honor the request if there's a good chance that the
     // rendered tile will actually be used
@@ -525,7 +528,7 @@ void RenderCache::RequestRendering(DisplayModel* dm, int pageNo, TilePosition ti
     // logvf("RenderCache::RequestRendering: pageNo %d\n", pageNo);
     ScopedCritSec scope(&requestAccess);
     ReportIf(!dm);
-    if (!dm || dm->pauseRendering) {
+    if (!dm || dm->pauseRendering || !dm->ValidPageNo(pageNo)) {
         return;
     }
 
@@ -601,7 +604,7 @@ bool RenderCache::Render(DisplayModel* dm, int pageNo, int rotation, float zoom,
                          const Func1<PageRenderRequest*>& renderFinishedCb) {
     logvf("RenderCache::Render: pageNo %d\n", pageNo);
     ReportIf(!dm);
-    if (!dm || dm->pauseRendering) {
+    if (!dm || dm->pauseRendering || !dm->ValidPageNo(pageNo)) {
         return false;
     }
     ReportIf(!renderFinishedCb.IsValid());
