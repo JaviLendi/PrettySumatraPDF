@@ -6,7 +6,7 @@ const clangFormatRelPath = String.raw`VC\Tools\Llvm\bin\clang-format.exe`;
 const clangTidyRelPath = String.raw`VC\Tools\Llvm\bin\clang-tidy.exe`;
 const llvmPdbutilRelPath = String.raw`VC\Tools\Llvm\bin\llvm-pdbutil.exe`;
 
-const vsEditions = ["Community", "Professional", "Enterprise"];
+const vsEditions = ["Community", "Professional", "Enterprise", "BuildTools"];
 
 export interface VisualStudioInfo {
   vsRoot: string;
@@ -62,12 +62,16 @@ function findVsRootVer(ver: string): string {
   }
 
   // try known Program Files locations
-  const programFiles = process.env["ProgramFiles"] ?? String.raw`C:\Program Files`;
-  const vsBase = join(programFiles, "Microsoft Visual Studio", ver);
-  for (const edition of vsEditions) {
-    const vsRoot = join(vsBase, edition);
-    if (existsSync(join(vsRoot, msBuildRelPath))) {
-      return vsRoot;
+  const pf = process.env["ProgramFiles"] ?? String.raw`C:\Program Files`;
+  const pf86 = process.env["ProgramFiles(x86)"] ?? String.raw`C:\Program Files (x86)`;
+  
+  for (const root of [pf, pf86]) {
+    const vsBase = join(root, "Microsoft Visual Studio", ver);
+    for (const edition of vsEditions) {
+      const vsRoot = join(vsBase, edition);
+      if (existsSync(join(vsRoot, msBuildRelPath))) {
+        return vsRoot;
+      }
     }
   }
   return "";
@@ -120,15 +124,20 @@ export function detectVisualStudio2026(): VisualStudioInfo {
 }
 
 export function detectVisualStudio(): VisualStudioInfo {
-  let res = detectVisualStudioVer("2022");
-  if (res) return res;
-  if (!res) {
-    res = detectVisualStudioVer("18");
+  // Prioritize VS 2026 (v18) as requested
+  for (const ver of ["18", "2022", "2019", "2017"]) {
+    const res = detectVisualStudioVer(ver);
+    if (res) return res;
   }
-  if (!res) {
-    throw new Error(`couldn't find vs 2026 or vs 2022`);
+  throw new Error(`couldn't find a suitable Visual Studio or Build Tools installation (checked 18, 2022, 2019, 2017)`);
+}
+
+export function findSolutionPath(): string {
+  const vs2026 = String.raw`vs2026\SumatraPDF.sln`;
+  if (existsSync(vs2026)) {
+    return vs2026;
   }
-  return res;
+  return String.raw`vs2022\SumatraPDF.sln`;
 }
 
 export async function runLogged(cmd: string, args: string[], cwd?: string): Promise<void> {

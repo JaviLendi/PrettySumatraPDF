@@ -275,6 +275,27 @@ COLORREF PrettyAccentColor() {
     return ThemeAccentColor();
 }
 
+// Annotation panel colors
+COLORREF AnnotationPanelTextColor() {
+    return ThemeWindowTextColor();
+}
+
+COLORREF AnnotationPanelLabelColor() {
+    return ThemeWindowTextColor();
+}
+
+COLORREF AnnotationPanelMutedTextColor() {
+    return ThemeWindowTextDisabledColor();
+}
+
+COLORREF AnnotationPanelBackgroundColor() {
+    return ThemeWindowControlBackgroundColor();
+}
+
+COLORREF AnnotationPanelSectionHeaderColor() {
+    return ThemeAccentColor();
+}
+
 void FreeThemes() {
     delete gThemes; // no need to free members, they are owned by gParsedThemes
     gThemes = nullptr;
@@ -532,9 +553,9 @@ COLORREF ThemeWindowTextDisabledColor() {
     // is visible but clearly muted on both light and dark themes
     COLORREF txt = ThemeWindowTextColor();
     COLORREF bg = ThemeMainWindowBackgroundColor();
-    u8 r = (u8)((GetRValue(txt) + GetRValue(bg)) / 2);
-    u8 g = (u8)((GetGValue(txt) + GetGValue(bg)) / 2);
-    u8 b = (u8)((GetBValue(txt) + GetBValue(bg)) / 2);
+    u8 r = (u8)((GetRValue(txt) + GetRValue(bg)) / 5);
+    u8 g = (u8)((GetGValue(txt) + GetGValue(bg)) / 5);
+    u8 b = (u8)((GetBValue(txt) + GetBValue(bg)) / 5);
     return RGB(r, g, b);
 }
 

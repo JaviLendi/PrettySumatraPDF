@@ -33,6 +33,14 @@ COLORREF PrettySurfaceAltColor();
 COLORREF PrettyBorderColor();
 COLORREF PrettyAccentColor();
 COLORREF AccentColor(COLORREF col, int light, int dark = 0);
+
+// Annotation panel theme colors
+COLORREF AnnotationPanelTextColor();
+COLORREF AnnotationPanelLabelColor();
+COLORREF AnnotationPanelMutedTextColor();
+COLORREF AnnotationPanelBackgroundColor();
+COLORREF AnnotationPanelSectionHeaderColor();
+
 void FreeThemes();
 bool UseDarkModeLib();
 

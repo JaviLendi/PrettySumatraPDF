@@ -1193,6 +1193,12 @@ cd ../out/rel64_prefast_asan &amp; ..\..\bin\MakeLZSA.exe InstallerData.dat libm
     <ClCompile Include="..\ext\darkmodelib\src\DmlibSubclassControl.cpp" />
     <ClCompile Include="..\ext\darkmodelib\src\DmlibSubclassWindow.cpp" />
     <ClCompile Include="..\ext\darkmodelib\src\DmlibWinApi.cpp" />
+    <ClCompile Include="..\ext\mujs\regexp.c">
+      <DisableSpecificWarnings>4310;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="..\ext\mujs\utf.c">
+      <DisableSpecificWarnings>4310;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="..\ext\synctex\synctex_parser.c" />
     <ClCompile Include="..\ext\synctex\synctex_parser_utils.c" />
     <ClCompile Include="..\src\Accelerators.cpp" />
@@ -1260,6 +1266,7 @@ cd ../out/rel64_prefast_asan &amp; ..\..\bin\MakeLZSA.exe InstallerData.dat libm
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ReleaseAnalyze x64_asan|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\Screenshot.cpp" />
+    <ClCompile Include="..\src\SearchResults.cpp" />
     <ClCompile Include="..\src\SearchAndDDE.cpp" />
     <ClCompile Include="..\src\Selection.cpp" />
     <ClCompile Include="..\src\SimpleBrowserWindow.cpp" />

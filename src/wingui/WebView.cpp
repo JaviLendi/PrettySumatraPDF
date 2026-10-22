@@ -193,7 +193,10 @@ class webview2_accel_handler : public ICoreWebView2AcceleratorKeyPressedEventHan
         if (ctrl && (vk == 'O' || vk == 'P' || vk == 'S' || vk == 'F' || vk == 'G' || vk == 'C' || vk == 'V' ||
                      vk == 'W' || vk == 'N' || vk == 'K'))
             isAppAccel = true;
+
         if (vk == VK_F3) isAppAccel = true;
+
+        if (vk == VK_ESCAPE && !ctrl && !shift) isAppAccel = true;
 
         if (isAppAccel) {
             // Prevent WebView from handling it
@@ -663,7 +666,7 @@ void WebviewWnd::OnBrowserMessage(const char* msg) {
     (*fn->first)(seq, args, fn->second);
     */
     using prettysumatra::bridge::DispatchResult;
-    DispatchResult res = prettysumatra::bridge::DispatchShellMessage(msg);
+    DispatchResult res = prettysumatra::bridge::DispatchShellMessage(msg, hwnd);
     if (res == DispatchResult::Disabled) {
         log(msg);
     }

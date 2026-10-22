@@ -4,6 +4,7 @@
 #define regcompx js_regcompx
 #define regfreex js_regfreex
 #define regcomp js_regcomp
+#define regexecAt js_regexecAt
 #define regexec js_regexec
 #define regfree js_regfree
 
@@ -16,6 +17,7 @@ void regfreex(void *(*alloc)(void *ctx, void *p, int n), void *ctx,
 	Reprog *prog);
 
 Reprog *regcomp(const char *pattern, int cflags, const char **errorp);
+int regexecAt(Reprog *prog, const char *string, const char *start, Resub *sub, int eflags);
 int regexec(Reprog *prog, const char *string, Resub *sub, int eflags);
 void regfree(Reprog *prog);
 

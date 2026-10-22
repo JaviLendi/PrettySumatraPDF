@@ -90,6 +90,8 @@ void CreateHomePageWebView(MainWindow* win) {
         return;
     }
 
+    win->homePageWebViewCreateTick = GetTickCount64();
+    win->homePageWebViewReady = false;
     win->homePageWebView = new WebviewWnd();
     {
         win->homePageWebView->dataDir = str::Dup(GetPathInAppDataDirTemp("webViewData"));
@@ -119,6 +121,7 @@ void CreateHomePageWebView(MainWindow* win) {
             return TRUE;
         },
         0);
+    win->homePageWebView->SetControllerVisible(false);
 
     // Buscar home.html en varias rutas
     char exePath[MAX_PATH];
@@ -140,10 +143,7 @@ void CreateHomePageWebView(MainWindow* win) {
         win->homePageWebView->SetHtml(msg.c_str());
     }
 
-    // --- FIX FLASH: restaurar visibilidad ahora que el HTML ya está cargado ---
-    SetWindowLongPtrW(hwndWV, GWL_STYLE, style | WS_VISIBLE);
-    SetWindowPos(hwndWV, nullptr, rcClient.x, rcClient.y, rcClient.dx, rcClient.dy,
-                 SWP_NOZORDER | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+    SetWindowPos(hwndWV, nullptr, rcClient.x, rcClient.y, rcClient.dx, rcClient.dy, SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
 void HomePageShow(MainWindow* win) {
@@ -152,6 +152,9 @@ void HomePageShow(MainWindow* win) {
     }
     if (!win->homePageWebView) {
         CreateHomePageWebView(win);
+        return;
+    }
+    if (!win->homePageWebViewReady) {
         return;
     }
 

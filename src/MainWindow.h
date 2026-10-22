@@ -8,12 +8,19 @@ struct StressTest;
 class SumatraUIAutomationProvider;
 struct FrameRateWnd;
 struct LabelWithCloseWnd;
+struct Static;
 struct WebviewWnd;
 struct Splitter;
 struct Tooltip;
 struct TreeView;
 struct TabsCtrl;
 struct TocTree;
+struct EditAnnotationsWindow;
+
+enum class SidebarContentMode {
+    Favorites = 0,
+    SearchResults
+};
 
 // factor by how large the non-maximized caption should be in relation to the tabbar
 #define kCaptionTabBarDyFactor 1.0f
@@ -152,7 +159,18 @@ struct MainWindow {
     HWND hwndFavBox = nullptr;
     LabelWithCloseWnd* favLabelWithClose = nullptr;
     TreeView* favTreeView = nullptr;
+
+    // state related to search results sidebar
+    HWND hwndSearchResultsBox = nullptr;
+    LabelWithCloseWnd* searchResultsLabelWithClose = nullptr;
+    TreeView* searchResultsTreeView = nullptr;
+
     Vec<FileState*> expandedFavorites;
+    EditAnnotationsWindow* editAnnotsWindow = nullptr;
+    SidebarContentMode sidebarContentMode = SidebarContentMode::Favorites;
+    AutoFreeStr sidebarSearchQuery;
+    Vec<int> sidebarSearchPageHits;
+    int sidebarSearchTotalHits = 0;
 
     // vertical splitter for resizing left side panel
     Splitter* sidebarSplitter = nullptr;
@@ -223,6 +241,11 @@ struct MainWindow {
 
     WebviewWnd* homePageWebView = nullptr;
     WebviewWnd* hybridToolbar = nullptr;
+    Static* hybridToolbarLoading = nullptr;
+    ULONGLONG homePageWebViewCreateTick = 0;
+    ULONGLONG hybridToolbarCreateTick = 0;
+    bool homePageWebViewReady = false;
+    bool hybridToolbarReady = false;
 
     // home page search filter
     HWND hwndHomeSearch = nullptr;
@@ -258,6 +281,7 @@ struct MainWindow {
         bool tocVisible = false;
         bool showFavorites = false;
         bool showMenuBarRebar = false;
+        bool editAnnotsVisible = false;
     };
     LayoutState lastLayoutState;
 
@@ -282,6 +306,8 @@ struct MainWindow {
     HANDLE findThread = nullptr;
     bool findCancelled = false;
     bool findMatchCase = false;
+    bool findWholeWord = false;
+    bool findUseRegex = false;
 
     ILinkHandler* linkHandler = nullptr;
     IPageElement* linkOnLastButtonDown = nullptr;

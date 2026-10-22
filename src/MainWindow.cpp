@@ -51,6 +51,7 @@ static void SafeDeleteTabsCtrl(TabsCtrl* tabsCtrl) {
 }
 #include "Theme.h"
 #include "Canvas.h"
+#include "EditAnnotations.h"
 
 #include "utils/Log.h"
 
@@ -117,6 +118,7 @@ MainWindow::~MainWindow() {
 
     UnsubclassToc(this);
 
+    delete hybridToolbarLoading;
     OverlayScrollbarDestroy(overlayScrollV);
     OverlayScrollbarDestroy(overlayScrollH);
 
@@ -164,11 +166,16 @@ MainWindow::~MainWindow() {
         delete favTreeView->treeModel;
         delete favTreeView;
     }
+    if (searchResultsTreeView) {
+        delete searchResultsTreeView->treeModel;
+        delete searchResultsTreeView;
+    }
 
     delete sidebarSplitter;
     delete favSplitter;
     delete tocLabelWithClose;
     delete favLabelWithClose;
+    delete searchResultsLabelWithClose;
 }
 
 void ClearMouseState(MainWindow* win) {
@@ -735,6 +742,20 @@ void UpdateControlsColors(MainWindow* win) {
         favTreeView->SetColors(txtCol, bgCol);
         win->favLabelWithClose->SetColors(txtCol, bgCol);
         win->favSplitter->SetColors(kColorNoChange, splitterCol);
+    }
+
+    for (WindowTab* tab : win->Tabs()) {
+        if (tab && tab->editAnnotsWindow) {
+            UpdateEditAnnotationsColors(tab->editAnnotsWindow);
+        }
+    }
+
+    auto searchResultsTreeView = win->searchResultsTreeView;
+    if (searchResultsTreeView) {
+        searchResultsTreeView->SetColors(txtCol, bgCol);
+        if (win->searchResultsLabelWithClose) {
+            win->searchResultsLabelWithClose->SetColors(txtCol, bgCol);
+        }
     }
 }
 

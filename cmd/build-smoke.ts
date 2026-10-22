@@ -1,5 +1,5 @@
 import { join, resolve } from "node:path";
-import { detectVisualStudio2026, runLogged } from "./util";
+import { detectVisualStudio, runLogged, findSolutionPath } from "./util";
 import { clearDirPreserveSettings } from "./clean";
 
 function removeReleaseBuilds(): void {
@@ -16,8 +16,8 @@ async function main() {
   console.log("smoke build");
   removeReleaseBuilds();
 
-  const { msbuildPath } = detectVisualStudio2026();
-  const sln = String.raw`vs2022\SumatraPDF.sln`;
+  const { msbuildPath } = detectVisualStudio();
+  const sln = findSolutionPath();
   const t = `/t:SumatraPDF-dll:Rebuild;test_util:Rebuild`;
   const p = `/p:Configuration=Release;Platform=x64`;
   await runLogged(msbuildPath, [sln, t, p, `/m`]);

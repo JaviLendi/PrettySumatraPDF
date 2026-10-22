@@ -1224,7 +1224,8 @@ static int match(Reinst *pc, const char *sp, const char *bol, int flags, Resub *
 	}
 }
 
-int regexec(Reprog *prog, const char *sp, Resub *sub, int eflags)
+int regexecAt(Reprog *prog, const char *string, const char *start, Resub *sub,
+              int eflags)
 {
 	Resub scratch;
 	int i;
@@ -1236,7 +1237,12 @@ int regexec(Reprog *prog, const char *sp, Resub *sub, int eflags)
 	for (i = 0; i < REG_MAXSUB; ++i)
 		sub->sub[i].sp = sub->sub[i].ep = NULL;
 
-	return match(prog->start, sp, sp, prog->flags | eflags, sub, 0);
+	return match(prog->start, start, string, prog->flags | eflags, sub, 0);
+}
+
+int regexec(Reprog *prog, const char *sp, Resub *sub, int eflags)
+{
+	return regexecAt(prog, sp, sp, sub, eflags);
 }
 
 #ifdef TEST

@@ -22,6 +22,7 @@ void SyncHomePageTheme(HWND hwndFrame);
 void InitHybridToolbarText(HWND hwndFrame);
 void SyncHybridToolbarText(HWND hwndFrame);
 void SyncHybridToolbarSearchText(HWND hwndFrame, const char* text);
+void SyncHybridToolbarSearchOptions(HWND hwndFrame, bool matchCase, bool wholeWord, bool useRegex);
 void FocusHybridToolbarSearch(HWND hwndFrame);
 void SyncHybridToolbarButtonVisibility(HWND hwndFrame, bool showButtons);
 void SyncHybridToolbarEditableAllowed(HWND hwndFrame, bool allowed);
@@ -29,7 +30,7 @@ void SyncHybridToolbarPageState(HWND hwndFrame, int currentPage, int totalPages)
 void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent);
 void SyncHybridToolbarAnnotationAvailability(HWND hwndFrame);
 
-DispatchResult DispatchShellMessage(const char* msg);
+DispatchResult DispatchShellMessage(const char* msg, HWND sourceWindow = nullptr);
 
 // Get the pending highlight color from bridge (used for passing color from webui)
 const char* GetPendingHighlightColor();

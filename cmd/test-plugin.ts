@@ -1,6 +1,6 @@
 import { join, resolve } from "node:path";
 import { copyFileSync, unlinkSync } from "node:fs";
-import { detectVisualStudio2026, runLogged } from "./util";
+import { detectVisualStudio, runLogged, findSolutionPath } from "./util";
 
 function tryDelete(path: string) {
   try {
@@ -19,8 +19,8 @@ async function main() {
   const timeStart = performance.now();
   console.log("debug build");
 
-  const { msbuildPath } = detectVisualStudio2026();
-  const sln = String.raw`vs2022\SumatraPDF.sln`;
+  const { msbuildPath } = detectVisualStudio();
+  const sln = findSolutionPath();
   const t = `/t:SumatraPDF`;
   const p = `/p:Configuration=Debug;Platform=x64`;
   await runLogged(msbuildPath, [sln, t, p, `/m`]);

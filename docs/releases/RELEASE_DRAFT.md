@@ -1,18 +1,18 @@
-# PrettySumatraPDF v1.0.1 — Release Draft
+# PrettySumatraPDF v1.0.2 — Release Draft
 
-Release date: 2026-05-30
+Release date: 2026-10-21
 
 ## Summary
 
-PrettySumatraPDF v1.0.1 is the first official release of the PrettySumatra redesign. It preserves the full functionality of the original SumatraPDF reader while introducing a modern native UI and optional hybrid WebView2 components.
+PrettySumatraPDF v1.0.2 builds on the initial PrettySumatra redesign with more responsive multi-document startup, expanded search, and refinements to the hybrid toolbar and annotation workflow.
 
 ## Highlights
 
 - Modern native Win32 toolbar and visual refresh
-- All original formats supported (PDF, EPUB, MOBI, CBZ, CBR, FB2, CHM, XPS, DjVu)
-- Preserved command behavior, shortcuts, and features
-- Improved toolbar density and Windows 11–inspired visuals
-- Hybrid WebView2 integration for advanced UI components
+- Regular-expression, whole-word, and case-sensitive search, with a page-results sidebar
+- More responsive opening of multiple documents from startup and Explorer
+- Per-tool annotation colors and improved toolbar search, theme, and accessibility behavior
+- Native window appears before the hybrid WebView2 toolbar finishes initializing
 
 ## Download
 
@@ -20,7 +20,7 @@ PrettySumatraPDF v1.0.1 is the first official release of the PrettySumatra redes
 
 ## Notes
 
-See [RELEASE_NOTES_v1.0.1.md](RELEASE_NOTES_v1.0.1.md) for full details.
+See [RELEASE_NOTES_v1.0.2.md](RELEASE_NOTES_v1.0.2.md) for full details.
 
 ---
 

@@ -737,6 +737,9 @@ float DisplayModel::GetZoomReal(int pageNo) const {
     DisplayMode mode = GetDisplayMode();
     if (IsContinuous(mode)) {
         PageInfo* pageInfo = GetPageInfo(pageNo);
+        if (!pageInfo) {
+            return zoomReal;
+        }
         return pageInfo->zoomReal;
     }
     if (IsSingle(mode)) {
