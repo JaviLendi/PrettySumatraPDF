@@ -2760,6 +2760,8 @@ void LoadModelIntoTab(WindowTab* tab) {
     for (WindowTab* t : win->Tabs()) {
         SetEditAnnotationsWindowVisible(t, t == tab);
     }
+    win->lastLayoutState = {};
+    RelayoutWindow(win);
 
     if (tab->IsAboutTab()) {
         HomePageShow(win);
