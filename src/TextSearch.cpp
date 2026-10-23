@@ -47,6 +47,9 @@ void TextSearch::Clear() {
         regexProg = nullptr;
     }
     regexValid = false;
+    lastMatchStart = -1;
+    lastMatchEnd = -1;
+    pageSearchDone = false;
     Reset();
 }
 
@@ -110,7 +113,7 @@ void TextSearch::SetText(const WCHAR* text) {
     if (str::Len(this->findText) >= INT_MAX) {
         this->findText[(unsigned)INT_MAX - 1] = '\0';
     }
-    if (str::EndsWith(this->findText, L" ")) {
+    if (!useRegex && str::EndsWith(this->findText, L" ")) {
         this->findText[str::Len(this->findText) - 1] = '\0';
     }
 
@@ -161,11 +164,15 @@ void TextSearch::SetDirection(TextSearch::Direction direction) {
     }
     forward = fwd;
     if (findText) {
-        int n = (int)str::Len(findText);
-        if (fwd) {
-            findIndex += n;
+        if (useRegex && lastMatchStart >= 0 && lastMatchEnd >= 0) {
+            findIndex = fwd ? lastMatchEnd : lastMatchStart;
         } else {
-            findIndex -= n;
+            int n = (int)str::Len(findText);
+            if (fwd) {
+                findIndex += n;
+            } else {
+                findIndex -= n;
+            }
         }
     }
 }
@@ -290,10 +297,14 @@ bool TextSearch::FindTextInPageRegex(int pageNo, TextSearch::PageAndOffset* fina
                 StartAt(pageNo, off);
                 SelectUpTo(pageNo, foundEndWideOffset);
                 findIndex = foundEndWideOffset;
-                if (finalGlyph) {
-                    *finalGlyph = {pageNo, foundEndWideOffset};
+                if (this->result.len > 0) {
+                    lastMatchStart = foundWideOffset;
+                    lastMatchEnd = foundEndWideOffset;
+                    if (finalGlyph) {
+                        *finalGlyph = {pageNo, foundEndWideOffset};
+                    }
+                    return true;
                 }
-                return true;
             }
             cur = NextUtf8Char(found);
         }
@@ -327,10 +338,12 @@ bool TextSearch::FindTextInPageRegex(int pageNo, TextSearch::PageAndOffset* fina
         int foundEndWideOffset = Utf8ByteOffsetToWideIndex(pageUtf8, foundEndByteOffset);
         const WCHAR* foundWide = pageStart + foundWideOffset;
         const WCHAR* foundWideEnd = pageStart + foundEndWideOffset;
-        if (!wholeWord || MatchWholeWord(foundWide, foundWideEnd, pageStart, pageEnd)) {
+        if (foundEnd <= searchLimit && (!wholeWord || MatchWholeWord(foundWide, foundWideEnd, pageStart, pageEnd))) {
             best = {foundWideOffset, foundEndWideOffset};
+            cur = foundEnd;
+        } else {
+            cur = NextUtf8Char(found);
         }
-        cur = NextUtf8Char(found);
     }
 
     if (best.page < 0) {
@@ -343,8 +356,13 @@ bool TextSearch::FindTextInPageRegex(int pageNo, TextSearch::PageAndOffset* fina
     StartAt(pageNo, off);
     SelectUpTo(pageNo, endOff);
     findIndex = off;
-    if (finalGlyph) {
-        *finalGlyph = {pageNo, endOff};
+    if (result.len > 0) {
+        lastMatchStart = off;
+        lastMatchEnd = endOff;
+        if (finalGlyph) {
+            *finalGlyph = {pageNo, endOff};
+        }
+        return true;
     }
     return true;
 }
@@ -453,7 +471,12 @@ bool TextSearch::FindTextInPage(int pageNo, TextSearch::PageAndOffset* finalGlyp
     // a findText = engine->GetTextForPage(findPage) here.
     findPage = pageNo;
     if (useRegex) {
-        return FindTextInPageRegex(pageNo, finalGlyph);
+        while (FindTextInPageRegex(pageNo, finalGlyph)) {
+            if (result.len > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     const WCHAR* found;
@@ -574,6 +597,45 @@ TextSel* TextSearch::FindNext() {
         return &result;
     }
     return nullptr;
+}
+
+TextSel* TextSearch::FindFirstOnPage(int pageNo, const WCHAR* text) {
+    if (pageNo < 1 || pageNo > nPages || str::IsEmpty(text)) {
+        return nullptr;
+    }
+    SetText(text);
+    if (!findText) {
+        return nullptr;
+    }
+    forward = true;
+    pageSearchDone = false;
+    Reset();
+    pageText = engine->GetTextForPage(pageNo, &findIndex);
+    if (!pageText) {
+        return nullptr;
+    }
+    findPage = pageNo;
+    findIndex = 0;
+    PageAndOffset glyph{};
+    if (!FindTextInPage(pageNo, &glyph) || result.len == 0) {
+        return nullptr;
+    }
+    pageSearchDone = glyph.page != pageNo;
+    findIndex = glyph.offset;
+    return &result;
+}
+
+TextSel* TextSearch::FindNextOnPage(int pageNo) {
+    if (pageSearchDone || pageNo != findPage || !pageText) {
+        return nullptr;
+    }
+    PageAndOffset glyph{};
+    if (!FindTextInPage(pageNo, &glyph) || result.len == 0) {
+        return nullptr;
+    }
+    pageSearchDone = glyph.page != pageNo;
+    findIndex = glyph.offset;
+    return &result;
 }
 
 bool TextSearch::CountMatchesPerPage(const WCHAR* text, Vec<int>& pageMatchCounts, int* totalMatches) {

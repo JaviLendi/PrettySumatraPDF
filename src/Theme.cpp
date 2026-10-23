@@ -553,9 +553,9 @@ COLORREF ThemeWindowTextDisabledColor() {
     // is visible but clearly muted on both light and dark themes
     COLORREF txt = ThemeWindowTextColor();
     COLORREF bg = ThemeMainWindowBackgroundColor();
-    u8 r = (u8)((GetRValue(txt) + GetRValue(bg)) / 5);
-    u8 g = (u8)((GetGValue(txt) + GetGValue(bg)) / 5);
-    u8 b = (u8)((GetBValue(txt) + GetBValue(bg)) / 5);
+    u8 r = (u8)((GetRValue(txt) + GetRValue(bg)) / 2);
+    u8 g = (u8)((GetGValue(txt) + GetGValue(bg)) / 2);
+    u8 b = (u8)((GetBValue(txt) + GetBValue(bg)) / 2);
     return RGB(r, g, b);
 }
 

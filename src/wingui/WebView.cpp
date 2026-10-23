@@ -196,8 +196,6 @@ class webview2_accel_handler : public ICoreWebView2AcceleratorKeyPressedEventHan
 
         if (vk == VK_F3) isAppAccel = true;
 
-        if (vk == VK_ESCAPE && !ctrl && !shift) isAppAccel = true;
-
         if (isAppAccel) {
             // Prevent WebView from handling it
             args->put_Handled(TRUE);

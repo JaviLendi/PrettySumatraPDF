@@ -19,6 +19,8 @@ struct TextSearch : public TextSelection {
     void SetLastResult(TextSelection* sel);
     TextSel* FindFirst(int page, const WCHAR* text);
     TextSel* FindNext();
+    TextSel* FindFirstOnPage(int page, const WCHAR* text);
+    TextSel* FindNextOnPage(int page);
     bool CountMatchesPerPage(const WCHAR* text, Vec<int>& pageMatchCounts, int* totalMatches);
 
     int GetCurrentPageNo() const;
@@ -47,6 +49,9 @@ struct TextSearch : public TextSelection {
     bool matchWordEnd = false;
     bool regexValid = false;
     Reprog* regexProg = nullptr;
+    int lastMatchStart = -1;
+    int lastMatchEnd = -1;
+    bool pageSearchDone = false;
 
     void SetText(const WCHAR* text);
     bool FindTextInPage(int pageNo, PageAndOffset* finalGlyph);

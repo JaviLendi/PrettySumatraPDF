@@ -105,6 +105,9 @@ struct EditAnnotationsWindow : Wnd {
     LabelWithCloseWnd* headerLabel = nullptr;
     Vec<Static*> sectionLabels;
     HBRUSH brSurface = nullptr;
+    int scrollPos = 0;
+    int contentHeight = 0;
+    int viewportHeight = 0;
 
     ListBox* listBox = nullptr;
     Static* staticRect = nullptr;
@@ -377,6 +380,48 @@ EditAnnotationsWindow::~EditAnnotationsWindow() {
 }
 
 LRESULT EditAnnotationsWindow::WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    if (msg == WM_VSCROLL) {
+        SCROLLINFO si = {sizeof(si), SIF_ALL};
+        GetScrollInfo(hwnd, SB_VERT, &si);
+        int newPos = scrollPos;
+        switch (LOWORD(wparam)) {
+            case SB_LINEUP:
+                newPos -= DpiScale(hwnd, 24);
+                break;
+            case SB_LINEDOWN:
+                newPos += DpiScale(hwnd, 24);
+                break;
+            case SB_PAGEUP:
+                newPos -= viewportHeight;
+                break;
+            case SB_PAGEDOWN:
+                newPos += viewportHeight;
+                break;
+            case SB_THUMBPOSITION:
+            case SB_THUMBTRACK:
+                newPos = si.nTrackPos;
+                break;
+            case SB_TOP:
+                newPos = 0;
+                break;
+            case SB_BOTTOM:
+                newPos = std::max(0, contentHeight - viewportHeight);
+                break;
+            default:
+                return 0;
+        }
+        newPos = limitValue(newPos, 0, std::max(0, contentHeight - viewportHeight));
+        if (newPos != scrollPos) {
+            int delta = scrollPos - newPos;
+            scrollPos = newPos;
+            si.fMask = SIF_POS;
+            si.nPos = scrollPos;
+            SetScrollInfo(hwnd, SB_VERT, &si, TRUE);
+            ScrollWindowEx(hwnd, 0, delta, nullptr, nullptr, nullptr, nullptr,
+                           SW_SCROLLCHILDREN | SW_INVALIDATE | SW_ERASE);
+        }
+        return 0;
+    }
     if (msg == WM_ERASEBKGND) {
         HDC hdc = (HDC)wparam;
         RECT rc;
@@ -576,7 +621,7 @@ static void ButtonSaveToCurrentPDFHandler(EditAnnotationsWindow* ew) {
 
 constexpr int kMaxControls = 18;
 
-static void AdvanceFocus(EditAnnotationsWindow* ew, bool forward) {
+static bool AdvanceFocus(EditAnnotationsWindow* ew, bool forward) {
     HWND controls[kMaxControls];
     int n = 0;
     auto addIfVisible = [&](HWND h) {
@@ -606,7 +651,7 @@ static void AdvanceFocus(EditAnnotationsWindow* ew, bool forward) {
     addIfVisible(ew->buttonSaveToNewFile->hwnd);
 
     if (n == 0) {
-        return;
+        return false;
     }
 
     HWND focused = ::GetFocus();
@@ -618,16 +663,28 @@ static void AdvanceFocus(EditAnnotationsWindow* ew, bool forward) {
         }
     }
 
-    int next;
-    if (forward) {
-        next = (idx + 1) % n;
-    } else {
-        next = (idx <= 0) ? n - 1 : idx - 1;
+    if (idx < 0) {
+        HwndSetFocus(controls[forward ? 0 : n - 1]);
+        return true;
     }
+    if ((forward && idx == n - 1) || (!forward && idx == 0)) {
+        return false;
+    }
+    int next = idx + (forward ? 1 : -1);
     HwndSetFocus(controls[next]);
+    return true;
 }
 
 bool EditAnnotationsWindow::PreTranslateMessage(MSG& msg) {
+    if (msg.message == WM_MOUSEWHEEL && (msg.hwnd == hwnd || IsChild(hwnd, msg.hwnd))) {
+        int delta = GET_WHEEL_DELTA_WPARAM(msg.wParam);
+        int lines = std::max(1, abs(delta) / WHEEL_DELTA) * 3;
+        WPARAM command = MAKEWPARAM(delta > 0 ? SB_LINEUP : SB_LINEDOWN, 0);
+        for (int i = 0; i < lines; i++) {
+            SendMessageW(hwnd, WM_VSCROLL, command, 0);
+        }
+        return true;
+    }
     if (msg.message == WM_KEYDOWN) {
         int key = (int)msg.wParam;
         if (key == VK_ESCAPE) {
@@ -636,7 +693,9 @@ bool EditAnnotationsWindow::PreTranslateMessage(MSG& msg) {
         }
         if (key == VK_TAB) {
             bool forward = !IsShiftPressed();
-            AdvanceFocus(this, forward);
+            if (!AdvanceFocus(this, forward)) {
+                ::AdvanceFocus(tab->win);
+            }
             return true;
         }
         if (key == VK_DELETE) {
@@ -1085,6 +1144,29 @@ static void OpacityChanging(EditAnnotationsWindow* ew, Trackbar::PositionChangin
     MainWindowRerender(ew->tab->win);
 }
 
+static void LayoutAnnotationsPanel(EditAnnotationsWindow* ew) {
+    Rect client = ClientRect(ew->hwnd);
+    if (client.dx <= 0 || client.dy <= 0 || !ew->mainLayout) {
+        return;
+    }
+
+    ew->viewportHeight = client.dy;
+    ew->contentHeight = std::max(client.dy, ew->mainLayout->MinIntrinsicHeight(client.dx));
+    ew->scrollPos = limitValue(ew->scrollPos, 0, ew->contentHeight - client.dy);
+    LayoutToSize(ew->mainLayout, {client.dx, ew->contentHeight});
+
+    SCROLLINFO si = {sizeof(si), SIF_RANGE | SIF_PAGE | SIF_POS};
+    si.nMin = 0;
+    si.nMax = ew->contentHeight - 1;
+    si.nPage = (UINT)client.dy;
+    si.nPos = ew->scrollPos;
+    SetScrollInfo(ew->hwnd, SB_VERT, &si, TRUE);
+    if (ew->scrollPos > 0) {
+        ScrollWindowEx(ew->hwnd, 0, -ew->scrollPos, nullptr, nullptr, nullptr, nullptr,
+                       SW_SCROLLCHILDREN | SW_INVALIDATE | SW_ERASE);
+    }
+}
+
 // TODO: maybe use ew->tab->selectedAnnotation instead of annot
 static void UpdateUIForSelectedAnnotation(EditAnnotationsWindow* ew, Annotation* annot, bool isNew = false,
                                           EditAnnotFocus focus = EditAnnotFocus::Default) {
@@ -1135,11 +1217,8 @@ static void UpdateUIForSelectedAnnotation(EditAnnotationsWindow* ew, Annotation*
         }
     }
 
-    // TODO: get from client size
-    auto currBounds = ew->mainLayout->lastBounds;
-    int dx = currBounds.dx;
-    int dy = currBounds.dy;
-    LayoutToSize(ew->mainLayout, {dx, dy});
+    ew->scrollPos = 0;
+    LayoutAnnotationsPanel(ew);
 
     if (!annot) {
         return;
@@ -1342,7 +1421,7 @@ void EditAnnotationsWindow::OnSize(UINT msg, UINT, SIZE size) {
         // avoid un-necessary layout
         return;
     }
-    LayoutToSize(mainLayout, {dx, dy});
+    LayoutAnnotationsPanel(this);
 }
 
 static Static* CreateStatic(HWND parent, const char* s = nullptr) {
@@ -1363,6 +1442,20 @@ static void CreateMainLayout(EditAnnotationsWindow* ew) {
     vbox->alignMain = MainAxisAlign::MainStart;
     vbox->alignCross = CrossAxisAlign::Stretch;
     HFONT fnt = GetAppFont();
+
+    {
+        auto* header = new LabelWithCloseWnd();
+        LabelWithCloseWnd::CreateArgs args;
+        args.parent = parent;
+        args.font = GetDefaultGuiFont(true, false);
+        args.cmdId = 1;
+        args.isRtl = IsUIRtl();
+        header->Create(args);
+        header->SetLabel(_TRA("Annotations"));
+        header->SetPaddingXY(4, 4);
+        ew->headerLabel = header;
+        vbox->AddChild(header);
+    }
 
     {
         ListBox::CreateArgs args;
@@ -1811,7 +1904,7 @@ void ShowEditAnnotationsWindow(WindowTab* tab, Annotation* annot, EditAnnotFocus
 
     args.title = str::JoinTemp(_TRA("Annotations"), ": ", tab->GetTabTitle());
     args.parent = tab->win->hwndFrame;
-    args.style = WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS;
+    args.style = WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VSCROLL;
     args.visible = false;
     args.font = GetAppFont();
 

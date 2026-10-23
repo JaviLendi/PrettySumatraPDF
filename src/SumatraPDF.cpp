@@ -229,6 +229,21 @@ static void CreateHybridToolbar(MainWindow* win) {
     prettysumatra::bridge::SyncHybridToolbarText(win->hwndFrame);
 }
 
+static void RelayoutFrame(MainWindow* win, bool updateToolbars = true, int sidebarDx = -1);
+
+static void EnsureHybridToolbarInitialized(MainWindow* win) {
+    if (win->hybridToolbar) {
+        return;
+    }
+    CreateHybridToolbar(win);
+    if (!win->hybridToolbar) {
+        return;
+    }
+    win->lastLayoutState = {};
+    RelayoutFrame(win);
+    UpdateWindow(win->hwndFrame);
+}
+
 // used to show it in debug, but is not very useful,
 // so always disable
 bool gShowFrameRate = false;
@@ -267,7 +282,6 @@ bool gSupressNextAltMenuTrigger = false;
 bool gCrashOnOpen = false;
 bool gRedrawLog = false;
 
-static void RelayoutFrame(MainWindow* win, bool updateToolbars = true, int sidebarDx = -1);
 static void UpdateOverlayScrollbarPositions(MainWindow* win);
 
 // Forward declarations for sidebar helper functions
@@ -1688,6 +1702,7 @@ static bool ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
         }
         if (args->showWin) {
             ShowWindow(win->hwndFrame, showType);
+            EnsureHybridToolbarInitialized(win);
         }
 
 #if 0
@@ -2100,11 +2115,7 @@ void ShowMainWindow(MainWindow* win, int windowState) {
     // until they become visible. Force one relayout before the first paint.
     RelayoutFrame(win);
     UpdateWindow(win->hwndFrame);
-    CreateHybridToolbar(win);
-    if (win->hybridToolbar) {
-        RelayoutFrame(win);
-        UpdateWindow(win->hwndFrame);
-    }
+    EnsureHybridToolbarInitialized(win);
     UpdateToolbarFindText(win);
     HwndEnsureVisible(win->hwndFrame);
 
@@ -2969,6 +2980,7 @@ static void CloseDocumentInCurrentTab(MainWindow* win, bool keepUIEnabled, bool 
     }
     ClearTocBox(win);
     AbortFinding(win, true);
+    ClearSearchResultsSidebar(win);
 
     win->linkOnLastButtonDown = nullptr;
     win->annotationUnderCursor = nullptr;

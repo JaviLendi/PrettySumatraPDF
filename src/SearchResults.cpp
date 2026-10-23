@@ -43,6 +43,9 @@ static void SearchResultsTreeSelectionChanged(TreeView::SelectionChangedEvent* e
         return;
     }
     GoToSearchResultForTreeItem(win, ev->selectedItem);
+    if (ev->byKeyboard) {
+        HwndSetFocus(ev->treeView->hwnd);
+    }
 }
 
 static void SearchResultsTreeContextMenu(ContextMenuEvent*) {}

@@ -426,8 +426,9 @@ static void FindThread(FindThreadData* ftd) {
     Vec<int> pageMatchCounts;
     int totalMatches = 0;
     bool hasSearchData = false;
-    if (!win->findCancelled && !str::IsEmpty(ftd->text.Get())) {
+    if (!win->findCancelled && ftd->wasModified && !str::IsEmpty(ftd->text.Get())) {
         TextSearch countSearch(engine);
+        countSearch.progressCb = MkFunc1<FindThreadData, ProgressUpdateData*>(UpdateSearchProgress, ftd);
         countSearch.SetMatchCase(win->findMatchCase);
         countSearch.SetWholeWord(win->findWholeWord);
         countSearch.SetUseRegex(win->findUseRegex);
@@ -536,26 +537,16 @@ bool HighlightSearchResultsOnPage(MainWindow* win, const char* text, int pageNo)
     pageSearch.SetDirection(TextSearch::Direction::Forward);
 
     Vec<SelectionOnPage>* matchesOnPage = new Vec<SelectionOnPage>();
-    TextSel* result = pageSearch.FindFirst(pageNo, needle);
+    TextSel* result = pageSearch.FindFirstOnPage(pageNo, needle);
     while (result && result->len > 0) {
-        bool foundOnTargetPage = false;
-        bool hasPastTargetPage = false;
         for (int i = 0; i < result->len; i++) {
             int p = result->pages[i];
             if (p == pageNo) {
                 RectF rect = ToRectF(result->rects[i]);
                 matchesOnPage->Append(SelectionOnPage(pageNo, &rect));
-                foundOnTargetPage = true;
-            } else if (p > pageNo) {
-                hasPastTargetPage = true;
             }
         }
-
-        if (!foundOnTargetPage || hasPastTargetPage) {
-            break;
-        }
-
-        result = pageSearch.FindNext();
+        result = pageSearch.FindNextOnPage(pageNo);
     }
 
     DeleteOldSelectionInfo(win, true);
@@ -1033,12 +1024,7 @@ static const char* HandleOpenCmd(const char* cmd, bool* ack) {
         }
         logf("HandleOpenCmd: calling LoadDocument(), activateExisting: %d, forceReuse: %d\n",
              (int)args.activateExisting, (int)args.forceReuse);
-        if (forceRefresh) {
-            win = LoadDocument(&args);
-        } else {
-            StartLoadDocument(&args);
-            win = args.win;
-        }
+        win = LoadDocument(&args);
         if (!win) {
             logf("HandleOpenCmd: LoadDocument() for '%s' failed\n", filePath.Get());
         }

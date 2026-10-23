@@ -665,6 +665,11 @@ static bool DispatchSearch(const BridgeMessage& msg) {
         return false;
     }
     if (str::IsEmptyOrWhiteSpace(msg.query)) {
+        AbortFinding(win, true);
+        HwndSetText(win->hwndFindEdit, "");
+        Edit_SetModify(win->hwndFindEdit, FALSE);
+        Edit_SetSel(win->hwndFindEdit, 0, 0);
+        ClearSearchResult(win);
         ClearSearchResultsSidebar(win);
         return true;
     }
