@@ -1151,7 +1151,7 @@ static void LayoutAnnotationsPanel(EditAnnotationsWindow* ew) {
     }
 
     ew->viewportHeight = client.dy;
-    ew->contentHeight = std::max(client.dy, ew->mainLayout->MinIntrinsicHeight(client.dx));
+    ew->contentHeight = std::max(client.dy, ew->mainLayout->Layout(ExpandHeight(client.dx)).dy);
     ew->scrollPos = limitValue(ew->scrollPos, 0, ew->contentHeight - client.dy);
     LayoutToSize(ew->mainLayout, {client.dx, ew->contentHeight});
 
