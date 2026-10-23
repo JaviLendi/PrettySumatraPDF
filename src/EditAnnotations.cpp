@@ -676,7 +676,7 @@ static bool AdvanceFocus(EditAnnotationsWindow* ew, bool forward) {
 }
 
 bool EditAnnotationsWindow::PreTranslateMessage(MSG& msg) {
-    if (msg.message == WM_MOUSEWHEEL && (msg.hwnd == hwnd || IsChild(hwnd, msg.hwnd))) {
+    if (msg.message == WM_MOUSEWHEEL && msg.hwnd == hwnd) {
         int delta = GET_WHEEL_DELTA_WPARAM(msg.wParam);
         int lines = std::max(1, abs(delta) / WHEEL_DELTA) * 3;
         WPARAM command = MAKEWPARAM(delta > 0 ? SB_LINEUP : SB_LINEDOWN, 0);
