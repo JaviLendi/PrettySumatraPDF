@@ -262,7 +262,7 @@ bool TextSearch::FindTextInPageRegex(int pageNo, TextSearch::PageAndOffset* fina
     } else if (wideSearchStart > pageLen) {
         wideSearchStart = pageLen;
     }
-    TempStr pageUtf8 = ToUtf8Temp(pageText);
+    AutoFreeStr pageUtf8(ToUtf8(pageText));
     int searchStartBytes = WideIndexToUtf8ByteOffset(pageText, wideSearchStart);
 
     if (forward) {
