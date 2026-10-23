@@ -1,29 +1,20 @@
-# PrettySumatraPDF v1.0.2 — Release Draft
+# PrettySumatraPDF v1.0.2
 
 Release date: 2026-10-21
 
-## Summary
+PrettySumatraPDF v1.0.2 adds advanced search and improves document startup, the hybrid toolbar, and annotation editing.
 
-PrettySumatraPDF v1.0.2 builds on the initial PrettySumatra redesign with more responsive multi-document startup, expanded search, and refinements to the hybrid toolbar and annotation workflow.
+## What's New
 
-## Highlights
-
-- Modern native Win32 toolbar and visual refresh
-- Regular-expression, whole-word, and case-sensitive search, with a page-results sidebar
-- More responsive opening of multiple documents from startup and Explorer
-- Per-tool annotation colors and improved toolbar search, theme, and accessibility behavior
-- Native window appears before the hybrid WebView2 toolbar finishes initializing
+- Search with regular expressions, case-sensitive matching, or whole-word matching.
+- Browse search results grouped by page, see each page's match count, and jump to highlighted matches.
+- Open multiple PDFs more responsively from startup and File Explorer.
+- Use separate colors for highlighting, underlining, and striking out text.
+- Get improved keyboard navigation, localization, theme synchronization, dropdown behavior, and accessibility in the hybrid toolbar.
+- See the native window while the WebView2 toolbar initializes.
 
 ## Download
 
-(Attach installer and archive artifacts here.)
+[Download the Windows installer](https://github.com/JaviLendi/PrettySumatraPDF/releases/download/v1.0.2/PrettySumatraPDF-Setup-1.0.2.exe).
 
-## Notes
-
-See [RELEASE_NOTES_v1.0.2.md](RELEASE_NOTES_v1.0.2.md) for full details.
-
----
-
-### How to produce the installer (developer)
-
-See [../installer/README_INSTALLER.md](../installer/README_INSTALLER.md) for build instructions.
+The installer includes the WebView home page, toolbar, styles, fonts, and icons for offline use.
