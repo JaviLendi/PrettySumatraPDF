@@ -304,6 +304,16 @@ static void MaybeStartSearch(MainWindow* win, const char* searchTerm) {
 static MainWindow* LoadOnStartup(const char* filePath, const Flags& flags, bool isFirstWin) {
     LoadArgs args(filePath, nullptr);
     args.showWin = !(flags.printDialog && flags.exitWhenDone) && !gPluginMode;
+    bool hasStartupState = flags.namedDest || flags.pageNumber > 0 || flags.startView != DisplayMode::Automatic ||
+                           flags.startZoom != kInvalidZoom || flags.startScroll.x != -1 || flags.startScroll.y != -1 ||
+                           flags.forwardSearchOrigin || flags.forwardSearchLine || flags.search || flags.enterPresentation ||
+                           flags.enterFullScreen;
+    bool canLoadAsync = SettingsUseTabs() && !flags.printDialog && !gPluginMode &&
+                        (!isFirstWin || (flags.fileNames.Size() > 1 && !hasStartupState));
+    if (canLoadAsync) {
+        StartLoadDocument(&args);
+        return args.win;
+    }
     MainWindow* win = LoadDocument(&args);
     if (!win) {
         return win;

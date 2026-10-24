@@ -1127,6 +1127,7 @@
     <ClInclude Include="..\src\Scratch.h" />
     <ClInclude Include="..\src\Screenshot.h" />
     <ClInclude Include="..\src\SearchAndDDE.h" />
+    <ClInclude Include="..\src\SearchResults.h" />
     <ClInclude Include="..\src\Selection.h" />
     <ClInclude Include="..\src\Settings.h" />
     <ClInclude Include="..\src\SimpleBrowserWindow.h" />
@@ -1148,6 +1149,8 @@
     <ClInclude Include="..\src\WindowTab.h" />
     <ClInclude Include="..\src\mui\Mui.h" />
     <ClInclude Include="..\src\mui\TextRender.h" />
+    <ClInclude Include="..\src\prettysumatra\BridgeDispatcher.h" />
+    <ClInclude Include="..\src\prettysumatra\CommandBridgeSpec.h" />
     <ClInclude Include="..\src\resource.h" />
     <ClInclude Include="..\src\testcode\test-app.h" />
     <ClInclude Include="..\src\uia\DocumentProvider.h" />
@@ -1218,7 +1221,6 @@
     <ClCompile Include="..\src\Installer.cpp" />
     <ClCompile Include="..\src\InstallerCommon.cpp" />
     <ClCompile Include="..\src\MainWindow.cpp" />
-    <ClCompile Include="..\src\prettysumatra\BridgeDispatcher.cpp" />
     <ClCompile Include="..\src\Menu.cpp" />
     <ClCompile Include="..\src\MobiDoc.cpp" />
     <ClCompile Include="..\src\Notifications.cpp" />
@@ -1244,6 +1246,7 @@
     </ClCompile>
     <ClCompile Include="..\src\Screenshot.cpp" />
     <ClCompile Include="..\src\SearchAndDDE.cpp" />
+    <ClCompile Include="..\src\SearchResults.cpp" />
     <ClCompile Include="..\src\Selection.cpp" />
     <ClCompile Include="..\src\SimpleBrowserWindow.cpp" />
     <ClCompile Include="..\src\StressTesting.cpp" />
@@ -1289,6 +1292,7 @@
     <ClCompile Include="..\src\WindowTab.cpp" />
     <ClCompile Include="..\src\mui\Mui.cpp" />
     <ClCompile Include="..\src\mui\TextRender.cpp" />
+    <ClCompile Include="..\src\prettysumatra\BridgeDispatcher.cpp" />
     <ClCompile Include="..\src\regress\Regress.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1562,6 +1566,7 @@
     <None Include="..\.github\workflows\codeql.yml" />
     <None Include="..\.github\workflows\daily.yml" />
     <None Include="..\.gitignore" />
+    <None Include="..\PRETTYSUMATRA_NOTES.md" />
     <None Include="..\SECURITY.md" />
     <None Include="..\agents.md" />
     <None Include="..\cmd\build-all.ts" />

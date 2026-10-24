@@ -63,12 +63,13 @@ bool HasWebView() {
 
 class webview2_com_handler : public ICoreWebView2CreateCoreWebView2ControllerCompletedHandler,
                              public ICoreWebView2WebMessageReceivedEventHandler,
+                             public ICoreWebView2NavigationCompletedEventHandler,
                              public ICoreWebView2PermissionRequestedEventHandler {
     using webview2_com_handler_cb_t = Func1<ICoreWebView2Controller*>;
 
   public:
-    webview2_com_handler(HWND hwnd, WebViewMsgCb& msgCb, webview2_com_handler_cb_t cb)
-        : m_window(hwnd), msgCb(msgCb), m_cb(cb) {}
+    webview2_com_handler(WebviewWnd* webviewWnd, HWND hwnd, WebViewMsgCb& msgCb, webview2_com_handler_cb_t cb)
+        : webviewWnd(webviewWnd), m_window(hwnd), msgCb(msgCb), m_cb(cb) {}
     ULONG STDMETHODCALLTYPE AddRef() { return ++m_refCount; }
 
     ULONG STDMETHODCALLTYPE Release() {
@@ -88,6 +89,8 @@ class webview2_com_handler : public ICoreWebView2CreateCoreWebView2ControllerCom
             *ppv = static_cast<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler*>(this);
         } else if (riid == __uuidof(ICoreWebView2WebMessageReceivedEventHandler)) {
             *ppv = static_cast<ICoreWebView2WebMessageReceivedEventHandler*>(this);
+        } else if (riid == __uuidof(ICoreWebView2NavigationCompletedEventHandler)) {
+            *ppv = static_cast<ICoreWebView2NavigationCompletedEventHandler*>(this);
         } else if (riid == __uuidof(ICoreWebView2PermissionRequestedEventHandler)) {
             *ppv = static_cast<ICoreWebView2PermissionRequestedEventHandler*>(this);
         } else {
@@ -114,6 +117,7 @@ class webview2_com_handler : public ICoreWebView2CreateCoreWebView2ControllerCom
             return E_FAIL;
         }
         webview->add_WebMessageReceived(this, &token);
+        webview->add_NavigationCompleted(this, &token);
         webview->add_PermissionRequested(this, &token);
         webview->Release();
 
@@ -133,6 +137,17 @@ class webview2_com_handler : public ICoreWebView2CreateCoreWebView2ControllerCom
         return S_OK;
     }
 
+    HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* /*sender*/, ICoreWebView2NavigationCompletedEventArgs* args) {
+        BOOL isSuccess = FALSE;
+        if (args) {
+            args->get_IsSuccess(&isSuccess);
+        }
+        if (webviewWnd) {
+            webviewWnd->OnNavigationCompleted(isSuccess != FALSE);
+        }
+        return S_OK;
+    }
+
     HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2* /*sender*/, ICoreWebView2PermissionRequestedEventArgs* args) {
         COREWEBVIEW2_PERMISSION_KIND kind;
         args->get_PermissionKind(&kind);
@@ -145,6 +160,7 @@ class webview2_com_handler : public ICoreWebView2CreateCoreWebView2ControllerCom
     }
 
   private:
+        WebviewWnd* webviewWnd;
     HWND m_window;
     WebViewMsgCb msgCb;
     webview2_com_handler_cb_t m_cb;
@@ -193,6 +209,7 @@ class webview2_accel_handler : public ICoreWebView2AcceleratorKeyPressedEventHan
         if (ctrl && (vk == 'O' || vk == 'P' || vk == 'S' || vk == 'F' || vk == 'G' || vk == 'C' || vk == 'V' ||
                      vk == 'W' || vk == 'N' || vk == 'K'))
             isAppAccel = true;
+
         if (vk == VK_F3) isAppAccel = true;
 
         if (isAppAccel) {
@@ -555,7 +572,7 @@ static void CreateControllerWithSharedEnvironment(WebviewWnd* self, WebViewMsgCb
         return;
     }
     auto fn = MkFunc1(ComHandlerCb, self);
-    auto* handler = new webview2_com_handler(self->hwnd, cb, fn);
+    auto* handler = new webview2_com_handler(self, self->hwnd, cb, fn);
     HRESULT hr = gSharedEnvironment->CreateCoreWebView2Controller(self->hwnd, handler);
     handler->Release();
     if (FAILED(hr)) {
@@ -663,11 +680,13 @@ void WebviewWnd::OnBrowserMessage(const char* msg) {
     (*fn->first)(seq, args, fn->second);
     */
     using prettysumatra::bridge::DispatchResult;
-    DispatchResult res = prettysumatra::bridge::DispatchShellMessage(msg);
+    DispatchResult res = prettysumatra::bridge::DispatchShellMessage(msg, hwnd);
     if (res == DispatchResult::Disabled) {
         log(msg);
     }
 }
+
+void WebviewWnd::OnNavigationCompleted(bool) {}
 
 static void OnBrowserMessageCb(WebviewWnd* self, const char* msg) {
     self->OnBrowserMessage(msg);

@@ -1,8 +1,8 @@
 import { join, resolve } from "node:path";
-import { detectVisualStudio, runLogged } from "./util";
+import { detectVisualStudio, runLogged, findSolutionPath } from "./util";
 
 const { msbuildPath } = detectVisualStudio();
-const slnPath = join("vs2022", "SumatraPDF.sln");
+const slnPath = findSolutionPath();
 await runLogged(msbuildPath, [slnPath, `/t:test_util:Rebuild`, `/p:Configuration=Release;Platform=x64`, `/m`]);
 
 const dir = join("out", "rel64");

@@ -27,6 +27,7 @@
 #include "wingui/WinGui.h"
 #include "wingui/WebView.h"
 #include "FileHistory.h"
+#include "SearchResults.h"
 
 #include "utils/JsonParser.h"
 #include "utils/Log.h"
@@ -90,6 +91,10 @@ bool LogBridgeMessages() {
 #else
     return ParseBoolEnvWithDefault("PRETTYSUMATRA_LOG_BRIDGE", true);
 #endif
+}
+
+static bool LogWebViewTimings() {
+    return ParseBoolEnvWithDefault("PRETTYSUMATRA_LOG_WEBVIEW_TIMINGS", false);
 }
 
 static bool gHybridFollowWindowsTheme = true;
@@ -167,7 +172,8 @@ static void SyncHybridToolbarState(HWND hwndFrame, int currentPage, int totalPag
     win->hybridToolbarSyncHasState = true;
 
     TempStr js = str::FormatTemp(
-        "window.hybridToolbarBatchUpdate && window.hybridToolbarBatchUpdate({page:%d,total:%d,zoom:%.4f,canAnnotate:%s});",
+        "window.hybridToolbarBatchUpdate && "
+        "window.hybridToolbarBatchUpdate({page:%d,total:%d,zoom:%.4f,canAnnotate:%s});",
         currentPage, totalPages, zoomPercent, canAnnotate ? "true" : "false");
     win->hybridToolbar->Eval(js);
 }
@@ -268,6 +274,13 @@ static TempStr HybridToolbarTextJs(HWND hwndFrame) {
         JsQuoted(_TRA("Invert document colors")));
 }
 
+static TempStr HybridToolbarSearchOptionsJs(bool matchCase, bool wholeWord, bool useRegex) {
+    return str::FormatTemp(
+        "window.hybridToolbarSetSearchOptions && "
+        "window.hybridToolbarSetSearchOptions({matchCase:%s,wholeWord:%s,useRegex:%s});",
+        matchCase ? "true" : "false", wholeWord ? "true" : "false", useRegex ? "true" : "false");
+}
+
 bool HasHybridToolbar(HWND hwndFrame) {
     MainWindow* win = FindWindowForFrame(hwndFrame);
     return win && win->hybridToolbar;
@@ -304,6 +317,15 @@ void SyncHybridToolbarSearchText(HWND hwndFrame, const char* text) {
     }
     TempStr js =
         str::FormatTemp("window.hybridToolbarSetSearchText && window.hybridToolbarSetSearchText(%s);", JsQuoted(text));
+    win->hybridToolbar->Eval(js);
+}
+
+void SyncHybridToolbarSearchOptions(HWND hwndFrame, bool matchCase, bool wholeWord, bool useRegex) {
+    MainWindow* win = FindWindowForFrame(hwndFrame);
+    if (!win || !win->hybridToolbar) {
+        return;
+    }
+    TempStr js = HybridToolbarSearchOptionsJs(matchCase, wholeWord, useRegex);
     win->hybridToolbar->Eval(js);
 }
 
@@ -411,6 +433,12 @@ struct BridgeMessage {
     bool hasPage = false;
     bool hasCmdId = false;
     bool hasValue = false;
+    bool matchCase = false;
+    bool wholeWord = false;
+    bool useRegex = false;
+    bool hasMatchCase = false;
+    bool hasWholeWord = false;
+    bool hasUseRegex = false;
 };
 
 class BridgeMessageVisitor : public json::ValueVisitor {
@@ -473,6 +501,21 @@ class BridgeMessageVisitor : public json::ValueVisitor {
             msg->color = str::DupTemp(value);
             return true;
         }
+        if (str::Eq(path, "/payload/matchCase") && type == json::Type::Bool) {
+            msg->matchCase = str::EqI(value, "true");
+            msg->hasMatchCase = true;
+            return true;
+        }
+        if (str::Eq(path, "/payload/wholeWord") && type == json::Type::Bool) {
+            msg->wholeWord = str::EqI(value, "true");
+            msg->hasWholeWord = true;
+            return true;
+        }
+        if (str::Eq(path, "/payload/useRegex") && type == json::Type::Bool) {
+            msg->useRegex = str::EqI(value, "true");
+            msg->hasUseRegex = true;
+            return true;
+        }
         return true;
     }
 
@@ -489,7 +532,17 @@ static bool ParseBridgeMessage(const char* rawMsg, BridgeMessage& out) {
     return ok && !str::IsEmpty(out.name);
 }
 
+static HWND gDispatchSourceWindow = nullptr;
+
 static MainWindow* GetTargetWindow() {
+    if (gDispatchSourceWindow) {
+        HWND sourceFrame = GetAncestor(gDispatchSourceWindow, GA_ROOT);
+        MainWindow* sourceWin = FindMainWindowByHwnd(sourceFrame);
+        if (sourceWin) {
+            return sourceWin;
+        }
+    }
+
     HWND hwnd = GetForegroundWindow();
     MainWindow* win = FindMainWindowByHwnd(hwnd);
     if (!win && gLastActiveFrameHwnd) {
@@ -608,9 +661,34 @@ static bool DispatchSetFitMode(const BridgeMessage& msg) {
 
 static bool DispatchSearch(const BridgeMessage& msg) {
     MainWindow* win = GetTargetWindow();
-    if (!win || !win->IsDocLoaded() || str::IsEmptyOrWhiteSpace(msg.query)) {
+    if (!win || !win->IsDocLoaded()) {
         return false;
     }
+    if (str::IsEmptyOrWhiteSpace(msg.query)) {
+        AbortFinding(win, true);
+        HwndSetText(win->hwndFindEdit, "");
+        Edit_SetModify(win->hwndFindEdit, FALSE);
+        Edit_SetSel(win->hwndFindEdit, 0, 0);
+        ClearSearchResult(win);
+        ClearSearchResultsSidebar(win);
+        return true;
+    }
+
+    bool searchOptionsChanged = false;
+    if (msg.hasMatchCase && win->findMatchCase != msg.matchCase) {
+        win->findMatchCase = msg.matchCase;
+        searchOptionsChanged = true;
+    }
+    if (msg.hasWholeWord && win->findWholeWord != msg.wholeWord) {
+        win->findWholeWord = msg.wholeWord;
+        searchOptionsChanged = true;
+    }
+    if (msg.hasUseRegex && win->findUseRegex != msg.useRegex) {
+        win->findUseRegex = msg.useRegex;
+        searchOptionsChanged = true;
+    }
+
+    SyncHybridToolbarSearchOptions(win->hwndFrame, win->findMatchCase, win->findWholeWord, win->findUseRegex);
 
     TextSearch::Direction dir = TextSearch::Direction::Forward;
     if (str::EqI(msg.direction, "backward") || str::EqI(msg.direction, "prev") || str::EqI(msg.direction, "previous")) {
@@ -618,13 +696,15 @@ static bool DispatchSearch(const BridgeMessage& msg) {
     }
 
     bool wasModified = true;
-    if (str::EqI(msg.action, "step") || str::EqI(msg.action, "next") || str::EqI(msg.action, "prev") ||
-        str::EqI(msg.action, "previous")) {
-        wasModified = false;
-    } else if (str::IsEmpty(msg.action)) {
-        TempStr currentFind = HwndGetTextTemp(win->hwndFindEdit);
-        if (str::Eq(msg.query, currentFind)) {
+    if (!searchOptionsChanged) {
+        if (str::EqI(msg.action, "step") || str::EqI(msg.action, "next") || str::EqI(msg.action, "prev") ||
+            str::EqI(msg.action, "previous")) {
             wasModified = false;
+        } else if (str::IsEmpty(msg.action)) {
+            TempStr currentFind = HwndGetTextTemp(win->hwndFindEdit);
+            if (str::Eq(msg.query, currentFind)) {
+                wasModified = false;
+            }
         }
     }
     HwndSetText(win->hwndFindEdit, msg.query);
@@ -780,23 +860,38 @@ static int ResolveBridgeCommandId(const char* commandName) {
     };
 
     static constexpr CommandMapEntry kCommandMap[] = {
-        {"commandPalette", CmdCommandPalette},       {"openFile", CmdOpenFile},
-        {"properties", CmdProperties},               {"find", CmdFindFirst},
-        {"newWindow", CmdNewWindow},                 {"saveAs", CmdSaveAs},
-        {"reload", CmdReloadDocument},               {"reopenLastClosed", CmdReopenLastClosedFile},
-        {"navigateBack", CmdNavigateBack},           {"navigateForward", CmdNavigateForward},
-        {"prevPage", CmdGoToPrevPage},               {"nextPage", CmdGoToNextPage},
-        {"firstPage", CmdGoToFirstPage},             {"lastPage", CmdGoToLastPage},
-        {"zoomIn", CmdZoomIn},                       {"zoomOut", CmdZoomOut},
-        {"fitWidth", CmdZoomFitWidth},               {"fitPage", CmdZoomFitPage},
-        {"actualSize", CmdZoomActualSize},           {"singlePage", CmdSinglePageView},
-        {"facing", CmdFacingView},                   {"bookView", CmdBookView},
+        {"commandPalette", CmdCommandPalette},
+        {"openFile", CmdOpenFile},
+        {"properties", CmdProperties},
+        {"find", CmdFindFirst},
+        {"newWindow", CmdNewWindow},
+        {"saveAs", CmdSaveAs},
+        {"reload", CmdReloadDocument},
+        {"reopenLastClosed", CmdReopenLastClosedFile},
+        {"navigateBack", CmdNavigateBack},
+        {"navigateForward", CmdNavigateForward},
+        {"prevPage", CmdGoToPrevPage},
+        {"nextPage", CmdGoToNextPage},
+        {"firstPage", CmdGoToFirstPage},
+        {"lastPage", CmdGoToLastPage},
+        {"zoomIn", CmdZoomIn},
+        {"zoomOut", CmdZoomOut},
+        {"fitWidth", CmdZoomFitWidth},
+        {"fitPage", CmdZoomFitPage},
+        {"actualSize", CmdZoomActualSize},
+        {"singlePage", CmdSinglePageView},
+        {"facing", CmdFacingView},
+        {"bookView", CmdBookView},
         {"showPagesContinuously", CmdToggleContinuousView},
-        {"toggleBookmarks", CmdToggleBookmarks},     {"toggleFavorites", CmdFavoriteToggle},
-        {"toggleFullscreen", CmdToggleFullscreen},   {"rotateLeft", CmdRotateLeft},
-        {"rotateRight", CmdRotateRight},             {"print", CmdPrint},
+        {"toggleBookmarks", CmdToggleBookmarks},
+        {"toggleFavorites", CmdFavoriteToggle},
+        {"toggleFullscreen", CmdToggleFullscreen},
+        {"rotateLeft", CmdRotateLeft},
+        {"rotateRight", CmdRotateRight},
+        {"print", CmdPrint},
         {"highlightSelection", CmdCreateAnnotHighlight},
-        {"addAnnotation", CmdCreateAnnotText},       {"freeDraw", CmdCreateAnnotInk},
+        {"addAnnotation", CmdCreateAnnotText},
+        {"freeDraw", CmdCreateAnnotInk},
         {"createAnnotUnderline", CmdCreateAnnotUnderline},
         {"createAnnotStrikeOut", CmdCreateAnnotStrikeOut},
     };
@@ -907,6 +1002,17 @@ static bool DispatchToolbarReady() {
     if (!win) {
         return false;
     }
+    bool wasReady = win->hybridToolbarReady;
+    win->hybridToolbarReady = true;
+    if (win->hybridToolbarLoading) {
+        ShowWindow(win->hybridToolbarLoading->hwnd, SW_HIDE);
+    }
+    if (!wasReady) {
+        if (LogWebViewTimings() && win->hybridToolbarCreateTick) {
+            logf("[PrettySumatraWebViewTiming] toolbar ready in %llu ms\n",
+                 GetTickCount64() - win->hybridToolbarCreateTick);
+        }
+    }
     win->hybridToolbarSyncCtrl = nullptr;
     win->hybridToolbarSyncHasState = false;
     SyncHybridToolbarButtonVisibility(win->hwndFrame, !win->IsCurrentTabAbout());
@@ -918,34 +1024,50 @@ static bool DispatchToolbarReady() {
     } else {
         SyncHybridToolbarState(win->hwndFrame, 1, 1, 100.0f, HybridToolbarCanAnnotate(win));
     }
+    SyncHybridToolbarSearchOptions(win->hwndFrame, win->findMatchCase, win->findWholeWord, win->findUseRegex);
+    return true;
+}
+
+static bool DispatchWebViewFontsReady(bool isHomePage) {
+    MainWindow* win = GetTargetWindow();
+    if (!win) {
+        return false;
+    }
+    if (LogWebViewTimings()) {
+        ULONGLONG createTick = isHomePage ? win->homePageWebViewCreateTick : win->hybridToolbarCreateTick;
+        if (createTick) {
+            logf("[PrettySumatraWebViewTiming] %s fonts ready in %llu ms\n", isHomePage ? "home" : "toolbar",
+                 GetTickCount64() - createTick);
+        }
+    }
     return true;
 }
 
 static void AppendJsonEscapedChar(StrBuilder& json, unsigned char c) {
     switch (c) {
-    case '"':
-        json.Append("\\\"");
-        return;
-    case '\\':
-        json.Append("\\\\");
-        return;
-    case '\b':
-        json.Append("\\b");
-        return;
-    case '\f':
-        json.Append("\\f");
-        return;
-    case '\n':
-        json.Append("\\n");
-        return;
-    case '\r':
-        json.Append("\\r");
-        return;
-    case '\t':
-        json.Append("\\t");
-        return;
-    default:
-        break;
+        case '"':
+            json.Append("\\\"");
+            return;
+        case '\\':
+            json.Append("\\\\");
+            return;
+        case '\b':
+            json.Append("\\b");
+            return;
+        case '\f':
+            json.Append("\\f");
+            return;
+        case '\n':
+            json.Append("\\n");
+            return;
+        case '\r':
+            json.Append("\\r");
+            return;
+        case '\t':
+            json.Append("\\t");
+            return;
+        default:
+            break;
     }
     if (c < 0x20) {
         static const char* kHex = "0123456789abcdef";
@@ -1050,10 +1172,14 @@ static ::TempStr SerializeRecentFilesToJson() {
 }
 
 // HomePage UI message handlers
-static bool DispatchHomePageReady() {
-    MainWindow* win = GetTargetWindow();
+bool NotifyHomePageWebViewReady(MainWindow* win) {
     if (!win || !win->homePageWebView) {
         return false;
+    }
+    bool wasReady = win->homePageWebViewReady;
+    win->homePageWebViewReady = true;
+    if (!wasReady && LogWebViewTimings() && win->homePageWebViewCreateTick) {
+        logf("[PrettySumatraWebViewTiming] home ready in %llu ms\n", GetTickCount64() - win->homePageWebViewCreateTick);
     }
 
     static u32 sCachedRecentSignature = (u32)-1;
@@ -1076,7 +1202,20 @@ static bool DispatchHomePageReady() {
         win->homePageWebView->Eval(themeJs);
     }
 
+    if (win->IsCurrentTabAbout()) {
+        Rect rc = ClientRect(win->hwndCanvas);
+        SetWindowPos(win->homePageWebView->hwnd, nullptr, rc.x, rc.y, rc.dx, rc.dy, SWP_NOZORDER | SWP_SHOWWINDOW);
+        win->homePageWebView->SetControllerVisible(true);
+        win->homePageWebView->UpdateWebviewSize();
+        SyncHybridToolbarButtonVisibility(win->hwndFrame, false);
+        SyncHybridToolbarEditableAllowed(win->hwndFrame, false);
+    }
+
     return true;
+}
+
+static bool DispatchHomePageReady() {
+    return NotifyHomePageWebViewReady(GetTargetWindow());
 }
 
 static bool DispatchOpenRecent(const BridgeMessage& msg) {
@@ -1147,6 +1286,12 @@ static bool DispatchKnownCommand(const BridgeMessage& msg) {
     if (str::Eq(msg.name, kToolbarReady)) {
         return DispatchToolbarReady();
     }
+    if (str::Eq(msg.name, "toolbarFontsReady")) {
+        return DispatchWebViewFontsReady(false);
+    }
+    if (str::Eq(msg.name, "homePageFontsReady")) {
+        return DispatchWebViewFontsReady(true);
+    }
     if (str::Eq(msg.name, "setUnderlineColor")) {
         return DispatchSetUnderlineColor(msg);
     }
@@ -1191,7 +1336,13 @@ void SyncHomePageTheme(HWND hwndFrame) {
     }
 }
 
-DispatchResult DispatchShellMessage(const char* msg) {
+DispatchResult DispatchShellMessage(const char* msg, HWND sourceWindow) {
+    HWND previousSourceWindow = gDispatchSourceWindow;
+    gDispatchSourceWindow = sourceWindow;
+    defer {
+        gDispatchSourceWindow = previousSourceWindow;
+    };
+
     if (!UseHybridShell()) {
         return DispatchResult::Disabled;
     }

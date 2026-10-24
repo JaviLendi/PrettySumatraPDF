@@ -74,6 +74,21 @@ static bool LoadWebViewHtmlFromFile(WebviewWnd* wv, const std::vector<std::strin
     return false;
 }
 
+class HomePageWebviewWnd : public WebviewWnd {
+    public:
+        explicit HomePageWebviewWnd(MainWindow* win) : win(win) {}
+
+        void OnNavigationCompleted(bool) override {
+                if (!IsMainWindowValid(win) || win->homePageWebView != this) {
+                        return;
+                }
+                prettysumatra::bridge::NotifyHomePageWebViewReady(win);
+        }
+
+    private:
+        MainWindow* win;
+};
+
 // Crea el WebView para la HomePage y carga el HTML
 void CreateHomePageWebView(MainWindow* win) {
     if (!win || !win->IsCurrentTabAbout()) {
@@ -90,7 +105,9 @@ void CreateHomePageWebView(MainWindow* win) {
         return;
     }
 
-    win->homePageWebView = new WebviewWnd();
+    win->homePageWebViewCreateTick = GetTickCount64();
+    win->homePageWebViewReady = false;
+    win->homePageWebView = new HomePageWebviewWnd(win);
     {
         win->homePageWebView->dataDir = str::Dup(GetPathInAppDataDirTemp("webViewData"));
     }
@@ -119,6 +136,7 @@ void CreateHomePageWebView(MainWindow* win) {
             return TRUE;
         },
         0);
+    win->homePageWebView->SetControllerVisible(false);
 
     // Buscar home.html en varias rutas
     char exePath[MAX_PATH];
@@ -140,10 +158,7 @@ void CreateHomePageWebView(MainWindow* win) {
         win->homePageWebView->SetHtml(msg.c_str());
     }
 
-    // --- FIX FLASH: restaurar visibilidad ahora que el HTML ya está cargado ---
-    SetWindowLongPtrW(hwndWV, GWL_STYLE, style | WS_VISIBLE);
-    SetWindowPos(hwndWV, nullptr, rcClient.x, rcClient.y, rcClient.dx, rcClient.dy,
-                 SWP_NOZORDER | SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+    SetWindowPos(hwndWV, nullptr, rcClient.x, rcClient.y, rcClient.dx, rcClient.dy, SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
 void HomePageShow(MainWindow* win) {
@@ -152,6 +167,9 @@ void HomePageShow(MainWindow* win) {
     }
     if (!win->homePageWebView) {
         CreateHomePageWebView(win);
+        return;
+    }
+    if (!win->homePageWebViewReady) {
         return;
     }
 

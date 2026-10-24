@@ -8,13 +8,14 @@ import {
   isGitClean,
   getGitSha1,
   detectVisualStudio,
+  findSolutionPath,
 } from "./util";
 
 //const { msbuildPath } = detectVisualStudio();
 //const slnPath = join("vs2022", "SumatraPDF.sln");
 
 const { msbuildPath } = detectVisualStudio();
-const slnPath = join("vs2022", "SumatraPDF.sln");
+const slnPath = findSolutionPath();
 
 const platforms = [
   { vsplatform: "ARM64", suffix: "arm64", outDir: join("out", "arm64") },

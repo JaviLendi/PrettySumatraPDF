@@ -789,6 +789,7 @@ function sumatrapdf_files()
     "RegistrySearchFilter.*",
     "RenderCache.*",
     "resource.h",
+    "SearchResults.*",
     "SearchAndDDE.*",
     "OverlayScrollbar.*",
     "Screenshot.*",

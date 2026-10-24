@@ -71,6 +71,7 @@
 #include "CrashHandler.h"
 #include "ExternalViewers.h"
 #include "Favorites.h"
+#include "SearchResults.h"
 #include "FileThumbnails.h"
 #include "Menu.h"
 #include "Print.h"
@@ -153,17 +154,14 @@ static const char* GetHybridToolbarFallbackHtml() {
 }
 
 static std::string BuildFileUrl(const std::string& filePath) {
-    std::string url = "file:///";
-    for (char ch : filePath) {
-        if (ch == '\\') {
-            url.push_back('/');
-        } else if (ch == ' ') {
-            url += "%20";
-        } else {
-            url.push_back(ch);
-        }
+    TempWStr pathW = ToWStrTemp(filePath.c_str());
+    WCHAR urlW[MAX_PATH * 12]{};
+    DWORD urlLen = (DWORD)dimof(urlW);
+    HRESULT hr = UrlCreateFromPathW(pathW, urlW, &urlLen, 0);
+    if (FAILED(hr)) {
+        return {};
     }
-    return url;
+    return ToUtf8Temp((const WCHAR*)urlW);
 }
 
 static bool LoadHybridToolbarFromFile(WebviewWnd* wv, const std::vector<std::string>& candidates) {
@@ -182,6 +180,7 @@ static void CreateHybridToolbar(MainWindow* win) {
     if (!prettysumatra::bridge::UseHybridToolbar() || win->hybridToolbar) {
         return;
     }
+    win->hybridToolbarCreateTick = GetTickCount64();
     win->hybridToolbar = new WebviewWnd();
     win->hybridToolbar->dataDir = str::Dup(GetPathInAppDataDirTemp("webViewData"));
     CreateWebViewArgs args;
@@ -192,11 +191,23 @@ static void CreateHybridToolbar(MainWindow* win) {
     if (!win->hybridToolbar->Create(args)) {
         delete win->hybridToolbar;
         win->hybridToolbar = nullptr;
-        if (win->hwndReBar) {
-            HwndSetVisibility(win->hwndReBar, false);
-        }
         return;
     }
+
+    win->hybridToolbarLoading = new Static();
+    CreateControlArgs loadingArgs;
+    loadingArgs.parent = win->hwndFrame;
+    loadingArgs.className = WC_STATICW;
+    loadingArgs.style = WS_CHILD | SS_CENTER | SS_CENTERIMAGE;
+    loadingArgs.pos = args.pos;
+    loadingArgs.text = _TRA("Loading...");
+    if (!win->hybridToolbarLoading->CreateControl(loadingArgs)) {
+        delete win->hybridToolbarLoading;
+        win->hybridToolbarLoading = nullptr;
+    } else {
+        win->hybridToolbarLoading->SetColors(ThemeWindowTextColor(), ThemeWindowControlBackgroundColor());
+    }
+
     prettysumatra::bridge::InitHybridToolbarTheme(win->hwndFrame);
     prettysumatra::bridge::InitHybridToolbarText(win->hwndFrame);
 
@@ -216,6 +227,21 @@ static void CreateHybridToolbar(MainWindow* win) {
 
     prettysumatra::bridge::SyncHybridToolbarTheme(win->hwndFrame);
     prettysumatra::bridge::SyncHybridToolbarText(win->hwndFrame);
+}
+
+static void RelayoutFrame(MainWindow* win, bool updateToolbars = true, int sidebarDx = -1);
+
+static void EnsureHybridToolbarInitialized(MainWindow* win) {
+    if (win->hybridToolbar) {
+        return;
+    }
+    CreateHybridToolbar(win);
+    if (!win->hybridToolbar) {
+        return;
+    }
+    win->lastLayoutState = {};
+    RelayoutFrame(win);
+    UpdateWindow(win->hwndFrame);
 }
 
 // used to show it in debug, but is not very useful,
@@ -256,8 +282,11 @@ bool gSupressNextAltMenuTrigger = false;
 bool gCrashOnOpen = false;
 bool gRedrawLog = false;
 
-static void RelayoutFrame(MainWindow* win, bool updateToolbars = true, int sidebarDx = -1);
 static void UpdateOverlayScrollbarPositions(MainWindow* win);
+
+// Forward declarations for sidebar helper functions
+static HWND GetSecondarySidebarBox(MainWindow* win);
+static TreeView* GetSecondarySidebarTree(MainWindow* win);
 
 static const char* HwndName(HWND hwnd) {
     WCHAR cls[64]{};
@@ -338,6 +367,16 @@ void LoadArgs::SetFilePath(const char* path) {
 
 LoadArgs* LoadArgs::Clone() {
     LoadArgs* res = new LoadArgs(fileName, win);
+    res->engine = engine;
+    res->showWin = showWin;
+    res->forceReuse = forceReuse;
+    res->noPlaceWindow = noPlaceWindow;
+    res->isNewWindow = isNewWindow;
+    res->placeWindow = placeWindow;
+    res->noSavePrefs = noSavePrefs;
+    res->lazyLoad = lazyLoad;
+    res->async = async;
+    res->activateExisting = activateExisting;
     res->tabState = this->tabState;
     return res;
 }
@@ -811,6 +850,7 @@ static void UpdateWindowRtlLayout(MainWindow* win) {
 
     if (win->tocLabelWithClose) win->tocLabelWithClose->Layout();
     if (win->favLabelWithClose) win->favLabelWithClose->Layout();
+    if (win->searchResultsLabelWithClose) win->searchResultsLabelWithClose->Layout();
 
     RelayoutNotifications(win->hwndCanvas);
 
@@ -824,7 +864,7 @@ static void UpdateWindowRtlLayout(MainWindow* win) {
             SendMessageW(win->hwndTocBox, WM_SIZE, 0, 0);
         }
         if (favVisible) {
-            SendMessageW(win->hwndFavBox, WM_SIZE, 0, 0);
+            SendMessageW(GetSecondarySidebarBox(win), WM_SIZE, 0, 0);
         }
     }
     ReCreateToolbar(win);
@@ -1672,6 +1712,7 @@ static bool ReplaceDocumentInCurrentTab(LoadArgs* args, DocController* ctrl, Fil
         }
         if (args->showWin) {
             ShowWindow(win->hwndFrame, showType);
+            EnsureHybridToolbarInitialized(win);
         }
 
 #if 0
@@ -1891,13 +1932,14 @@ static void CreateSidebar(MainWindow* win) {
     }
 
     CreateFavorites(win);
+    CreateSearchResults(win);
 
     if (win->tocVisible) {
         HwndRepaintNow(win->hwndTocBox);
     }
 
     if (gGlobalPrefs->showFavorites) {
-        HwndRepaintNow(win->hwndFavBox);
+        HwndRepaintNow(GetSecondarySidebarBox(win));
     }
 }
 
@@ -1910,7 +1952,10 @@ static void UpdateToolbarSidebarText(MainWindow* win) {
     }
 
     win->tocLabelWithClose->SetLabel(_TRA("Bookmarks"));
-    win->favLabelWithClose->SetLabel(_TRA("Favorites"));
+    win->favLabelWithClose->SetLabel(GetFavoritesSidebarTitle(win));
+    if (win->searchResultsLabelWithClose) {
+        win->searchResultsLabelWithClose->SetLabel(_TRA("Results"));
+    }
 }
 
 static void UpdateWindowFrameBorderColor(MainWindow* win);
@@ -1996,7 +2041,6 @@ static MainWindow* CreateMainWindow() {
 
     CreateTabbar(win);
     CreateToolbar(win);
-    CreateHybridToolbar(win);
     CreateSidebar(win);
     UpdateFindbox(win);
     if (CanAccessDisk() && !gPluginMode) {
@@ -2053,10 +2097,6 @@ static MainWindow* CreateMainWindow() {
         // DarkMode::setDarkTooltips(win->infotip->hwnd, (int)DarkMode::ToolTipsType::tooltip);
     }
 
-    if (prettysumatra::bridge::UseHybridToolbar() && win->hybridToolbar) {
-        HwndSetVisibility(win->hwndReBar, false);
-    }
-
     // re-enable painting now that dark mode is configured
     SendMessageW(win->hwndFrame, WM_SETREDRAW, TRUE, 0);
 
@@ -2085,6 +2125,7 @@ void ShowMainWindow(MainWindow* win, int windowState) {
     // until they become visible. Force one relayout before the first paint.
     RelayoutFrame(win);
     UpdateWindow(win->hwndFrame);
+    EnsureHybridToolbarInitialized(win);
     UpdateToolbarFindText(win);
     HwndEnsureVisible(win->hwndFrame);
 
@@ -2121,8 +2162,11 @@ MainWindow* CreateAndShowMainWindow(SessionData* data, bool showWin) {
 
     if (data) {
         windowState = data->windowState;
-        Rect rect = ShiftRectToWorkArea(data->windowPos);
-        MoveWindow(win->hwndFrame, rect);
+        if (!data->windowPos.IsEmpty()) {
+            Rect rect = data->windowPos;
+            EnsureAreaVisibility(rect);
+            MoveWindow(win->hwndFrame, rect);
+        }
         // TODO: also restore data->sidebarDx
     }
 
@@ -2175,8 +2219,8 @@ void UpdateAfterThemeChange() {
     for (auto win : gWindows) {
         DeleteObject(win->brControlBgColor);
         win->brControlBgColor = CreateSolidBrush(ThemeControlBackgroundColor());
-
         UpdateControlsColors(win);
+        RelayoutWindow(win);
         RebuildMenuBarForWindow(win);
         // TODO: probably leaking toolbar image list
         UpdateToolbarAfterThemeChange(win);
@@ -2194,6 +2238,7 @@ void UpdateAfterThemeChange() {
         // includingNonClientArea == true.
         MainWindowRerender(win, true);
         uint flags = RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN;
+        win->RedrawAll();
         RedrawWindow(win->hwndFrame, nullptr, nullptr, flags);
     }
     UpdateDocumentColors();
@@ -2531,6 +2576,9 @@ static void LoadDocumentAsyncFinish(LoadDocumentAsyncData* d) {
     }
     const char* path = args->FilePath();
     if (!args->ctrl) {
+        if (args->showWin && !IsWindowVisible(win->hwndFrame)) {
+            ShowMainWindow(win, gGlobalPrefs->windowState);
+        }
         ShowErrorLoadingNotification(win, path, args->noSavePrefs);
         // re-sync win->ctrl with current tab after ShowErrorLoadingNotification
         // which can pump messages and change tab selection
@@ -2720,6 +2768,13 @@ void LoadModelIntoTab(WindowTab* tab) {
 
     win->currentTabTemp = tab;
     win->ctrl = tab->ctrl;
+
+    // Ensure only the current tab's annotations panel is visible
+    for (WindowTab* t : win->Tabs()) {
+        SetEditAnnotationsWindowVisible(t, t == tab);
+    }
+    win->lastLayoutState = {};
+    RelayoutWindow(win);
 
     if (tab->IsAboutTab()) {
         HomePageShow(win);
@@ -2940,6 +2995,7 @@ static void CloseDocumentInCurrentTab(MainWindow* win, bool keepUIEnabled, bool 
     }
     ClearTocBox(win);
     AbortFinding(win, true);
+    ClearSearchResultsSidebar(win);
 
     win->linkOnLastButtonDown = nullptr;
     win->annotationUnderCursor = nullptr;
@@ -4278,7 +4334,7 @@ static bool IsLayoutStateEq(LayoutState* s1, LayoutState* s2) {
            s1->isFullScreen == s2->isFullScreen && s1->tabsVisible == s2->tabsVisible &&
            s1->isToolbarVisible == s2->isToolbarVisible && s1->isToolbarCompact == s2->isToolbarCompact &&
            s1->tocVisible == s2->tocVisible && s1->showFavorites == s2->showFavorites &&
-           s1->showMenuBarRebar == s2->showMenuBarRebar;
+           s1->showMenuBarRebar == s2->showMenuBarRebar && s1->editAnnotsVisible == s2->editAnnotsVisible;
 }
 
 static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
@@ -4300,6 +4356,8 @@ static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
     curState.tocVisible = win->tocVisible;
     curState.showFavorites = gGlobalPrefs->showFavorites;
     curState.showMenuBarRebar = IsShowingMenuBarRebar(win);
+    WindowTab* currentTab = win->CurrentTab();
+    curState.editAnnotsVisible = IsEditAnnotationsWindowVisible(currentTab);
 
     // skip redundant relayouts when all layout-affecting state is unchanged
     if (IsLayoutStateEq(&curState, &win->lastLayoutState) && updateToolbars && sidebarDx == -1) {
@@ -4401,19 +4459,29 @@ static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
         rc.y += menuBarDy;
         rc.dy -= menuBarDy;
     }
-    if (win->hybridToolbar && win->isToolbarVisible) {
+    bool useHybridToolbar = win->hybridToolbar && win->isToolbarVisible;
+    if (useHybridToolbar) {
         int hybridToolbarHeight = GetHybridToolbarHeight(win->hwndFrame);
         constexpr int kHybridToolbarOverlapDy = 1;
         if (updateToolbars) {
             dh.SetWindowPos(win->hybridToolbar->hwnd, nullptr, rc.x, rc.y, rc.dx, hybridToolbarHeight, SWP_NOZORDER);
             ShowWindow(win->hybridToolbar->hwnd, SW_SHOW);
+            if (win->hybridToolbarLoading) {
+                dh.SetWindowPos(win->hybridToolbarLoading->hwnd, nullptr, rc.x, rc.y, rc.dx, hybridToolbarHeight,
+                                SWP_NOZORDER);
+                ShowWindow(win->hybridToolbarLoading->hwnd, win->hybridToolbarReady ? SW_HIDE : SW_SHOW);
+            }
         }
         rc.y += hybridToolbarHeight - kHybridToolbarOverlapDy;
         rc.dy -= hybridToolbarHeight - kHybridToolbarOverlapDy;
     } else if (win->hybridToolbar && updateToolbars) {
         ShowWindow(win->hybridToolbar->hwnd, SW_HIDE);
+        if (win->hybridToolbarLoading) {
+            ShowWindow(win->hybridToolbarLoading->hwnd, SW_HIDE);
+        }
     }
-    if (win->isToolbarVisible && !win->hybridToolbar) {
+    bool showNativeToolbar = win->isToolbarVisible && !useHybridToolbar;
+    if (showNativeToolbar) {
         int integrationDy = DpiScale(win->hwndFrame, kNativeToolbarIntegrationDy);
         int rebarDy = (int)SendMessageW(win->hwndReBar, RB_GETBARHEIGHT, 0, 0);
         if (rebarDy <= 0) {
@@ -4426,11 +4494,17 @@ static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
         rc.dy -= rebarDy + integrationDy;
     }
     if (updateToolbars) {
-        bool showNativeToolbar = win->isToolbarVisible && !win->hybridToolbar;
         ShowWindow(win->hwndReBar, showNativeToolbar ? SW_SHOW : SW_HIDE);
     }
-    if (updateToolbars && win->hybridToolbar) {
+    if (updateToolbars && useHybridToolbar) {
         RedrawWindow(win->hybridToolbar->hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+    }
+
+    for (WindowTab* t : win->Tabs()) {
+        if (IsEditAnnotationsWindowVisible(t)) {
+            HWND hwndAnnot = GetEditAnnotationsWindowHwnd(t);
+            RedrawWindow(hwndAnnot, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+        }
     }
 
     // ToC and Favorites sidebars at the left
@@ -4477,15 +4551,27 @@ static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
                 toc.dy += kSplitterDy;
             }
         }
-        if (favVisible) {
-            Rect rFav(rc.x, rc.y + toc.dy, toc.dx, rc.dy - toc.dy);
+
+        // Always move both potential secondary sidebar boxes to the same rectangle
+        // to keep them synchronized and avoid hit-test artifacts from hidden windows.
+        Rect rFav(rc.x, rc.y + toc.dy, toc.dx, rc.dy - toc.dy);
+        if (win->hwndFavBox) {
             dh.MoveWindow(win->hwndFavBox, rFav);
         }
+        if (win->hwndSearchResultsBox) {
+            dh.MoveWindow(win->hwndSearchResultsBox, rFav);
+        }
+
         Rect rSplitH(rc.x + toc.dx, rc.y, kSplitterDx, rc.dy);
         dh.MoveWindow(win->sidebarSplitter->hwnd, rSplitH);
 
         rc.x += toc.dx + kSplitterDx;
         rc.dx -= toc.dx + kSplitterDx;
+    }
+
+    WindowTab* tab = currentTab;
+    if (tab && tab->editAnnotsWindow) {
+        LayoutEditAnnotationsWindow(tab, rc, &dh);
     }
 
     dh.MoveWindow(win->hwndCanvas, rc);
@@ -4503,7 +4589,7 @@ static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
         RedrawWindow(win->hwndTocBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
     }
     if (favVisible) {
-        RedrawWindow(win->hwndFavBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+        RedrawWindow(GetSecondarySidebarBox(win), nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
     }
     if (tocVisible || favVisible) {
         InvalidateRect(win->sidebarSplitter->hwnd, nullptr, TRUE);
@@ -4522,6 +4608,13 @@ static void RelayoutFrame(MainWindow* win, bool updateToolbars, int sidebarDx) {
         }
         if (win->tabsCtrl && win->tabsCtrl->IsVisible()) {
             RedrawWindow(win->tabsCtrl->hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
+        }
+    }
+
+    for (WindowTab* t : win->Tabs()) {
+        if (IsEditAnnotationsWindowVisible(t)) {
+            HWND hwndAnnot = GetEditAnnotationsWindowHwnd(t);
+            RedrawWindow(hwndAnnot, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
         }
     }
 
@@ -5201,9 +5294,10 @@ void AdvanceFocus(MainWindow* win) {
     bool hasToolbar = !win->isFullScreen && !win->presentation && gGlobalPrefs->showToolbar && win->IsDocLoaded();
     int direction = IsShiftPressed() ? -1 : 1;
 
-    const int MAX_WINDOWS = 5;
+    const int MAX_WINDOWS = 6;
     HWND tabOrder[MAX_WINDOWS] = {win->hwndFrame};
     int nWindows = 1;
+    WindowTab* tab = win->CurrentTab();
     if (hasToolbar) {
         tabOrder[nWindows++] = win->hwndPageEdit;
     }
@@ -5214,7 +5308,16 @@ void AdvanceFocus(MainWindow* win) {
         tabOrder[nWindows++] = win->tocTreeView->hwnd;
     }
     if (gGlobalPrefs->showFavorites) {
-        tabOrder[nWindows++] = win->favTreeView->hwnd;
+        TreeView* secondaryTree = GetSecondarySidebarTree(win);
+        if (secondaryTree) {
+            tabOrder[nWindows++] = secondaryTree->hwnd;
+        }
+    }
+    if (tab && tab->editAnnotsWindow) {
+        HWND annotFocus = GetEditAnnotationsFocusHwnd(tab);
+        if (annotFocus) {
+            tabOrder[nWindows++] = annotFocus;
+        }
     }
     ReportIf(nWindows > MAX_WINDOWS);
 
@@ -5353,6 +5456,23 @@ static void OnFrameKeyEsc(MainWindow* win) {
         return;
     }
     if (RemoveNotificationsForGroup(win->hwndCanvas, kNotifZoom)) {
+        return;
+    }
+    WindowTab* tab = win->CurrentTab();
+    if (tab && tab->editAnnotsWindow) {
+        CloseAndDeleteEditAnnotationsWindow(tab);
+        return;
+    }
+    // Cerrar panel de resultados de búsqueda si está activo
+    if (IsSearchResultsSidebarActive(win)) {
+        ClearSearchResultsSidebar(win);
+        SetSidebarVisibility(win, win->tocVisible, gGlobalPrefs->showFavorites);
+        return;
+    }
+    // Cerrar el panel de favoritos si está activo (y no es el de resultados)
+    if (gGlobalPrefs->showFavorites) {
+        gGlobalPrefs->showFavorites = false;
+        SetSidebarVisibility(win, win->tocVisible, false);
         return;
     }
     if (win->showSelection) {
@@ -5595,6 +5715,20 @@ static bool FrameOnSysChar(MainWindow* win, WPARAM key) {
     return false;
 }
 
+static HWND GetSecondarySidebarBox(MainWindow* win) {
+    if (IsSearchResultsSidebarActive(win)) {
+        return win->hwndSearchResultsBox;
+    }
+    return win->hwndFavBox;
+}
+
+static TreeView* GetSecondarySidebarTree(MainWindow* win) {
+    if (IsSearchResultsSidebarActive(win)) {
+        return win->searchResultsTreeView;
+    }
+    return win->favTreeView;
+}
+
 static void OnSidebarSplitterMove(Splitter::MoveEvent* ev) {
     Splitter* splitter = ev->w;
     HWND hwnd = splitter->hwnd;
@@ -5617,17 +5751,20 @@ static void OnSidebarSplitterMove(Splitter::MoveEvent* ev) {
 
     SendMessageW(win->hwndTocBox, WM_SETREDRAW, FALSE, 0);
     SendMessageW(win->hwndFavBox, WM_SETREDRAW, FALSE, 0);
+    SendMessageW(win->hwndSearchResultsBox, WM_SETREDRAW, FALSE, 0);
     bool oldSuppressFrameRedraw = win->suppressFrameRedraw;
     win->suppressFrameRedraw = true;
     RelayoutFrame(win, false, sidebarDx);
     win->suppressFrameRedraw = oldSuppressFrameRedraw;
     SendMessageW(win->hwndFavBox, WM_SETREDRAW, TRUE, 0);
+    SendMessageW(win->hwndSearchResultsBox, WM_SETREDRAW, TRUE, 0);
     SendMessageW(win->hwndTocBox, WM_SETREDRAW, TRUE, 0);
     if (win->tocVisible) {
         RedrawWindow(win->hwndTocBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
     if (gGlobalPrefs->showFavorites) {
-        RedrawWindow(win->hwndFavBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+        RedrawWindow(GetSecondarySidebarBox(win), nullptr, nullptr,
+                     RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
 }
 
@@ -5642,7 +5779,7 @@ static void OnFavSplitterMove(Splitter::MoveEvent* ev) {
     // make sure to keep this in sync with the calculations in RelayoutFrame
     Rect rFrame = ClientRect(win->hwndFrame);
     Rect rToc = ClientRect(win->hwndTocBox);
-    ReportIf(rToc.dx != ClientRect(win->hwndFavBox).dx);
+    ReportIf(rToc.dx != ClientRect(GetSecondarySidebarBox(win)).dx);
     int minDy = std::min(kTocMinDy, rToc.dy);
     int maxDy = std::max(rFrame.dy - kTocMinDy, rToc.dy);
     if (tocDy < minDy || tocDy > maxDy) {
@@ -5652,17 +5789,20 @@ static void OnFavSplitterMove(Splitter::MoveEvent* ev) {
     gGlobalPrefs->tocDy = tocDy;
     SendMessageW(win->hwndTocBox, WM_SETREDRAW, FALSE, 0);
     SendMessageW(win->hwndFavBox, WM_SETREDRAW, FALSE, 0);
+    SendMessageW(win->hwndSearchResultsBox, WM_SETREDRAW, FALSE, 0);
     bool oldSuppressFrameRedraw = win->suppressFrameRedraw;
     win->suppressFrameRedraw = true;
     RelayoutFrame(win, false, rToc.dx);
     win->suppressFrameRedraw = oldSuppressFrameRedraw;
     SendMessageW(win->hwndFavBox, WM_SETREDRAW, TRUE, 0);
+    SendMessageW(win->hwndSearchResultsBox, WM_SETREDRAW, TRUE, 0);
     SendMessageW(win->hwndTocBox, WM_SETREDRAW, TRUE, 0);
     if (win->tocVisible) {
         RedrawWindow(win->hwndTocBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
     if (gGlobalPrefs->showFavorites) {
-        RedrawWindow(win->hwndFavBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
+        RedrawWindow(GetSecondarySidebarBox(win), nullptr, nullptr,
+                     RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN | RDW_UPDATENOW);
     }
 }
 
@@ -5701,8 +5841,9 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
     // TODO: make this a per-window setting as well?
     gGlobalPrefs->showFavorites = showFavorites;
 
+    TreeView* secondaryTree = GetSecondarySidebarTree(win);
     if ((!tocVisible && HwndIsFocused(win->tocTreeView->hwnd)) ||
-        (!showFavorites && HwndIsFocused(win->favTreeView->hwnd))) {
+        (!showFavorites && secondaryTree && HwndIsFocused(secondaryTree->hwnd))) {
         HwndSetFocus(win->hwndFrame);
     }
 
@@ -5711,7 +5852,20 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
     win->sidebarSplitter->isLive = true;
 
     HwndSetVisibility(win->favSplitter->hwnd, tocVisible && showFavorites);
-    HwndSetVisibility(win->hwndFavBox, showFavorites);
+
+    // Ensure the correct secondary panel is on top before showing/hiding
+    if (showFavorites) {
+        HWND hwndShow = IsSearchResultsSidebarActive(win) ? win->hwndSearchResultsBox : win->hwndFavBox;
+        if (hwndShow) {
+            SetWindowPos(hwndShow, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+    }
+    if (tocVisible) {
+        SetWindowPos(win->hwndTocBox, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+
+    HwndSetVisibility(win->hwndFavBox, showFavorites && !IsSearchResultsSidebarActive(win));
+    HwndSetVisibility(win->hwndSearchResultsBox, showFavorites && IsSearchResultsSidebarActive(win));
     win->favSplitter->isLive = true;
 
     if (relayout) {
@@ -5720,7 +5874,7 @@ void SetSidebarVisibility(MainWindow* win, bool tocVisible, bool showFavorites, 
             RedrawWindow(win->hwndTocBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
         }
         if (showFavorites) {
-            RedrawWindow(win->hwndFavBox, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
+            RedrawWindow(GetSecondarySidebarBox(win), nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE | RDW_ALLCHILDREN);
         }
         if (tocVisible || showFavorites) {
             InvalidateRect(win->sidebarSplitter->hwnd, nullptr, TRUE);

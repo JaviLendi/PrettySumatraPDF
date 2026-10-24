@@ -29,6 +29,7 @@
 #include "Flags.h"
 #include "AppSettings.h"
 #include "Favorites.h"
+#include "SearchResults.h"
 #include "Menu.h"
 #include "SumatraDialogs.h"
 #include "Tabs.h"
@@ -634,6 +635,11 @@ static FavTreeModel* BuildFavTreeModel(MainWindow* win) {
 }
 
 void PopulateFavTreeIfNeeded(MainWindow* win) {
+    if (IsSearchResultsSidebarActive(win)) {
+        PopulateSearchResultsTreeIfNeeded(win);
+        return;
+    }
+
     TreeView* treeView = win->favTreeView;
     if (treeView->treeModel) {
         return;
@@ -643,6 +649,11 @@ void PopulateFavTreeIfNeeded(MainWindow* win) {
 }
 
 void UpdateFavoritesTree(MainWindow* win) {
+    if (IsSearchResultsSidebarActive(win)) {
+        UpdateSearchResultsTree(win);
+        return;
+    }
+
     TreeView* treeView = win->favTreeView;
     auto* prevModel = treeView->treeModel;
     TreeModel* newModel = BuildFavTreeModel(win);
@@ -656,6 +667,9 @@ void UpdateFavoritesTree(MainWindow* win) {
         show = false;
     }
     SetSidebarVisibility(win, win->tocVisible, show);
+    if (win->favLabelWithClose) {
+        win->favLabelWithClose->SetLabel(GetFavoritesSidebarTitle(win));
+    }
 }
 
 void UpdateFavoritesTreeForAllWindows() {
@@ -748,6 +762,10 @@ void DelFavorite(const char* filePath, int pageNo) {
 }
 
 void RememberFavTreeExpansionState(MainWindow* win) {
+    if (IsSearchResultsSidebarActive(win)) {
+        return;
+    }
+
     win->expandedFavorites.Reset();
     TreeView* treeView = win->favTreeView;
     TreeModel* tm = treeView ? treeView->treeModel : nullptr;
@@ -779,6 +797,10 @@ static void FavTreeItemClicked(TreeView::ClickEvent* ev) {
     if (ev->treeItem == ev->treeView->GetSelection()) {
         MainWindow* win = FindMainWindowByHwnd(ev->treeView->hwnd);
         ReportIf(!win);
+        if (IsSearchResultsSidebarActive(win)) {
+            GoToSearchResultForTreeItem(win, ev->treeItem);
+            return;
+        }
         GoToFavForTreeItem(win, ev->treeItem);
     }
 }
@@ -797,6 +819,12 @@ static void FavTreeSelectionChanged(TreeView::SelectionChangedEvent* ev) {
     if (!shouldHandle) {
         return;
     }
+
+    if (IsSearchResultsSidebarActive(win)) {
+        GoToSearchResultForTreeItem(win, ev->selectedItem);
+        return;
+    }
+
     GoToFavForTreeItem(win, ev->selectedItem);
 }
 
@@ -815,6 +843,10 @@ static MenuDef menuDefContextFav[] = {
 
 static void FavTreeContextMenu(ContextMenuEvent* ev) {
     MainWindow* win = FindMainWindowByHwnd(ev->w->hwnd);
+    if (IsSearchResultsSidebarActive(win)) {
+        return;
+    }
+
     // TreeView* treeView = (TreeView*)ev->w;
     // HWND hwnd = treeView->hwnd;
     // MainWindow* win = FindMainWindowByHwnd(hwnd);

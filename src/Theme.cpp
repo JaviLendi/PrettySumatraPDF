@@ -275,6 +275,27 @@ COLORREF PrettyAccentColor() {
     return ThemeAccentColor();
 }
 
+// Annotation panel colors
+COLORREF AnnotationPanelTextColor() {
+    return ThemeWindowTextColor();
+}
+
+COLORREF AnnotationPanelLabelColor() {
+    return ThemeWindowTextColor();
+}
+
+COLORREF AnnotationPanelMutedTextColor() {
+    return ThemeWindowTextDisabledColor();
+}
+
+COLORREF AnnotationPanelBackgroundColor() {
+    return ThemeWindowControlBackgroundColor();
+}
+
+COLORREF AnnotationPanelSectionHeaderColor() {
+    return ThemeAccentColor();
+}
+
 void FreeThemes() {
     delete gThemes; // no need to free members, they are owned by gParsedThemes
     gThemes = nullptr;

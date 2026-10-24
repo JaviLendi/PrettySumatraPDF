@@ -28,6 +28,9 @@
     <Filter Include="ext\darkmodelib\src">
       <UniqueIdentifier>{3A2F0B1B-A690-E828-2FFE-2EDB9B5E1FE8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ext\mujs">
+      <UniqueIdentifier>{046F1FD9-F03B-7AE4-1955-688C0581AF72}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ext\synctex">
       <UniqueIdentifier>{73E6124D-DF9B-8B42-6890-8519D4448246}</UniqueIdentifier>
     </Filter>
@@ -36,6 +39,9 @@
     </Filter>
     <Filter Include="src\mui">
       <UniqueIdentifier>{A71E30A9-13FE-AE44-1C16-3A1B887415A6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\prettysumatra">
+      <UniqueIdentifier>{011943FD-6D2F-4193-B6A6-CCB422FC111B}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\regress">
       <UniqueIdentifier>{F7CE8947-6384-023D-EC78-FC13582DF940}</UniqueIdentifier>
@@ -252,6 +258,9 @@
     <ClInclude Include="..\src\SearchAndDDE.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\SearchResults.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\Selection.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -314,6 +323,12 @@
     </ClInclude>
     <ClInclude Include="..\src\mui\TextRender.h">
       <Filter>src\mui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\prettysumatra\BridgeDispatcher.h">
+      <Filter>src\prettysumatra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\prettysumatra\CommandBridgeSpec.h">
+      <Filter>src\prettysumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\resource.h">
       <Filter>src</Filter>
@@ -397,6 +412,12 @@
     </ClCompile>
     <ClCompile Include="..\ext\darkmodelib\src\DmlibWinApi.cpp">
       <Filter>ext\darkmodelib\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\mujs\regexp.c">
+      <Filter>ext\mujs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\mujs\utf.c">
+      <Filter>ext\mujs</Filter>
     </ClCompile>
     <ClCompile Include="..\ext\synctex\synctex_parser.c">
       <Filter>ext\synctex</Filter>
@@ -572,6 +593,9 @@
     <ClCompile Include="..\src\SearchAndDDE.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\SearchResults.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\Selection.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -652,6 +676,9 @@
     </ClCompile>
     <ClCompile Include="..\src\mui\TextRender.cpp">
       <Filter>src\mui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\prettysumatra\BridgeDispatcher.cpp">
+      <Filter>src\prettysumatra</Filter>
     </ClCompile>
     <ClCompile Include="..\src\regress\Regress.cpp">
       <Filter>src\regress</Filter>
@@ -816,6 +843,7 @@
       <Filter>.github\workflows</Filter>
     </None>
     <None Include="..\.gitignore" />
+    <None Include="..\PRETTYSUMATRA_NOTES.md" />
     <None Include="..\SECURITY.md" />
     <None Include="..\agents.md" />
     <None Include="..\cmd\build-all.ts">

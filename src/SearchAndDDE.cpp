@@ -23,6 +23,7 @@
 #include "TextSelection.h"
 #include "TextSearch.h"
 #include "Notifications.h"
+#include "SearchResults.h"
 #include "SumatraPDF.h"
 #include "MainWindow.h"
 #include "WindowTab.h"
@@ -120,6 +121,8 @@ void FindFirst(MainWindow* win) {
         win->findMatchCase = newMatchCase;
         dm->textSearch->SetMatchCase(newMatchCase);
         SetToolbarButtonCheckedState(win, CmdFindToggleMatchCase, win->findMatchCase);
+        prettysumatra::bridge::SyncHybridToolbarSearchOptions(win->hwndFrame, win->findMatchCase, win->findWholeWord,
+                                                              win->findUseRegex);
     }
 
     FindTextOnThread(win, TextSearch::Direction::Forward, true);
@@ -150,6 +153,8 @@ void FindToggleMatchCase(MainWindow* win) {
     win->findMatchCase = !win->findMatchCase;
     win->AsFixed()->textSearch->SetMatchCase(win->findMatchCase);
     SetToolbarButtonCheckedState(win, CmdFindToggleMatchCase, win->findMatchCase);
+    prettysumatra::bridge::SyncHybridToolbarSearchOptions(win->hwndFrame, win->findMatchCase, win->findWholeWord,
+                                                          win->findUseRegex);
     Edit_SetModify(win->hwndFindEdit, TRUE);
 }
 
@@ -317,6 +322,10 @@ struct FindEndTaskData {
     TextSel* textSel = nullptr;
     bool wasModifiedCanceled = false;
     bool loopedAround = false;
+    AutoFreeStr query;
+    Vec<int> pageMatchCounts;
+    int totalMatches = 0;
+    bool hasSearchData = false;
     FindEndTaskData() = default;
     ~FindEndTaskData() {
         delete ftd;
@@ -351,6 +360,15 @@ static void FindEndTask(FindEndTaskData* d) {
         ClearSearchResult(win);
         ftd->HideUI(false, !wasModifiedCanceled);
     }
+
+    if (!win->findCancelled && d->hasSearchData) {
+        if (d->totalMatches > 0) {
+            bool autoOpen = true;
+            ShowSearchResultsSidebar(win, d->query, d->pageMatchCounts, d->totalMatches, autoOpen);
+        } else {
+            ClearSearchResultsSidebar(win);
+        }
+    }
     win->findThread = nullptr;
 }
 
@@ -370,6 +388,10 @@ static void FindThread(FindThreadData* ftd) {
     DisplayModel* dm = win->AsFixed();
     auto textSearch = dm->textSearch;
     auto ctrl = win->ctrl;
+
+    textSearch->SetMatchCase(win->findMatchCase);
+    textSearch->SetWholeWord(win->findWholeWord);
+    textSearch->SetUseRegex(win->findUseRegex);
 
     auto engine = dm->GetEngine();
     engine->AddRef();
@@ -401,6 +423,18 @@ static void FindThread(FindThreadData* ftd) {
         }
     }
 
+    Vec<int> pageMatchCounts;
+    int totalMatches = 0;
+    bool hasSearchData = false;
+    if (!win->findCancelled && ftd->wasModified && !str::IsEmpty(ftd->text.Get())) {
+        TextSearch countSearch(engine);
+        countSearch.progressCb = MkFunc1<FindThreadData, ProgressUpdateData*>(UpdateSearchProgress, ftd);
+        countSearch.SetMatchCase(win->findMatchCase);
+        countSearch.SetWholeWord(win->findWholeWord);
+        countSearch.SetUseRegex(win->findUseRegex);
+        hasSearchData = countSearch.CountMatchesPerPage(ftd->text, pageMatchCounts, &totalMatches);
+    }
+
     // wait for FindTextOnThread to return so that
     // FindEndTask closes the correct handle to
     // the current find thread
@@ -413,6 +447,14 @@ static void FindThread(FindThreadData* ftd) {
     data->ftd = ftd;
     data->textSel = nullptr;
     data->loopedAround = false;
+    data->query.SetCopy(ToUtf8Temp(ftd->text));
+    data->totalMatches = totalMatches;
+    data->hasSearchData = hasSearchData;
+    int nMatchesByPage = (int)pageMatchCounts.size();
+    data->pageMatchCounts.SetSize(nMatchesByPage);
+    for (int i = 0; i < nMatchesByPage; i++) {
+        data->pageMatchCounts[i] = pageMatchCounts.at(i);
+    }
 
     if (!win->findCancelled && rect) {
         data->textSel = rect;
@@ -455,6 +497,7 @@ void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, const ch
                       bool showProgress, int startPage) {
     AbortFinding(win, false);
     if (str::IsEmpty(text)) {
+        ClearSearchResultsSidebar(win);
         return;
     }
     FindThreadData* ftd = new FindThreadData(win, direction, text, wasModified, startPage);
@@ -463,6 +506,61 @@ void FindTextOnThread(MainWindow* win, TextSearch::Direction direction, const ch
     auto fn = MkFunc0(FindThread, ftd);
     win->findThread = StartThread(fn, "FindThread");
     ftd->thread = win->findThread; // safe because only accesssed on ui thread
+}
+
+void FindTextOnThreadAtPage(MainWindow* win, const char* text, int pageNo) {
+    if (!win || !win->IsDocLoaded() || !win->ctrl || !win->ctrl->ValidPageNo(pageNo) || str::IsEmpty(text)) {
+        return;
+    }
+    FindTextOnThread(win, TextSearch::Direction::Forward, text, true, true, pageNo);
+}
+
+bool HighlightSearchResultsOnPage(MainWindow* win, const char* text, int pageNo) {
+    if (!win || !win->IsDocLoaded() || !win->ctrl || !win->ctrl->ValidPageNo(pageNo) || str::IsEmpty(text)) {
+        return false;
+    }
+
+    DisplayModel* dm = win->AsFixed();
+    if (!dm) {
+        return false;
+    }
+
+    TempWStr needle = ToWStrTemp(text);
+    if (str::IsEmpty(needle)) {
+        return false;
+    }
+
+    TextSearch pageSearch(dm->GetEngine());
+    pageSearch.SetMatchCase(win->findMatchCase);
+    pageSearch.SetWholeWord(win->findWholeWord);
+    pageSearch.SetUseRegex(win->findUseRegex);
+    pageSearch.SetDirection(TextSearch::Direction::Forward);
+
+    Vec<SelectionOnPage>* matchesOnPage = new Vec<SelectionOnPage>();
+    TextSel* result = pageSearch.FindFirstOnPage(pageNo, needle);
+    while (result && result->len > 0) {
+        for (int i = 0; i < result->len; i++) {
+            int p = result->pages[i];
+            if (p == pageNo) {
+                RectF rect = ToRectF(result->rects[i]);
+                matchesOnPage->Append(SelectionOnPage(pageNo, &rect));
+            }
+        }
+        result = pageSearch.FindNextOnPage(pageNo);
+    }
+
+    DeleteOldSelectionInfo(win, true);
+    if (matchesOnPage->size() > 0) {
+        win->CurrentTab()->selectionOnPage = matchesOnPage;
+        win->showSelection = true;
+    } else {
+        delete matchesOnPage;
+    }
+
+    win->ctrl->GoToPage(pageNo, true);
+    ScheduleRepaint(win, 0);
+    win->Focus();
+    return win->showSelection;
 }
 
 // TODO: for https://github.com/sumatrapdfreader/sumatrapdf/issues/2655

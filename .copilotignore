@@ -1,0 +1,11 @@
+# .copilotignore - tells Copilot what to skip
+node_modules/
+dist/
+build/
+.git/
+*.test.ts
+*.spec.ts
+coverage/
+.next/
+*.log
+vs2022/

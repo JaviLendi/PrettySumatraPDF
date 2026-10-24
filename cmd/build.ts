@@ -1,5 +1,6 @@
+import { copyFileSync } from "node:fs";
 import { join } from "node:path";
-import { detectVisualStudio, runLogged } from "./util";
+import { detectVisualStudio, runLogged, findSolutionPath } from "./util";
 import { clearDirPreserveSettings } from "./clean";
 
 let clean = false;
@@ -19,10 +20,13 @@ async function main() {
   }
 
   const { msbuildPath } = detectVisualStudio();
-  const sln = String.raw`vs2022\SumatraPDF.sln`;
+  const sln = findSolutionPath();
   // const t = `/t:SumatraPDF;test_util`;
   const p = `/p:Configuration=Debug;Platform=x64`;
   await runLogged(msbuildPath, [sln, t, p, `/m`]);
+
+  const outDir = join("out", "dbg64");
+  copyFileSync(join(outDir, "SumatraPDF-dll.exe"), join(outDir, "SumatraPDF.exe"));
 
   // const outDir = join("out", "dbg64");
   // await runLogged(resolve(join(outDir, "test_util.exe")), [], outDir);
