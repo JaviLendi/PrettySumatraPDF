@@ -1172,8 +1172,7 @@ static ::TempStr SerializeRecentFilesToJson() {
 }
 
 // HomePage UI message handlers
-static bool DispatchHomePageReady() {
-    MainWindow* win = GetTargetWindow();
+bool NotifyHomePageWebViewReady(MainWindow* win) {
     if (!win || !win->homePageWebView) {
         return false;
     }
@@ -1213,6 +1212,10 @@ static bool DispatchHomePageReady() {
     }
 
     return true;
+}
+
+static bool DispatchHomePageReady() {
+    return NotifyHomePageWebViewReady(GetTargetWindow());
 }
 
 static bool DispatchOpenRecent(const BridgeMessage& msg) {

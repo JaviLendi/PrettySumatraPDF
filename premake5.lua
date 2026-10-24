@@ -985,7 +985,12 @@ workspace "SumatraPDF"
 
     resdefines { "INSTALL_PAYLOAD_ZIP=.\\%{cfg.targetdir}\\InstallerData.dat" }
 
-    files { "src/MuPDF_Exports.cpp" }
+    files { "src/MuPDF_Exports.cpp", "ext/mujs/regexp.c", "ext/mujs/utf.c" }
+    filter "files:ext/mujs/regexp.c"
+    disablewarnings { "4310" }
+    filter "files:ext/mujs/utf.c"
+    disablewarnings { "4310" }
+    filter {}
 
     links {
       "libmupdf", "unrar", "libarchive", "utils", "chm"

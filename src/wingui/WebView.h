@@ -49,6 +49,7 @@ struct WebviewWnd : Wnd {
     void SetControllerVisible(bool visible);
 
     virtual void OnBrowserMessage(const char* msg);
+    virtual void OnNavigationCompleted(bool isSuccess);
 
     LRESULT WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
 

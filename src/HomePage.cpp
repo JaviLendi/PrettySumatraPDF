@@ -74,6 +74,21 @@ static bool LoadWebViewHtmlFromFile(WebviewWnd* wv, const std::vector<std::strin
     return false;
 }
 
+class HomePageWebviewWnd : public WebviewWnd {
+    public:
+        explicit HomePageWebviewWnd(MainWindow* win) : win(win) {}
+
+        void OnNavigationCompleted(bool) override {
+                if (!IsMainWindowValid(win) || win->homePageWebView != this) {
+                        return;
+                }
+                prettysumatra::bridge::NotifyHomePageWebViewReady(win);
+        }
+
+    private:
+        MainWindow* win;
+};
+
 // Crea el WebView para la HomePage y carga el HTML
 void CreateHomePageWebView(MainWindow* win) {
     if (!win || !win->IsCurrentTabAbout()) {
@@ -92,7 +107,7 @@ void CreateHomePageWebView(MainWindow* win) {
 
     win->homePageWebViewCreateTick = GetTickCount64();
     win->homePageWebViewReady = false;
-    win->homePageWebView = new WebviewWnd();
+    win->homePageWebView = new HomePageWebviewWnd(win);
     {
         win->homePageWebView->dataDir = str::Dup(GetPathInAppDataDirTemp("webViewData"));
     }

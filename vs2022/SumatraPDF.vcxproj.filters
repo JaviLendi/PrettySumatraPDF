@@ -37,6 +37,9 @@
     <Filter Include="src\mui">
       <UniqueIdentifier>{A71E30A9-13FE-AE44-1C16-3A1B887415A6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\prettysumatra">
+      <UniqueIdentifier>{011943FD-6D2F-4193-B6A6-CCB422FC111B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\regress">
       <UniqueIdentifier>{F7CE8947-6384-023D-EC78-FC13582DF940}</UniqueIdentifier>
     </Filter>
@@ -317,6 +320,12 @@
     </ClInclude>
     <ClInclude Include="..\src\mui\TextRender.h">
       <Filter>src\mui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\prettysumatra\BridgeDispatcher.h">
+      <Filter>src\prettysumatra</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\prettysumatra\CommandBridgeSpec.h">
+      <Filter>src\prettysumatra</Filter>
     </ClInclude>
     <ClInclude Include="..\src\resource.h">
       <Filter>src</Filter>
@@ -656,6 +665,9 @@
     <ClCompile Include="..\src\mui\TextRender.cpp">
       <Filter>src\mui</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\prettysumatra\BridgeDispatcher.cpp">
+      <Filter>src\prettysumatra</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\regress\Regress.cpp">
       <Filter>src\regress</Filter>
     </ClCompile>
@@ -819,6 +831,7 @@
       <Filter>.github\workflows</Filter>
     </None>
     <None Include="..\.gitignore" />
+    <None Include="..\PRETTYSUMATRA_NOTES.md" />
     <None Include="..\SECURITY.md" />
     <None Include="..\agents.md" />
     <None Include="..\cmd\build-all.ts">

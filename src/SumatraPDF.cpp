@@ -367,6 +367,16 @@ void LoadArgs::SetFilePath(const char* path) {
 
 LoadArgs* LoadArgs::Clone() {
     LoadArgs* res = new LoadArgs(fileName, win);
+    res->engine = engine;
+    res->showWin = showWin;
+    res->forceReuse = forceReuse;
+    res->noPlaceWindow = noPlaceWindow;
+    res->isNewWindow = isNewWindow;
+    res->placeWindow = placeWindow;
+    res->noSavePrefs = noSavePrefs;
+    res->lazyLoad = lazyLoad;
+    res->async = async;
+    res->activateExisting = activateExisting;
     res->tabState = this->tabState;
     return res;
 }
@@ -2566,6 +2576,9 @@ static void LoadDocumentAsyncFinish(LoadDocumentAsyncData* d) {
     }
     const char* path = args->FilePath();
     if (!args->ctrl) {
+        if (args->showWin && !IsWindowVisible(win->hwndFrame)) {
+            ShowMainWindow(win, gGlobalPrefs->windowState);
+        }
         ShowErrorLoadingNotification(win, path, args->noSavePrefs);
         // re-sync win->ctrl with current tab after ShowErrorLoadingNotification
         // which can pump messages and change tab selection

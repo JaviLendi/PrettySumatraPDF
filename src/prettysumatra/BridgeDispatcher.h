@@ -1,5 +1,7 @@
 #pragma once
 
+struct MainWindow;
+
 namespace prettysumatra {
 namespace bridge {
 
@@ -31,6 +33,7 @@ void SyncHybridToolbarZoomState(HWND hwndFrame, float zoomPercent);
 void SyncHybridToolbarAnnotationAvailability(HWND hwndFrame);
 
 DispatchResult DispatchShellMessage(const char* msg, HWND sourceWindow = nullptr);
+bool NotifyHomePageWebViewReady(MainWindow* win);
 
 // Get the pending highlight color from bridge (used for passing color from webui)
 const char* GetPendingHighlightColor();
