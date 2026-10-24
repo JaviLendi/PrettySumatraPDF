@@ -228,7 +228,7 @@ static void DeleteSelectedAnnotation(EditAnnotationsWindow* ew) {
         ew->tab->selectedAnnotation = annot;
     }
     DeleteAnnotationAndUpdateUI(ew->tab, annot);
-    
+
     // Note: auto-selecting next annotation might cause page jumping
 #if 0
     annot = PickNewSelectedAnnotation(this, idx);
@@ -554,12 +554,12 @@ void UpdateEditAnnotationsColors(EditAnnotationsWindow* ew) {
     }
 
     RedrawWindow(ew->hwnd, nullptr, nullptr,
-                 RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | 
+                 RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW |
                  RDW_ALLCHILDREN | RDW_FRAME);
 }
 
 static void RebuildAnnotationsListBox(EditAnnotationsWindow* ew) {
-    
+
     auto model = new ListBoxModelStrings();
     int n = 0;
     n = ew->annotations.Size();
@@ -1503,7 +1503,7 @@ static void CreateMainLayout(EditAnnotationsWindow* ew) {
     {
         auto w = CreateStatic(parent, _TRA("Contents:"));
         ew->staticContents = w;
-        w->SetInsetsPt(4, 0, 0, 0); 
+        w->SetInsetsPt(4, 0, 0, 0);
         vbox->AddChild(w);
     }
 

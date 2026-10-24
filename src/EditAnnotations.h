@@ -19,7 +19,7 @@ void SetSelectedAnnotation(WindowTab*, Annotation*, bool isNew = false, EditAnno
 void UpdateAnnotationsList(EditAnnotationsWindow*);
 void NotifyAnnotationsChanged(EditAnnotationsWindow*);
 void UpdateEditAnnotationsColors(WindowTab*);
-void UpdateEditAnnotationsColors(EditAnnotationsWindow*); 
+void UpdateEditAnnotationsColors(EditAnnotationsWindow*);
 class DeferWinPosHelper;
 void LayoutEditAnnotationsWindow(WindowTab*, Rect&, DeferWinPosHelper* dh = nullptr);
 HWND GetEditAnnotationsFocusHwnd(WindowTab*);

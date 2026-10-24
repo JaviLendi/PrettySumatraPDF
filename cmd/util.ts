@@ -64,7 +64,7 @@ function findVsRootVer(ver: string): string {
   // try known Program Files locations
   const pf = process.env["ProgramFiles"] ?? String.raw`C:\Program Files`;
   const pf86 = process.env["ProgramFiles(x86)"] ?? String.raw`C:\Program Files (x86)`;
-  
+
   for (const root of [pf, pf86]) {
     const vsBase = join(root, "Microsoft Visual Studio", ver);
     for (const edition of vsEditions) {
